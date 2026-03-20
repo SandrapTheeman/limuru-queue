@@ -1,0 +1,138 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: limuru-postgres
+    environment:
+      POSTGRES_DB: limuru_queue
+      POSTGRES_USER: limuru
+      POSTGRES_PASSWORD: limuru_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U limuru"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - limuru-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: limuru-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - limuru-network
+
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: ../docker/Dockerfile.api
+    container_name: limuru-api
+    ports:
+      - "8787:8787"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://limuru:limuru_pass@postgres:5432/limuru_queue
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: limuru-dev-jwt-secret-2024
+      PORT: "8787"
+      CORS_ORIGIN: "http://localhost:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8787/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - limuru-network
+    volumes:
+      - ../apps/api:/app
+      - /app/node_modules
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: ../docker/Dockerfile.web
+    container_name: limuru-web
+    ports:
+      - "3000:80"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8787
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - limuru-network
+
+  mobile:
+    build:
+      context: ../apps/mobile
+      dockerfile: ../docker/Dockerfile.mobile
+    container_name: limuru-mobile
+    ports:
+      - "3001:80"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8787
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - limuru-network
+
+  display:
+    build:
+      context: .
+      dockerfile: Dockerfile.display
+    container_name: limuru-display
+    ports:
+      - "3002:80"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8787
+      DISPLAY_MODE: "tv"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - limuru-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  limuru-network:
+    driver: bridge

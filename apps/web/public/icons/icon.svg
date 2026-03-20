@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background: Teal rounded rectangle -->
+  <rect width="512" height="512" rx="64" fill="#0d9488"/>
+  
+  <!-- Hospital cross - vertical bar -->
+  <rect x="196" y="96" width="120" height="320" rx="16" fill="white"/>
+  
+  <!-- Hospital cross - horizontal bar -->
+  <rect x="96" y="196" width="320" height="120" rx="16" fill="white"/>
+  
+  <!-- Queue indicator dots (representing waiting patients) -->
+  <circle cx="360" cy="120" r="36" fill="#14b8a6"/>
+  <circle cx="360" cy="120" r="20" fill="white" opacity="0.9"/>
+  
+  <!-- Small queue dots on the right side -->
+  <circle cx="400" cy="360" r="16" fill="#14b8a6" opacity="0.8"/>
+  <circle cx="400" cy="400" r="16" fill="#14b8a6" opacity="0.6"/>
+  <circle cx="400" cy="440" r="16" fill="#14b8a6" opacity="0.4"/>
+</svg>

@@ -1,0 +1,49 @@
+{
+  "name": "hospital-queue-v2",
+  "version": "2.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.4.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "dev:api": "pnpm --filter @hospital-queue/api dev",
+    "dev:web": "pnpm --filter @hospital-queue/web dev",
+    "dev:wrangler": "cd apps/api && wrangler dev --persist",
+    "db:local": "cd apps/api && wrangler d1 migrations apply hospital-queue",
+    "db:local:create": "cd apps/api && wrangler d1 create hospital-queue",
+    "db:local:reset": "cd apps/api && wrangler d1 migrations apply hospital-queue --force-reset",
+    "db:local:execute": "cd apps/api && wrangler d1 execute hospital-queue --command",
+    "db:pg": "cd services && docker-compose up -d database",
+    "db:pg:stop": "cd services && docker-compose stop database",
+    "db:migrate": "pnpm --filter @hospital-queue/api run db:migrate",
+    "db:generate": "pnpm --filter @hospital-queue/api run db:generate",
+    "deploy:staging": "cd apps/api && wrangler deploy --env staging",
+    "deploy:prod": "cd apps/api && wrangler deploy --env production",
+    "deploy:web": "pnpm --filter @hospital-queue/web build",
+    "logs": "cd apps/api && wrangler tail",
+    "logs:staging": "cd apps/api && wrangler tail --env staging",
+    "secrets:local": "cd apps/api && wrangler secret list",
+    "secrets:set": "cd apps/api && wrangler secret put"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.4",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

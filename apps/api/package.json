@@ -1,0 +1,43 @@
+{
+  "name": "@hospital-queue/api",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Hospital Queue System API (Hono.js + Cloudflare Workers)",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --persist",
+    "dev:local": "wrangler dev --local",
+    "build": "tsc",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:prod": "wrangler deploy --env production",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "db:migrate": "wrangler d1 migrations apply limuru-queue-db --local",
+    "db:migrate:prod": "wrangler d1 migrations apply limuru-queue-db --remote",
+    "db:execute": "wrangler d1 execute limuru-queue-db --local --command",
+    "db:execute:prod": "wrangler d1 execute limuru-queue-db --remote --command",
+    "tail": "wrangler tail",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@hono/zod-validator": "^0.2.0",
+    "zod": "^3.22.0",
+    "bcryptjs": "^2.4.3",
+    "@types/bcryptjs": "^2.4.6",
+    "jose": "^5.2.0",
+    "uuid": "^9.0.1",
+    "@types/uuid": "^9.0.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^4.0.0",
+    "vitest": "^1.2.0",
+    "@vitest/coverage-v8": "^1.2.0"
+  }
+}

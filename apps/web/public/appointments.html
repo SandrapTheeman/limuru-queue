@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointments - Limuru Cottage Hospital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/glassmorphism.css">
+    <style>
+        :root { --t: #14b8a6; --td: #0d9488; }
+        body { background: linear-gradient(135deg, #030712, #0f172a, #134e4a); min-height: 100vh; }
+        .pg { padding: 24px 0 48px; }
+        .ph { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .pt { font-size: 28px; font-weight: 700; margin: 0; background: linear-gradient(135deg, var(--t), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .ha { display: flex; align-items: center; gap: 12px; }
+        .ui { display: flex; align-items: center; gap: 10px; }
+        .ua { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--td), var(--t)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+        .rb { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ra { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
+        .rd { background: linear-gradient(135deg, #16a34a, #059669); }
+        .rr { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .sg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        @media (max-width: 768px) { .sg { grid-template-columns: 1fr; } }
+        .sc { display: flex; flex-direction: column; gap: 8px; padding: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; }
+        .sc.p { background: linear-gradient(135deg, rgba(13, 148, 136, 0.2) 0%, rgba(20, 184, 166, 0.1) 100%); border-color: rgba(13, 148, 136, 0.3); }
+        .sc.w { background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%); border-color: rgba(245, 158, 11, 0.3); }
+        .sc.c { background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(22, 163, 74, 0.05) 100%); border-color: rgba(22, 163, 74, 0.3); }
+        .si { font-size: 24px; }
+        .sv { font-size: 32px; font-weight: 700; color: var(--t); }
+        .sl { font-size: 13px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; }
+        .fr { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+        .fi, .fs { flex: 1; min-width: 140px; }
+        .fs { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2314b8a6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 40px; }
+        .vt { display: flex; gap: 4px; padding: 4px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .vb { padding: 8px 16px; background: transparent; border: none; border-radius: 8px; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .vb:hover { color: white; }
+        .vb.a { background: var(--td); color: white; }
+        .cc { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .ch { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .ct { font-size: 18px; font-weight: 600; color: var(--t); }
+        .cn { display: flex; gap: 8px; }
+        .nb { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: white; cursor: pointer; transition: all 0.2s; }
+        .nb:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--td); }
+        .nb.t { width: auto; padding: 0 14px; font-size: 13px; }
+        .cg { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        @media (max-width: 640px) { .cg { gap: 4px; } }
+        .dh { text-align: center; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; padding: 8px 0; }
+        @media (max-width: 640px) { .dh { font-size: 9px; padding: 4px 0; } }
+        .dc { min-height: 80px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 8px; cursor: pointer; transition: all 0.2s; }
+        .dc:hover { background: rgba(255, 255, 255, 0.06); border-color: var(--td); }
+        .dc.t { background: linear-gradient(135deg, rgba(13, 148, 136, 0.2) 0%, rgba(20, 184, 166, 0.1) 100%); border-color: var(--td); }
+        .dc.s { border-color: var(--t); box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.3); }
+        .dc.o { opacity: 0.3; }
+        .dn { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .dc.t .dn { color: var(--t); }
+        @media (max-width: 640px) { .dc { min-height: 60px; padding: 4px; } .dn { font-size: 12px; } }
+        .ma { font-size: 11px; padding: 2px 5px; background: rgba(255,255,255,0.05); border-radius: 4px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .ma:hover { background: rgba(13, 148, 136, 0.2); }
+        .ml { font-size: 10px; color: var(--t); }
+        @media (max-width: 640px) { .ma { font-size: 9px; padding: 1px 3px; } .ml { font-size: 8px; } }
+        .tb { width: 100%; border-collapse: collapse; }
+        .tb th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--t); background: rgba(13, 148, 136, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; }
+        .tb th:hover { background: rgba(13, 148, 136, 0.15); }
+        .tb td { padding: 14px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; }
+        .tb tr:hover td { background: rgba(13, 148, 136, 0.05); }
+        .sb { display: inline-flex; align-items: center; padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 20px; text-transform: uppercase; }
+        .ss { background: rgba(13, 148, 136, 0.2); color: var(--t); }
+        .scf { background: rgba(22, 163, 74, 0.2); color: #16a34a; }
+        .spd { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .scn { background: rgba(220, 38, 38, 0.2); color: #dc2626; }
+        .scl { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .as { display: flex; gap: 6px; }
+        .ab { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .ab:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+        .ab.e:hover { background: rgba(13, 148, 136, 0.2); color: var(--t); border-color: var(--t); }
+        .ab.d:hover { background: rgba(220, 38, 38, 0.2); color: #dc2626; border-color: #dc2626; }
+        .mo { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .mo.a { opacity: 1; visibility: visible; }
+        .mc { background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%); border: 1px solid rgba(13, 148, 136, 0.3); border-radius: 20px; max-width: 500px; width: 100%; padding: 28px; transform: translateY(20px); transition: transform 0.3s; }
+        .mo.a .mc { transform: translateY(0); }
+        .mh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .mt { font-size: 18px; font-weight: 600; margin: 0; }
+        .mc { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s; }
+        .mc:hover { background: rgba(220, 38, 38, 0.2); color: #dc2626; }
+        .mf { display: flex; gap: 12px; margin-top: 20px; }
+        .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .fl { font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.8); }
+        .fi, .fs, .ft { width: 100%; padding: 10px 14px; font-size: 14px; color: white; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; outline: none; transition: all 0.2s; }
+        .fi:focus, .fs:focus, .ft:focus { background: rgba(255, 255, 255, 0.08); border-color: var(--td); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2); }
+        .fi::placeholder { color: rgba(255, 255, 255, 0.4); }
+        .frw { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 480px) { .frw { grid-template-columns: 1fr; } }
+        .ps { position: relative; }
+        .pr { position: absolute; top: 100%; left: 0; right: 0; background: #0f172a; border: 1px solid var(--td); border-radius: 12px; max-height: 180px; overflow-y: auto; z-index: 50; display: none; margin-top: 4px; }
+        .pr.a { display: block; }
+        .prs { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.1); transition: background 0.15s; }
+        .prs:hover { background: rgba(13, 148, 136, 0.1); }
+        .prn { font-weight: 500; }
+        .pri { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .tc { position: fixed; bottom: 24px; right: 24px; z-index: 1100; }
+        .to { padding: 14px 20px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; align-items: center; gap: 10px; margin-top: 8px; animation: si 0.3s ease; backdrop-filter: blur(10px); }
+        .to.s { border-color: #16a34a; }
+        .to.e { border-color: #dc2626; }
+        @keyframes si { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        .ls { display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .sp { width: 32px; height: 32px; border: 3px solid rgba(13, 148, 136, 0.2); border-top-color: var(--td); border-radius: 50%; animation: sp 0.8s linear infinite; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+        .es { text-align: center; padding: 60px 20px; color: rgba(255, 255, 255, 0.4); }
+        .ei { font-size: 48px; margin-bottom: 12px; }
+        .es button { margin-top: 16px; }
+        .h { display: none !important; }
+        @media (max-width: 768px) { .hm { display: none !important; } }
+    </style>
+</head>
+<body>
+    <div class="container pg">
+        <header class="ph">
+            <div><h1 class="pt">Appointments</h1><p id="ct" style="color: rgba(255,255,255,0.6); font-size: 14px;"></p></div>
+            <div class="ha">
+                <div class="ui"><span class="rb" id="ur">Admin</span><div class="ua" id="ua">SA</div></div>
+                <button class="btn btn-ghost btn-sm" onclick="Auth.logout()">Logout</button>
+            </div>
+        </header>
+        <div class="sg">
+            <div class="sc p"><div class="si">📅</div><div class="sv" id="st1">--</div><div class="sl">Today's Appointments</div></div>
+            <div class="sc w"><div class="si">⏳</div><div class="sv" id="st2">--</div><div class="sl">Pending</div></div>
+            <div class="sc c"><div class="si">✓</div><div class="sv" id="st3">--</div><div class="sl">Completed</div></div>
+        </div>
+        <div class="fr">
+            <input type="date" class="fi" id="fd" onchange="applyFilters()">
+            <select class="fs" id="fs" onchange="applyFilters()"><option value="">All Statuses</option><option value="scheduled">Scheduled</option><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
+            <select class="fs" id="fde" onchange="applyFilters()"><option value="">All Departments</option></select>
+            <input type="text" class="fi" id="fq" placeholder="Search patient..." onkeyup="applyFilters()" style="flex: 2;">
+            <div class="vt"><button class="vb a" onclick="sw('cal')" id="vb1">📅 Calendar</button><button class="vb" onclick="sw('list')" id="vb2">📋 List</button></div>
+        </div>
+        <div class="cc" id="cv">
+            <div class="ch"><h3 class="ct" id="ct2">March 2026</h3><div class="cn"><button class="nb" onclick="nm(-1)">←</button><button class="nb t" onclick="gt()">Today</button><button class="nb" onclick="nm(1)">→</button></div></div>
+            <div class="cg" id="cg"></div>
+        </div>
+        <div class="tb-container h" id="lv" style="border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+            <table class="tb"><thead><tr><th onclick="sb('time')">Time ↕</th><th onclick="sb('patient')">Patient ↕</th><th onclick="sb('doctor')">Doctor ↕</th><th class="hm" onclick="sb('dept')">Department ↕</th><th onclick="sb('status')">Status ↕</th><th>Actions</th></tr></thead><tbody id="atb"><tr><td colspan="6"><div class="ls"><div class="sp"></div></div></td></tr></tbody></table>
+        </div>
+    </div>
+    <div class="mo" id="md">
+        <div class="mc">
+            <div class="mh"><h3 class="mt" id="mdt">New Appointment</h3><button class="mc" onclick="cm()">✕</button></div>
+            <form onsubmit="hs(event)">
+                <input type="hidden" id="ai">
+                <div class="fg ps"><label class="fl">Patient *</label><input type="text" class="fi" id="ps" placeholder="Search patient..." autocomplete="off" required><input type="hidden" id="pi"><div class="pr" id="pr"></div></div>
+                <div class="fg"><label class="fl">Doctor *</label><select class="fs" id="ds" required><option value="">Select Doctor</option></select></div>
+                <div class="fg"><label class="fl">Department *</label><select class="fs" id="dse" required><option value="">Select Department</option></select></div>
+                <div class="frw"><div class="fg"><label class="fl">Date *</label><input type="date" class="fi" id="ad" required></div><div class="fg"><label class="fl">Time *</label><input type="time" class="fi" id="at" required></div></div>
+                <div class="fg"><label class="fl">Notes</label><textarea class="ft" id="an" rows="2" placeholder="Additional notes..."></textarea></div>
+                <div class="mf"><button type="button" class="btn btn-ghost" onclick="cm()" style="flex:1">Cancel</button><button type="submit" class="btn btn-primary" id="sb" style="flex:1">Create</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="tc" id="tc"></div>
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+    (function() {
+        'use strict';
+        if (!Auth.requireAuth()) return;
+        const S = { appts: [], flt: [], pats: [], docs: [], depts: [], cm: new Date(), sd: null, cv: 'cal', sc: 'time', sd2: 'asc', eid: null };
+        const $ = id => document.getElementById(id);
+        const init = async () => {
+            const u = Auth.getUser();
+            if (u) { $('ur').textContent = u.role?.toUpperCase() || 'USER'; $('ur').className = `rb r${u.role}`; $('ua').textContent = (u.name || u.email || '??').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2); }
+            ut();
+            setInterval(ut, 60000);
+            try {
+                const [a, d, de] = await Promise.all([api.appointments.list(), api.doctors.list(), api.departments.list()]);
+                S.appts = a.success ? a.data || [] : [];
+                S.docs = d.success ? d.data || [] : [];
+                S.depts = de.success ? de.data || [] : [];
+                $('fde').innerHTML = '<option value="">All Departments</option>' + S.depts.filter(x => x.is_active).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+                $('ds').innerHTML = '<option value="">Select Doctor</option>' + S.docs.map(x => `<option value="${x.id}">${x.name || 'Dr. ' + x.id}${x.specialty ? ' (' + x.specialty + ')' : ''}</option>`).join('');
+                $('dse').innerHTML = '<option value="">Select Department</option>' + S.depts.filter(x => x.is_active).map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+                applyFilters(); rc(); us();
+            } catch (e) { console.error(e); showToast('Failed to load data', 'e'); $('atb').innerHTML = `<tr><td colspan="6"><div class="es"><div class="ei">⚠️</div><p>Failed to load appointments</p><button class="btn btn-primary btn-sm" onclick="location.reload()">Retry</button></div></td></tr>`; }
+            $('ps').addEventListener('input', sp); $('ps').addEventListener('focus', () => { if ($('ps').value.length >= 2) sp(); }); document.addEventListener('click', e => { if (!e.target.closest('.ps')) $('pr').classList.remove('a'); });
+            window.addEventListener('user-logout', () => location.reload());
+        };
+        const ut = () => { $('ct').textContent = new Date().toLocaleString('en-KE', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+        const rc = () => {
+            const y = S.cm.getFullYear(), m = S.cm.getMonth();
+            $('ct2').textContent = S.cm.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            let h = '<div class="dh">Mon</div><div class="dh">Tue</div><div class="dh">Wed</div><div class="dh">Thu</div><div class="dh">Fri</div><div class="dh">Sat</div><div class="dh">Sun</div>';
+            const fd = new Date(y, m, 1), ld = new Date(y, m + 1, 0), sd = (fd.getDay() + 6) % 7, t = new Date(); t.setHours(0, 0, 0, 0);
+            const pm = new Date(y, m, 0);
+            for (let i = sd - 1; i >= 0; i--) h += `<div class="dc o"><div class="dn">${pm.getDate() - i}</div></div>`;
+            for (let d = 1; d <= ld.getDate(); d++) {
+                const dt = new Date(y, m, d), ds = dt.toISOString().split('T')[0], isT = dt.getTime() === t.getTime(), isS = S.sd === ds;
+                const da = S.appts.filter(a => { const ad = new Date(a.appointment_date || a.appointment_date_time).toISOString().split('T')[0]; return ad === ds; });
+                h += `<div class="dc ${isT ? 't' : ''} ${isS ? 's' : ''}" onclick="sd2('${ds}')"><div class="dn">${d}</div>${da.slice(0, 3).map(a => `<div class="ma" onclick="event.stopPropagation(); om(${a.id})"><span style="width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px;background:${gcs(a.status)}"></span>${ft(a.appointment_time || a.appointment_date_time)}</div>`).join('')}${da.length > 3 ? `<span class="ml">+${da.length - 3} more</span>` : ''}</div>`;
+            }
+            const tt = Math.ceil((sd + ld.getDate()) / 7) * 7;
+            for (let i = 1; i <= tt - sd - ld.getDate(); i++) h += `<div class="dc o"><div class="dn">${i}</div></div>`;
+            $('cg').innerHTML = h;
+        };
+        const gcs = s => ({ scheduled: 'var(--td)', confirmed: '#16a34a', pending: '#f59e0b', cancelled: '#dc2626', completed: '#3b82f6' }[s] || 'var(--td)');
+        const nm = d => { S.cm.setMonth(S.cm.getMonth() + d); rc(); };
+        const gt = () => { S.cm = new Date(); S.sd = new Date().toISOString().split('T')[0]; $('fd').value = S.sd; rc(); applyFilters(); };
+        const sd2 = d => { S.sd = d; $('fd').value = d; rc(); applyFilters(); };
+        const applyFilters = () => {
+            const st = $('fs').value, de = $('fde').value, q = $('fq').value.toLowerCase(), dt = $('fd').value;
+            S.flt = S.appts.filter(a => { if (st && a.status !== st) return false; if (de && a.department_id !== de) return false; if (dt) { const ad = new Date(a.appointment_date || a.appointment_date_time).toISOString().split('T')[0]; if (ad !== dt) return false; } if (q) { const n = (a.patient_name || '').toLowerCase(), i = (a.patient_id || '').toString().toLowerCase(); if (!n.includes(q) && !i.includes(q)) return false; } return true; });
+            sf(); rl(); us();
+        };
+        const sb = c => { if (S.sc === c) S.sd2 = S.sd2 === 'asc' ? 'desc' : 'asc'; else { S.sc = c; S.sd2 = 'asc'; } sf(); rl(); };
+        const sf = () => { S.flt.sort((a, b) => { let va, vb; switch (S.sc) { case 'time': va = new Date((a.appointment_date || a.appointment_date_time) + 'T' + (a.appointment_time || '00:00')); vb = new Date((b.appointment_date || b.appointment_date_time) + 'T' + (b.appointment_time || '00:00')); break; case 'patient': va = (a.patient_name || '').toLowerCase(); vb = (b.patient_name || '').toLowerCase(); break; case 'doctor': va = (a.doctor_name || '').toLowerCase(); vb = (b.doctor_name || '').toLowerCase(); break; case 'dept': va = (a.department_name || '').toLowerCase(); vb = (b.department_name || '').toLowerCase(); break; case 'status': va = a.status || ''; vb = b.status || ''; break; default: return 0; } return S.sd2 === 'asc' ? (va < vb ? -1 : 1) : (va > vb ? 1 : -1); }); };
+        const rl = () => { if (S.flt.length === 0) { $('atb').innerHTML = `<tr><td colspan="6"><div class="es"><div class="ei">📅</div><p>No appointments found</p><button class="btn btn-primary btn-sm" onclick="of()">+ New Appointment</button></div></td></tr>`; return; } $('atb').innerHTML = S.flt.map(a => `<tr><td style="font-weight:600;color:var(--t)">${ft(a.appointment_time || a.appointment_date_time)}</td><td>${a.patient_name || 'Patient ' + a.patient_id}</td><td>${a.doctor_name || 'Dr. ' + a.doctor_id}</td><td class="hm">${a.department_name || '-'}</td><td><select class="sb s${a.status || 'scheduled'}" style="background:transparent;border:none;cursor:pointer;" onchange="ucs('${a.id}', this.value)"><option value="scheduled" ${a.status === 'scheduled' ? 'selected' : ''}>scheduled</option><option value="confirmed" ${a.status === 'confirmed' ? 'selected' : ''}>confirmed</option><option value="pending" ${a.status === 'pending' ? 'selected' : ''}>pending</option><option value="completed" ${a.status === 'completed' ? 'selected' : ''}>completed</option><option value="cancelled" ${a.status === 'cancelled' ? 'selected' : ''}>cancelled</option></select></td><td><div class="as"><button class="ab e" onclick="ea('${a.id}')" title="Edit">✎</button><button class="ab d" onclick="da('${a.id}')" title="Cancel">✕</button></div></td></tr>`).join(''); };
+        const ucs = async (id, status) => { try { const r = await api.request(`/appointments/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }); if (r.success !== false) { const idx = S.appts.findIndex(a => a.id == id); if (idx >= 0) S.appts[idx].status = status; showToast('Status updated', 's'); applyFilters(); } else { showToast(r.message || 'Failed to update', 'e'); } } catch (e) { showToast('Failed to update status', 'e'); } };
+        const us = () => { const t = new Date().toISOString().split('T')[0]; const ta = S.appts.filter(a => new Date(a.appointment_date || a.appointment_date_time).toISOString().split('T')[0] === t); $('st1').textContent = ta.length; $('st2').textContent = S.appts.filter(a => a.status === 'pending').length; $('st3').textContent = ta.filter(a => a.status === 'completed').length; };
+        const sw = v => { S.cv = v; $('vb1').classList.toggle('a', v === 'cal'); $('vb2').classList.toggle('a', v === 'list'); $('cv').classList.toggle('h', v !== 'cal'); $('lv').classList.toggle('h', v !== 'list'); };
+        const sp = debounce(async () => { const q = $('ps').value.toLowerCase(); if (q.length < 2) { $('pr').classList.remove('a'); return; } $('pr').innerHTML = '<div class="prs"><span class="prn" style="color:var(--t)">Searching...</span></div>'; $('pr').classList.add('a'); try { const r = await api.patients.list(`?search=${encodeURIComponent(q)}`); const pats = r.success ? (r.data || []).slice(0, 8) : []; if (pats.length === 0) { $('pr').innerHTML = '<div class="prs"><span class="prn">No patients found</span></div>'; } else { $('pr').innerHTML = pats.map(p => `<div class="prs" onclick="slp('${p.id}', '${(p.name || 'Patient ' + p.id).replace(/'/g, "\\'")}')"><div class="prn">${p.name || 'Patient ' + p.id}</div><div class="pri">ID: ${p.id}${p.phone ? ' | ' + p.phone : ''}</div></div>`).join(''); } } catch (e) { $('pr').innerHTML = '<div class="prs"><span class="prn">Search failed</span></div>'; } }, 300);
+        const slp = (id, name) => { $('pi').value = id; $('ps').value = name; $('pr').classList.remove('a'); };
+        const om = id => { const a = S.appts.find(x => x.id == id); if (a) of(a); };
+        const ea = id => { const a = S.appts.find(x => x.id == id); if (a) of(a); };
+        const of = e => { S.eid = e?.id || null; $('mdt').textContent = e ? 'Edit Appointment' : 'New Appointment'; $('sb').textContent = e ? 'Update' : 'Create'; if (e) { $('ai').value = e.id; slp(e.patient_id, e.patient_name || 'Patient ' + e.patient_id); $('ds').value = e.doctor_id || ''; $('dse').value = e.department_id || ''; $('ad').value = e.appointment_date || e.appointment_date_time?.split('T')[0] || ''; $('at').value = e.appointment_time || e.appointment_date_time?.split('T')[1]?.substring(0, 5) || ''; $('an').value = e.notes || ''; } else { $('ai').value = ''; $('ps').value = ''; $('pi').value = ''; $('ds').value = ''; $('dse').value = ''; $('an').value = ''; if (S.sd) $('ad').value = S.sd; } $('md').classList.add('a'); };
+        const cm = () => { $('md').classList.remove('a'); S.eid = null; };
+        const da = async id => { if (!confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) return; try { const r = await api.request(`/appointments/${id}`, { method: 'DELETE' }); if (r.success !== false) { showToast('Appointment cancelled', 's'); S.appts = S.appts.filter(a => a.id != id); applyFilters(); rc(); } else { showToast(r.message || 'Failed to cancel', 'e'); } } catch (e) { showToast('Failed to cancel appointment', 'e'); } };
+        const hs = async e => { e.preventDefault(); const d = { patient_id: $('pi').value, doctor_id: $('ds').value, department_id: $('dse').value, appointment_date: $('ad').value, appointment_time: $('at').value, notes: $('an').value, status: 'scheduled' }; if (!d.patient_id || !d.doctor_id || !d.department_id) { showToast('Please fill all required fields', 'e'); return; } try { if (S.eid) { const r = await api.request(`/appointments/${S.eid}`, { method: 'PATCH', body: JSON.stringify(d) }); const i = S.appts.findIndex(x => x.id == S.eid); if (i >= 0) S.appts[i] = { ...S.appts[i], ...r.data }; showToast('Appointment updated', 's'); } else { const r = await api.post('/appointments', d); if (r.success && r.data) S.appts.push(r.data); showToast('Appointment created', 's'); } cm(); applyFilters(); rc(); } catch (e) { showToast(e.message, 'e'); } };
+        const ft = v => v ? (v.includes('T') ? v.split('T')[1].substring(0, 5) : v.substring(0, 5)) : '--:--';
+        const showToast = (msg, t = 'i') => { const icons = { s: '✓', e: '✕', i: 'ℹ' }; const to = document.createElement('div'); to.className = `to ${t}`; to.innerHTML = `<span>${icons[t]}</span> ${msg}`; $('tc').appendChild(to); setTimeout(() => { to.style.opacity = '0'; setTimeout(() => to.remove(), 300); }, 3000); };
+        const debounce = (fn, d) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), d); }; };
+        window.om = of;
+        init();
+    })();
+    </script>
+</body>
+</html>

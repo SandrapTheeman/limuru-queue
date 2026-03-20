@@ -1,0 +1,81 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-workspace.yaml
+
+# Build outputs
+dist/
+.build/
+.turbo/
+.next/
+output/
+out/
+.t3-app/
+
+# Static build (for nginx)
+apps/web/public/out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Wrangler development artifacts
+.wrangler/
+apps/api/.wrangler/
+
+# Test outputs
+coverage/
+*.test-output/
+playwright-report/
+test-results/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Turborepo
+.turbo/
+
+# Prisma/Database (local)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Docker volumes (local development)
+data/
+*.sql.gz
+
+# Misc
+*.tsbuildinfo
+.vercel
+.cache/
+
+# Backup files
+*.backup
+*.old
+*.tmp
+
+# OpenCode (agent context)
+.opencode/
+
+# Documentation builds
+docs/_build/
+

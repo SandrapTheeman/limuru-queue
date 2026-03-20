@@ -1,0 +1,61 @@
+<!-- 
+  Staff Directory Modal Component
+  Usage: Include this HTML and call VoiceCalls.openStaffDirectory()
+-->
+<div id="voice-calls-staff-modal" class="voice-calls-modal">
+    <div class="voice-calls-staff-modal-content">
+        <div class="voice-calls-modal-header">
+            <div class="voice-calls-modal-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <h2>Staff Directory</h2>
+            </div>
+            <button onclick="VoiceCalls.closeStaffDirectory()" class="voice-calls-close-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Search -->
+        <div class="voice-calls-search-container">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="voice-calls-staff-search" placeholder="Search staff..." oninput="VoiceCalls.filterStaff(this.value)">
+        </div>
+        
+        <!-- Role Filters -->
+        <div class="voice-calls-filters">
+            <button class="voice-calls-filter-btn voice-calls-filter-active" data-role="all" onclick="VoiceCalls.filterStaffByRole('all')">All</button>
+            <button class="voice-calls-filter-btn" data-role="doctor" onclick="VoiceCalls.filterStaffByRole('doctor')">Doctors</button>
+            <button class="voice-calls-filter-btn" data-role="nurse" onclick="VoiceCalls.filterStaffByRole('nurse')">Nurses</button>
+            <button class="voice-calls-filter-btn" data-role="receptionist" onclick="VoiceCalls.filterStaffByRole('receptionist')">Receptionists</button>
+        </div>
+        
+        <!-- Staff List -->
+        <div id="voice-calls-staff-list" class="voice-calls-staff-list">
+            <p class="voice-calls-empty">Loading...</p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="voice-calls-modal-footer">
+            <p id="voice-calls-staff-count">Loading staff...</p>
+        </div>
+    </div>
+</div>
+
+<!-- 
+  Note: The StaffDirectory component is automatically created and managed
+  by VoiceCalls.js. This file serves as a reference/template showing the
+  component structure. The actual modal is created dynamically.
+  
+  To customize the staff list population, you can override the 
+  VoiceCalls.getStaffMembers() method or hook into the fetchStaff event.
+-->

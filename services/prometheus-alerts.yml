@@ -1,0 +1,307 @@
+# Prometheus Alert Rules for Hospital Queue Management System
+
+groups:
+  - name: hqs_api_alerts
+    interval: 30s
+    rules:
+      # API Down
+      - alert: HQSAPIDown
+        expr: up{job="hqs-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: hqs-api
+          team: platform
+        annotations:
+          summary: "HQS API is down"
+          description: "HQS API has been unreachable for more than 1 minute."
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/api-down"
+          dashboard_url: "http://grafana:3000/d/hqs-api"
+
+      # High API Error Rate
+      - alert: HQSAPIHighErrorRate
+        expr: |
+          (
+            rate(hqs_http_requests_total{status_code=~"5.."}[5m]) /
+            rate(hqs_http_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: hqs-api
+        annotations:
+          summary: "High API error rate detected"
+          description: "API error rate is above 5% for 2 minutes. Current rate: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/high-error-rate"
+
+      # Slow API Responses
+      - alert: HQSAPISlowResponse
+        expr: |
+          histogram_quantile(0.95, 
+            rate(hqs_http_request_duration_seconds_bucket[5m])
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-api
+        annotations:
+          summary: "API response time is degraded"
+          description: "p95 latency is above 2 seconds. Current: {{ $value | humanizeDuration }}"
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/slow-responses"
+
+      # High API Latency
+      - alert: HQSAPIHighLatency
+        expr: |
+          histogram_quantile(0.99, 
+            rate(hqs_http_request_duration_seconds_bucket[5m])
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-api
+        annotations:
+          summary: "API p99 latency is very high"
+          description: "p99 latency is above 5 seconds. Current: {{ $value | humanizeDuration }}"
+
+      # High Request Rate
+      - alert: HQSAPIHighRequestRate
+        expr: |
+          rate(hqs_http_requests_total[5m]) > 100
+        for: 10m
+        labels:
+          severity: info
+          service: hqs-api
+        annotations:
+          summary: "High API request rate"
+          description: "API is receiving unusually high request rate: {{ $value | humanize }} req/s"
+
+  - name: hqs_queue_alerts
+    interval: 30s
+    rules:
+      # High Queue Wait Time
+      - alert: HQSHighQueueWaitTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(hqs_wait_time_seconds_bucket[10m])
+          ) > 1800
+        for: 10m
+        labels:
+          severity: warning
+          service: hqs-queue
+        annotations:
+          summary: "High patient wait times"
+          description: "95th percentile wait time is above 30 minutes"
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/high-wait-times"
+
+      # Queue Backlog
+      - alert: HQSQueueBacklog
+        expr: hqs_queue_length > 50
+        for: 15m
+        labels:
+          severity: warning
+          service: hqs-queue
+        annotations:
+          summary: "Large queue backlog detected"
+          description: "Queue has {{ $value }} patients waiting"
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/queue-backlog"
+
+      # Queue Emergency
+      - alert: HQSQueueEmergency
+        expr: hqs_queue_length > 100
+        for: 5m
+        labels:
+          severity: critical
+          service: hqs-queue
+        annotations:
+          summary: "Critical queue backlog - emergency protocols may be needed"
+          description: "Queue has {{ $value }} patients waiting - exceeds maximum threshold"
+
+  - name: hqs_database_alerts
+    interval: 30s
+    rules:
+      # Database Connection Pool Exhausted
+      - alert: HQSDatabaseConnectionPoolHigh
+        expr: |
+          hqs_db_connection_pool{state="active"} / 
+          hqs_db_connection_pool{state="total"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-database
+        annotations:
+          summary: "Database connection pool utilization is high"
+          description: "Database connection pool is {{ $value | humanizePercentage }} utilized"
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/db-connection-pool"
+
+      # Database Connection Pool Critical
+      - alert: HQSDatabaseConnectionPoolCritical
+        expr: |
+          hqs_db_connection_pool{state="active"} / 
+          hqs_db_connection_pool{state="total"} > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          service: hqs-database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection pool is {{ $value | humanizePercentage }} utilized"
+
+      # High Database Query Latency
+      - alert: HQSDatabaseQuerySlow
+        expr: |
+          histogram_quantile(0.95,
+            rate(hqs_db_query_duration_seconds_bucket[5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "p95 query latency is {{ $value | humanizeDuration }}"
+
+      # Database Unavailable
+      - alert: HQSDatabaseDown
+        expr: up{job="hqs-database"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: hqs-database
+        annotations:
+          summary: "Database is unreachable"
+          description: "HQS database has been unreachable for 30 seconds"
+
+  - name: hqs_auth_alerts
+    interval: 30s
+    rules:
+      # High Authentication Failure Rate
+      - alert: HQSHighAuthFailureRate
+        expr: |
+          (
+            rate(hqs_auth_attempts_total{success="false"}[5m]) /
+            rate(hqs_auth_attempts_total[5m])
+          ) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-api
+        annotations:
+          summary: "High authentication failure rate"
+          description: "More than 30% of authentication attempts are failing"
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/auth-failures"
+
+      # Possible Brute Force Attack
+      - alert: HQSBruteForceDetected
+        expr: |
+          increase(hqs_auth_attempts_total{success="false"}[1m]) > 10
+        for: 1m
+        labels:
+          severity: critical
+          service: hqs-api
+        annotations:
+          summary: "Possible brute force attack detected"
+          description: "More than 10 failed login attempts in the last minute"
+          runbook_url: "https://docs.limuruhospital.co.ke/runbooks/brute-force"
+
+  - name: hqs_system_alerts
+    interval: 30s
+    rules:
+      # High Memory Usage
+      - alert: HQSHighMemoryUsage
+        expr: |
+          (process_resident_memory_bytes / process_max_memory_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-api
+        annotations:
+          summary: "High memory usage on API server"
+          description: "Memory usage is at {{ $value | humanizePercentage }}"
+
+      # Memory Critical
+      - alert: HQSMemoryCritical
+        expr: |
+          (process_resident_memory_bytes / process_max_memory_bytes) > 0.95
+        for: 1m
+        labels:
+          severity: critical
+          service: hqs-api
+        annotations:
+          summary: "Critical memory usage - risk of OOM"
+          description: "Memory usage is at {{ $value | humanizePercentage }}"
+
+      # High CPU Usage
+      - alert: HQSHighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          service: hqs-api
+        annotations:
+          summary: "High CPU usage on API server"
+          description: "CPU usage is at {{ $value | humanizePercentage }}"
+
+  - name: hqs_business_alerts
+    interval: 60s
+    rules:
+      # No Patients Registered Today
+      - alert: HQSNoPatientsRegistered
+        expr: |
+          increase(hqs_business_events_total{event_type="patient_registered"}[24h]) == 0
+        for: 4h
+        labels:
+          severity: warning
+          service: hqs-queue
+        annotations:
+          summary: "No patients registered today"
+          description: "No patient registrations in the last 4 hours - system may be down"
+
+      # High No-Show Rate
+      - alert: HQSHighNoShowRate
+        expr: |
+          (
+            hqs_business_events_total{event_type="queue_no_show"}[24h] /
+            hqs_business_events_total{event_type="queue_created"}[24h]
+          ) > 0.2
+        for: 1h
+        labels:
+          severity: info
+          service: hqs-queue
+        annotations:
+          summary: "High no-show rate"
+          description: "No-show rate is above 20%"
+
+  - name: hqs_availability_slos
+    interval: 60s
+    rules:
+      # SLO: API Availability < 99.9%
+      - alert: HQSAPISLOBreach
+        expr: |
+          (
+            1 - (
+              sum(rate(hqs_http_requests_total{status_code=~"5.."}[1h])) /
+              sum(rate(hqs_http_requests_total[1h]))
+            )
+          ) < 0.999
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-api
+        annotations:
+          summary: "SLO Breach: API Availability below 99.9%"
+          description: "Current availability: {{ $value | humanizePercentage }}"
+
+      # SLO: API Latency p95 < 500ms
+      - alert: HQSAPILatencySLOBreach
+        expr: |
+          histogram_quantile(0.95,
+            rate(hqs_http_request_duration_seconds_bucket[1h])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: hqs-api
+        annotations:
+          summary: "SLO Breach: API p95 latency above 500ms"
+          description: "Current p95 latency: {{ $value | humanizeDuration }}"

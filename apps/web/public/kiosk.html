@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="theme-color" content="#0d9488">
+    <meta name="description" content="Patient Self-Service Check-In Kiosk - Limuru Cottage Hospital">
+    <title>Patient Check-In | Limuru Cottage Hospital</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="/css/glassmorphism.css">
+    
+    <style>
+        /* ==========================================================================
+           KIOSK DESIGN SYSTEM - Premium Hospital Self-Service Terminal
+           ========================================================================== */
+        
+        :root {
+            /* Brand Colors */
+            --primary: #0d9488;
+            --primary-light: #14b8a6;
+            --primary-dark: #0f766e;
+            --primary-glow: rgba(13, 148, 136, 0.4);
+            --primary-subtle: rgba(13, 148, 136, 0.12);
+            
+            /* Semantic Colors */
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            
+            /* Text Colors */
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.85);
+            --text-muted: rgba(255, 255, 255, 0.6);
+            --text-subtle: rgba(255, 255, 255, 0.4);
+            
+            /* Surface Colors */
+            --surface-glass: rgba(255, 255, 255, 0.05);
+            --surface-glass-hover: rgba(255, 255, 255, 0.08);
+            --surface-glass-selected: rgba(13, 148, 136, 0.15);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --border-primary: rgba(13, 148, 136, 0.4);
+            
+            /* Background */
+            --bg-gradient: linear-gradient(135deg, #030712 0%, #0f172a 50%, #134e4a 100%);
+            
+            /* Spacing */
+            --space-xs: 0.5rem;
+            --space-sm: 0.75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            
+            /* Radii */
+            --radius-sm: 0.75rem;
+            --radius-md: 1rem;
+            --radius-lg: 1.5rem;
+            --radius-full: 9999px;
+            
+            /* Shadows */
+            --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 8px 32px var(--primary-glow);
+            
+            /* Typography */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-size-base: 1.125rem; /* 18px */
+            --font-size-lg: 1.25rem;
+            --font-size-xl: 1.5rem;
+            --font-size-2xl: 1.875rem;
+            --font-size-3xl: 2.25rem;
+            --font-size-4xl: 3rem;
+            --font-size-ticket: 5rem;
+            
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-base: 250ms ease;
+            --transition-slow: 400ms ease;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* ==========================================================================
+           BASE RESET & ACCESSIBILITY
+           ========================================================================== */
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 100%;
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-gradient);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(13, 148, 136, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(13, 148, 136, 0.6);
+        }
+
+        /* Screen Reader Only */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ==========================================================================
+           LAYOUT STRUCTURE
+           ========================================================================== */
+
+        .kiosk {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .kiosk-header {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) var(--space-xl);
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(13, 148, 136, 0.2);
+        }
+
+        .kiosk-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .kiosk-brand-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: var(--radius-md);
+            color: white;
+        }
+
+        .kiosk-brand-text h1 {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--primary-light);
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .kiosk-brand-text p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Step Progress */
+        .step-progress {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .step-progress-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .step-progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: var(--radius-full);
+            background: var(--surface-glass);
+            border: 2px solid var(--border-glass);
+            transition: all var(--transition-base);
+        }
+
+        .step-progress-dot.active {
+            background: var(--primary);
+            border-color: var(--primary-light);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .step-progress-dot.completed {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .step-progress-line {
+            width: 40px;
+            height: 2px;
+            background: var(--border-glass);
+            transition: background var(--transition-base);
+        }
+
+        .step-progress-line.completed {
+            background: var(--success);
+        }
+
+        .step-progress-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .step-progress-label.active {
+            color: var(--primary-light);
+        }
+
+        /* Main Content */
+        .kiosk-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: var(--space-xl);
+            scroll-behavior: smooth;
+        }
+
+        /* Navigation Footer */
+        .kiosk-nav {
+            flex-shrink: 0;
+            display: flex;
+            gap: var(--space-md);
+            padding: var(--space-lg) var(--space-xl);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-glass);
+        }
+
+        /* ==========================================================================
+           STEP CARDS
+           ========================================================================== */
+
+        .step {
+            display: none;
+            animation: stepEnter 0.5s var(--ease-out-expo);
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes stepEnter {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-header {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+        }
+
+        .step-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: var(--radius-lg);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .step-title {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .step-subtitle {
+            font-size: var(--font-size-lg);
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           WELCOME STEP
+           ========================================================================== */
+
+        .welcome-content {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            padding: var(--space-2xl) 0;
+        }
+
+        .welcome-logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto var(--space-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: var(--radius-xl);
+            color: white;
+            box-shadow: var(--shadow-glow);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .welcome-title {
+            font-size: var(--font-size-3xl);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+        }
+
+        .welcome-description {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-2xl);
+            line-height: 1.7;
+        }
+
+        /* ==========================================================================
+           DEPARTMENT GRID
+           ========================================================================== */
+
+        .department-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--space-lg);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .department-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            padding: var(--space-xl);
+            min-height: 180px;
+            background: var(--surface-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all var(--transition-base) var(--ease-out-expo);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .department-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--primary-subtle), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .department-card:hover {
+            border-color: var(--border-primary);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .department-card:hover::before {
+            opacity: 1;
+        }
+
+        .department-card:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .department-card.selected {
+            border-color: var(--primary);
+            background: var(--surface-glass-selected);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .department-card.selected::before {
+            opacity: 1;
+        }
+
+        .department-icon {
+            font-size: 3rem;
+            line-height: 1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .department-name {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .department-check {
+            position: absolute;
+            top: var(--space-md);
+            right: var(--space-md);
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            border-radius: var(--radius-full);
+            color: white;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all var(--transition-base) var(--ease-out-back);
+        }
+
+        .department-card.selected .department-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ==========================================================================
+           FORM ELEMENTS
+           ========================================================================== */
+
+        .form-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-label {
+            display: block;
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .form-label .required {
+            color: var(--danger);
+            margin-left: 2px;
+        }
+
+        .form-label .optional {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: var(--space-lg);
+            font-size: var(--font-size-lg);
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--surface-glass);
+            border: 2px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            outline: none;
+            transition: all var(--transition-fast);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-subtle);
+        }
+
+        .form-input:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            background: rgba(13, 148, 136, 0.08);
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+        }
+
+        .form-input.error {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .form-input.success {
+            border-color: var(--success);
+        }
+
+        .field-error {
+            display: none;
+            margin-top: var(--space-sm);
+            font-size: 0.875rem;
+            color: var(--danger);
+        }
+
+        .form-input.error + .field-error {
+            display: block;
+        }
+
+        /* ==========================================================================
+           BUTTONS
+           ========================================================================== */
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-md) var(--space-xl);
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast) var(--ease-out-expo);
+            min-height: 64px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px var(--primary-glow);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            flex: 1;
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            box-shadow: 0 8px 32px var(--success-glow);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px var(--success-glow);
+        }
+
+        .btn-ghost {
+            background: var(--surface-glass);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-glass);
+        }
+
+        .btn-ghost:hover:not(:disabled) {
+            background: var(--surface-glass-hover);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+
+        .btn-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .btn-icon-left {
+            margin-right: var(--space-xs);
+        }
+
+        .btn-icon-right {
+            margin-left: var(--space-xs);
+        }
+
+        /* Full Width Button */
+        .btn-full {
+            width: 100%;
+        }
+
+        /* ==========================================================================
+           TICKET DISPLAY
+           ========================================================================== */
+
+        .ticket-container {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .ticket-card {
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.1) 0%, rgba(20, 184, 166, 0.05) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 2px solid rgba(13, 148, 136, 0.3);
+            border-radius: var(--radius-xl);
+            padding: var(--space-2xl);
+            margin-bottom: var(--space-xl);
+        }
+
+        .ticket-success-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--success), #059669);
+            border-radius: var(--radius-full);
+            color: white;
+            animation: successPop 0.6s var(--ease-out-back);
+        }
+
+        @keyframes successPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        .ticket-label {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: var(--space-sm);
+        }
+
+        .ticket-number {
+            font-size: var(--font-size-ticket);
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-md);
+            animation: numberReveal 0.8s var(--ease-out-expo) 0.3s both;
+        }
+
+        @keyframes numberReveal {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .ticket-department {
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: var(--space-md);
+        }
+
+        .ticket-wait {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-lg);
+        }
+
+        /* Queue Stats */
+        .queue-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+            padding: var(--space-lg);
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+        }
+
+        .queue-stat {
+            text-align: center;
+        }
+
+        .queue-stat-value {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--primary-light);
+            line-height: 1.2;
+        }
+
+        .queue-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Ticket Actions */
+        .ticket-actions {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        .ticket-actions .btn {
+            flex: 1;
+        }
+
+        /* ==========================================================================
+           PRIORITY STEP
+           ========================================================================== */
+
+        .priority-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .priority-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            padding: var(--space-2xl);
+            min-height: 220px;
+            background: var(--surface-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all var(--transition-base) var(--ease-out-expo);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .priority-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--primary-subtle), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .priority-card:hover {
+            border-color: var(--border-primary);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .priority-card:hover::before {
+            opacity: 1;
+        }
+
+        .priority-card:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .priority-card.selected {
+            border-color: var(--primary);
+            background: var(--surface-glass-selected);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .priority-card.selected::before {
+            opacity: 1;
+        }
+
+        .priority-icon {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: var(--radius-lg);
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+            transition: all var(--transition-base);
+        }
+
+        .priority-card:hover .priority-icon,
+        .priority-card.selected .priority-icon {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+        .priority-icon.priority-urgent {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+            color: var(--danger);
+        }
+
+        .priority-card:hover .priority-icon.priority-urgent,
+        .priority-card.selected .priority-icon.priority-urgent {
+            background: linear-gradient(135deg, var(--danger), #b91c1c);
+            color: white;
+        }
+
+        .priority-label {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .priority-desc {
+            font-size: var(--font-size-base);
+            color: var(--text-muted);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 640px) {
+            .priority-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .priority-card {
+                min-height: 160px;
+                padding: var(--space-xl);
+            }
+        }
+
+        /* New Visit Button */
+        .new-visit-btn {
+            margin-top: var(--space-lg);
+        }
+
+        /* ==========================================================================
+           ERROR & LOADING STATES
+           ========================================================================== */
+
+        .error-message {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md) var(--space-lg);
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-md);
+            color: #fca5a5;
+            font-size: var(--font-size-base);
+            margin-bottom: var(--space-lg);
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .error-message svg {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: var(--space-lg);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: var(--radius-full);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: var(--font-size-lg);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* Loading Skeleton for Departments */
+        .loading-skeleton {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-md);
+            padding: var(--space-xl);
+            min-height: 180px;
+            background: var(--surface-glass);
+            border: 2px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+        }
+
+        .skeleton-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(90deg, var(--surface-glass) 0%, var(--surface-glass-hover) 50%, var(--surface-glass) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-md);
+        }
+
+        .skeleton-text {
+            width: 100px;
+            height: 20px;
+            background: linear-gradient(90deg, var(--surface-glass) 0%, var(--surface-glass-hover) 50%, var(--surface-glass) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ==========================================================================
+           PRINT STYLES - Premium Ticket
+           ========================================================================== */
+
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .kiosk-header,
+            .kiosk-nav,
+            .step:not(.active),
+            .btn,
+            .queue-stats,
+            .new-visit-btn {
+                display: none !important;
+            }
+
+            .kiosk {
+                height: auto;
+                overflow: visible;
+            }
+
+            .kiosk-content {
+                padding: 1rem;
+                overflow: visible;
+            }
+
+            .ticket-container {
+                max-width: 400px;
+                margin: 0 auto;
+            }
+
+            .ticket-card {
+                background: white !important;
+                border: 3px solid #0d9488 !important;
+                box-shadow: none !important;
+                padding: 2rem;
+            }
+
+            .ticket-success-icon {
+                background: #10b981 !important;
+            }
+
+            .ticket-number {
+                background: none !important;
+                -webkit-text-fill-color: #0d9488 !important;
+                color: #0d9488 !important;
+            }
+
+            .ticket-department {
+                color: #059669 !important;
+            }
+
+            .step-title,
+            .ticket-label,
+            .ticket-wait {
+                color: #374151 !important;
+            }
+
+            .step-icon {
+                background: #0d9488 !important;
+            }
+
+            .step-icon svg {
+                color: white !important;
+            }
+        }
+
+        /* ==========================================================================
+           RESPONSIVE DESIGN
+           ========================================================================== */
+
+        @media (max-width: 768px) {
+            :root {
+                --font-size-base: 1rem;
+                --font-size-ticket: 4rem;
+            }
+
+            .kiosk-header {
+                flex-direction: column;
+                gap: var(--space-md);
+                padding: var(--space-md);
+            }
+
+            .step-progress-label {
+                display: none;
+            }
+
+            .kiosk-content {
+                padding: var(--space-lg);
+            }
+
+            .kiosk-nav {
+                padding: var(--space-md);
+            }
+
+            .department-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--space-md);
+            }
+
+            .department-card {
+                min-height: 140px;
+                padding: var(--space-lg);
+            }
+
+            .department-icon {
+                font-size: 2.5rem;
+            }
+
+            .department-name {
+                font-size: var(--font-size-base);
+            }
+
+            .ticket-card {
+                padding: var(--space-xl);
+            }
+
+            .ticket-success-icon {
+                width: 80px;
+                height: 80px;
+            }
+
+            .queue-stats {
+                gap: var(--space-sm);
+                padding: var(--space-md);
+            }
+
+            .queue-stat-value {
+                font-size: var(--font-size-xl);
+            }
+
+            .btn {
+                min-height: 56px;
+                padding: var(--space-md) var(--space-lg);
+            }
+
+            .ticket-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .department-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-logo {
+                width: 100px;
+                height: 100px;
+            }
+
+            .welcome-logo svg {
+                width: 48px;
+                height: 48px;
+            }
+        }
+
+        /* ==========================================================================
+           ACCESSIBILITY - High Contrast & Focus
+           ========================================================================== */
+
+        @media (prefers-contrast: high) {
+            :root {
+                --border-glass: rgba(255, 255, 255, 0.3);
+                --surface-glass: rgba(255, 255, 255, 0.1);
+                --text-muted: rgba(255, 255, 255, 0.8);
+            }
+        }
+
+        /* Focus Visible */
+        .btn:focus-visible,
+        .form-input:focus-visible,
+        .department-card:focus-visible {
+            outline: 3px solid var(--primary-light);
+            outline-offset: 2px;
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="kiosk" role="main">
+        <!-- Header -->
+        <header class="kiosk-header">
+            <div class="kiosk-brand">
+                <div class="kiosk-brand-icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div class="kiosk-brand-text">
+                    <h1>Patient Check-In</h1>
+                    <p>Limuru Cottage Hospital</p>
+                </div>
+            </div>
+
+            <!-- Step Progress -->
+            <nav class="step-progress" aria-label="Registration progress">
+                <div class="step-progress-item">
+                    <span class="step-progress-dot active" data-step="1" aria-hidden="true"></span>
+                    <span class="step-progress-label active">Welcome</span>
+                </div>
+                <span class="step-progress-line" aria-hidden="true"></span>
+                <div class="step-progress-item">
+                    <span class="step-progress-dot" data-step="2" aria-hidden="true"></span>
+                    <span class="step-progress-label">Department</span>
+                </div>
+                <span class="step-progress-line" aria-hidden="true"></span>
+                <div class="step-progress-item">
+                    <span class="step-progress-dot" data-step="3" aria-hidden="true"></span>
+                    <span class="step-progress-label">Priority</span>
+                </div>
+                <span class="step-progress-line" aria-hidden="true"></span>
+                <div class="step-progress-item">
+                    <span class="step-progress-dot" data-step="4" aria-hidden="true"></span>
+                    <span class="step-progress-label">Details</span>
+                </div>
+                <span class="step-progress-line" aria-hidden="true"></span>
+                <div class="step-progress-item">
+                    <span class="step-progress-dot" data-step="5" aria-hidden="true"></span>
+                    <span class="step-progress-label">Ticket</span>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="kiosk-content" id="mainContent">
+            <!-- Step 1: Welcome -->
+            <section class="step active" id="step1" aria-labelledby="step1-title" data-step="1">
+                <div class="welcome-content">
+                    <div class="welcome-logo" aria-hidden="true">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </div>
+                    <h2 class="welcome-title" id="step1-title">Welcome to Our Hospital</h2>
+                    <p class="welcome-description">
+                        Please follow the simple steps below to get your queue ticket. 
+                        This helps us serve you better and keeps wait times organized.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Step 2: Select Department -->
+            <section class="step" id="step2" aria-labelledby="step2-title" data-step="2">
+                <div class="step-header">
+                    <div class="step-icon" aria-hidden="true">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <path d="M9 22V12h6v10"/>
+                        </svg>
+                    </div>
+                    <h2 class="step-title" id="step2-title">Select Your Department</h2>
+                    <p class="step-subtitle">Choose the department you need to visit</p>
+                </div>
+
+                <div id="errorDept" role="alert" aria-live="assertive"></div>
+
+                <div class="department-grid" id="departmentGrid" role="radiogroup" aria-labelledby="step2-title">
+                    <!-- Departments loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Step 3: Priority Question -->
+            <section class="step" id="step3" aria-labelledby="step3-title" data-step="3">
+                <div class="step-header">
+                    <div class="step-icon" aria-hidden="true">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <h2 class="step-title" id="step3-title">Priority Treatment?</h2>
+                    <p class="step-subtitle">Do you require urgent or priority care?</p>
+                </div>
+
+                <div id="errorPriority" role="alert" aria-live="assertive"></div>
+
+                <div class="priority-options" id="priorityOptions">
+                    <button type="button" class="priority-card" data-priority="false" onclick="selectPriority(false)">
+                        <div class="priority-icon" aria-hidden="true">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div class="priority-label">No, I can wait</div>
+                        <div class="priority-desc">Regular queue service</div>
+                    </button>
+                    <button type="button" class="priority-card" data-priority="true" onclick="selectPriority(true)">
+                        <div class="priority-icon priority-urgent" aria-hidden="true">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </div>
+                        <div class="priority-label">Yes, urgent care</div>
+                        <div class="priority-desc">Emergency/expedited service</div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 4: Enter Details -->
+            <section class="step" id="step4" aria-labelledby="step4-title" data-step="4">
+                <div class="step-header">
+                    <div class="step-icon" aria-hidden="true">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <h2 class="step-title" id="step4-title">Enter Your Information</h2>
+                    <p class="step-subtitle">Please provide your details for registration</p>
+                </div>
+
+                <div id="errorInfo" role="alert" aria-live="assertive"></div>
+
+                <form class="form-container" id="patientForm" novalidate>
+                    <div class="form-group">
+                        <label class="form-label" for="patientName">
+                            Full Name <span class="required" aria-label="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="patientName" 
+                            name="name"
+                            class="form-input" 
+                            placeholder="Enter your full name"
+                            required
+                            autocomplete="name"
+                            aria-required="true"
+                            aria-describedby="name-error"
+                        >
+                        <span id="name-error" class="field-error" role="alert">
+                            Please enter your full name
+                        </span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="patientPhone">
+                            Phone Number <span class="optional">(optional)</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="patientPhone" 
+                            name="phone"
+                            class="form-input" 
+                            placeholder="Enter phone number for SMS updates"
+                            autocomplete="tel"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="patientEmail">
+                            Email Address <span class="optional">(optional)</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            id="patientEmail" 
+                            name="email"
+                            class="form-input" 
+                            placeholder="Enter email for notifications"
+                            autocomplete="email"
+                        >
+                    </div>
+                </form>
+            </section>
+
+            <!-- Step 5: Confirmation / Ticket -->
+            <section class="step" id="step5" aria-labelledby="step5-title" data-step="5">
+                <div class="ticket-container">
+                    <div class="ticket-card" role="region" aria-label="Your ticket">
+                        <div class="ticket-success-icon" aria-hidden="true">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+
+                        <p class="ticket-label">Your Ticket Number</p>
+                        <p class="ticket-number" id="ticketNumber" aria-label="Ticket number">--</p>
+                        <p class="ticket-department" id="ticketDepartment">Department</p>
+                        <p class="ticket-wait" id="ticketWait">Estimated wait: -- minutes</p>
+
+                        <div class="queue-stats" aria-label="Current queue status">
+                            <div class="queue-stat">
+                                <div class="queue-stat-value" id="statWaiting">--</div>
+                                <div class="queue-stat-label">Waiting</div>
+                            </div>
+                            <div class="queue-stat">
+                                <div class="queue-stat-value" id="statCalled">--</div>
+                                <div class="queue-stat-label">Called</div>
+                            </div>
+                            <div class="queue-stat">
+                                <div class="queue-stat-value" id="statAvgWait">--</div>
+                                <div class="queue-stat-label">Avg. Wait</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ticket-actions">
+                        <button type="button" class="btn btn-primary" id="printBtn" aria-label="Print your ticket">
+                            <svg class="btn-icon btn-icon-left" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
+                            </svg>
+                            Print Ticket
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-ghost btn-full new-visit-btn" id="newVisitBtn">
+                        <svg class="btn-icon btn-icon-left" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Start New Visit
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Navigation -->
+        <nav class="kiosk-nav" aria-label="Form navigation">
+            <button type="button" class="btn btn-ghost" id="backBtn" aria-label="Go back" style="display: none;">
+                <svg class="btn-icon btn-icon-left" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Back
+            </button>
+            <button type="button" class="btn btn-primary" id="nextBtn" aria-label="Continue to next step">
+                Get Started
+                <svg class="btn-icon btn-icon-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
+            <button type="button" class="btn btn-success" id="getTicketBtn" style="display: none;" aria-label="Get your queue ticket">
+                <svg class="btn-icon btn-icon-left" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M15 5v2"/>
+                    <path d="M15 11v2"/>
+                    <path d="M15 17v2"/>
+                    <path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/>
+                </svg>
+                Get My Ticket
+            </button>
+        </nav>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" role="dialog" aria-modal="true" aria-labelledby="loadingText">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p class="loading-text" id="loadingText">Processing your request...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/api-client.js"></script>
+    
+    <script>
+    (function() {
+        'use strict';
+
+        // ===================================================================
+        // CONSTANTS
+        // ===================================================================
+
+        const STEPS = {
+            WELCOME: 1,
+            DEPARTMENT: 2,
+            PRIORITY: 3,
+            DETAILS: 4,
+            TICKET: 5
+        };
+
+        const STEP_LABELS = ['Welcome', 'Department', 'Priority', 'Details', 'Ticket'];
+
+        const DEPT_ICONS = {
+            'General': '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+            'default': '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>'
+        };
+
+        // ===================================================================
+        // STATE MANAGEMENT
+        // ===================================================================
+
+        const state = {
+            currentStep: STEPS.WELCOME,
+            selectedDepartment: null,
+            hasPriority: false,
+            departments: [],
+            queueStats: { waiting: 0, called: 0, avgWait: 0 },
+            isSubmitting: false
+        };
+
+        // ===================================================================
+        // DOM REFERENCES
+        // ===================================================================
+
+        const DOM = {
+            // Steps
+            steps: document.querySelectorAll('.step'),
+            stepDots: document.querySelectorAll('.step-progress-dot'),
+            stepLines: document.querySelectorAll('.step-progress-line'),
+            stepLabels: document.querySelectorAll('.step-progress-label'),
+
+            // Content
+            departmentGrid: document.getElementById('departmentGrid'),
+            patientForm: document.getElementById('patientForm'),
+            patientName: document.getElementById('patientName'),
+            patientPhone: document.getElementById('patientPhone'),
+            patientEmail: document.getElementById('patientEmail'),
+            nameError: document.getElementById('name-error'),
+
+            // Error containers
+            errorDept: document.getElementById('errorDept'),
+            errorInfo: document.getElementById('errorInfo'),
+            errorPriority: document.getElementById('errorPriority'),
+
+            // Ticket
+            ticketNumber: document.getElementById('ticketNumber'),
+            ticketDepartment: document.getElementById('ticketDepartment'),
+            ticketWait: document.getElementById('ticketWait'),
+            statWaiting: document.getElementById('statWaiting'),
+            statCalled: document.getElementById('statCalled'),
+            statAvgWait: document.getElementById('statAvgWait'),
+
+            // Navigation
+            backBtn: document.getElementById('backBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+            getTicketBtn: document.getElementById('getTicketBtn'),
+            printBtn: document.getElementById('printBtn'),
+            newVisitBtn: document.getElementById('newVisitBtn'),
+
+            // Loading
+            loadingOverlay: document.getElementById('loadingOverlay'),
+            loadingText: document.getElementById('loadingText')
+        };
+
+        // ===================================================================
+        // UTILITY FUNCTIONS
+        // ===================================================================
+
+        /**
+         * Debounce function for input handling
+         */
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        /**
+         * Escape HTML to prevent XSS
+         */
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        /**
+         * Show error message
+         */
+        function showError(container, message) {
+            container.innerHTML = `
+                <div class="error-message" role="alert">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span>${escapeHtml(message)}</span>
+                </div>
+            `;
+        }
+
+        /**
+         * Clear error message
+         */
+        function clearError(container) {
+            if (container) container.innerHTML = '';
+        }
+
+        function selectPriority(hasPriority) {
+            state.hasPriority = hasPriority;
+            
+            document.querySelectorAll('.priority-card').forEach(card => {
+                const isSelected = (card.dataset.priority === 'true') === hasPriority;
+                card.classList.toggle('selected', isSelected);
+                card.setAttribute('aria-pressed', isSelected);
+            });
+            
+            clearError(DOM.errorPriority);
+        }
+
+        window.selectPriority = selectPriority;
+
+        /**
+         * Set loading state
+         */
+        function setLoading(show, message = 'Processing your request...') {
+            DOM.loadingOverlay.classList.toggle('active', show);
+            DOM.loadingText.textContent = message;
+            state.isSubmitting = show;
+        }
+
+        /**
+         * Announce step change for screen readers
+         */
+        function announceStep(step) {
+            const message = `Step ${step} of ${Object.keys(STEPS).length}: ${STEP_LABELS[step - 1]}`;
+            const announcement = document.createElement('div');
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.className = 'sr-only';
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            setTimeout(() => announcement.remove(), 1000);
+        }
+
+        // ===================================================================
+        // STEP NAVIGATION
+        // ===================================================================
+
+        /**
+         * Navigate to a specific step
+         */
+        function goToStep(step) {
+            // Validate before moving forward
+            if (step > state.currentStep && !validateCurrentStep()) {
+                return;
+            }
+
+            // Hide all steps
+            DOM.steps.forEach(s => s.classList.remove('active'));
+            
+            // Show target step
+            const targetStep = document.querySelector(`[data-step="${step}"]`);
+            if (targetStep) {
+                targetStep.classList.add('active');
+            }
+
+            state.currentStep = step;
+
+            // Update progress indicator
+            updateProgress(step);
+
+            // Update navigation buttons
+            updateNavigation();
+
+            // Scroll to top
+            document.getElementById('mainContent').scrollTop = 0;
+
+            // Announce for screen readers
+            announceStep(step);
+
+            // Step-specific actions
+            if (step === STEPS.DEPARTMENT) {
+                loadDepartments();
+            } else if (step === STEPS.PRIORITY) {
+                // Focus on first priority option
+                const firstOption = document.querySelector('.priority-card');
+                if (firstOption) firstOption.focus();
+            } else if (step === STEPS.DETAILS) {
+                setTimeout(() => DOM.patientName.focus(), 100);
+            } else if (step === STEPS.TICKET) {
+                loadQueueStats();
+            }
+        }
+
+        /**
+         * Update progress indicator
+         */
+        function updateProgress(currentStep) {
+            DOM.stepDots.forEach((dot, index) => {
+                const stepNum = index + 1;
+                dot.classList.remove('active', 'completed');
+                
+                if (stepNum < currentStep) {
+                    dot.classList.add('completed');
+                } else if (stepNum === currentStep) {
+                    dot.classList.add('active');
+                }
+            });
+
+            DOM.stepLines.forEach((line, index) => {
+                line.classList.toggle('completed', index + 1 < currentStep);
+            });
+
+            DOM.stepLabels.forEach((label, index) => {
+                label.classList.toggle('active', index + 1 === currentStep);
+            });
+        }
+
+        /**
+         * Update navigation buttons visibility
+         */
+        function updateNavigation() {
+            const isFirst = state.currentStep === STEPS.WELCOME;
+            const isDetails = state.currentStep === STEPS.DETAILS;
+            const isTicket = state.currentStep === STEPS.TICKET;
+
+            DOM.backBtn.style.display = isFirst || isTicket ? 'none' : 'flex';
+            DOM.backBtn.disabled = isFirst;
+            
+            DOM.nextBtn.style.display = isDetails || isTicket ? 'none' : 'flex';
+            DOM.getTicketBtn.style.display = isDetails ? 'flex' : 'none';
+        }
+
+        /**
+         * Validate current step
+         */
+        function validateCurrentStep() {
+            clearError(DOM.errorDept);
+            clearError(DOM.errorInfo);
+            clearError(DOM.errorPriority);
+
+            switch (state.currentStep) {
+                case STEPS.WELCOME:
+                    return true;
+
+                case STEPS.DEPARTMENT:
+                    if (!state.selectedDepartment) {
+                        showError(DOM.errorDept, 'Please select a department to continue.');
+                        return false;
+                    }
+                    return true;
+
+                case STEPS.PRIORITY:
+                    if (state.hasPriority === null) {
+                        showError(DOM.errorPriority, 'Please select an option to continue.');
+                        return false;
+                    }
+                    return true;
+
+                case STEPS.DETAILS:
+                    const name = DOM.patientName.value.trim();
+                    
+                    if (!name) {
+                        DOM.patientName.classList.add('error');
+                        DOM.nameError.textContent = 'Please enter your full name';
+                        DOM.nameError.style.display = 'block';
+                        DOM.patientName.focus();
+                        return false;
+                    }
+                    
+                    if (name.length < 2) {
+                        DOM.patientName.classList.add('error');
+                        DOM.nameError.textContent = 'Name must be at least 2 characters';
+                        DOM.nameError.style.display = 'block';
+                        DOM.patientName.focus();
+                        return false;
+                    }
+
+                    DOM.patientName.classList.remove('error');
+                    DOM.patientName.classList.add('success');
+                    return true;
+
+                default:
+                    return true;
+            }
+        }
+
+        // ===================================================================
+        // DATA LOADING
+        // ===================================================================
+
+        /**
+         * Load departments from API
+         */
+        async function loadDepartments() {
+            if (state.departments.length > 0) return;
+
+            // Show loading state
+            DOM.departmentGrid.innerHTML = Array(6).fill(`
+                <div class="loading-skeleton">
+                    <div class="skeleton-icon"></div>
+                    <div class="skeleton-text"></div>
+                </div>
+            `).join('');
+
+            try {
+                const result = await api.departments.list();
+                
+                if (result.success && result.data) {
+                    state.departments = result.data.filter(d => d.is_active !== false);
+                    renderDepartments();
+                } else {
+                    throw new Error(result.error || 'Failed to load departments');
+                }
+            } catch (error) {
+                console.error('Failed to load departments:', error);
+                DOM.departmentGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl);">
+                        <div class="error-message" style="margin-bottom: var(--space-lg);">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            <span>Failed to load departments. Please try again.</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="KioskApp.loadDepartments()">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Render department selection cards
+         */
+        function renderDepartments() {
+            if (state.departments.length === 0) {
+                DOM.departmentGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl); color: var(--text-muted);">
+                        No departments available at this time.
+                    </div>
+                `;
+                return;
+            }
+
+            DOM.departmentGrid.innerHTML = state.departments.map(dept => {
+                const icon = DEPT_ICONS[dept.name] || DEPT_ICONS.default;
+                const isSelected = state.selectedDepartment?.id === dept.id;
+                
+                return `
+                    <div 
+                        class="department-card ${isSelected ? 'selected' : ''}"
+                        data-dept-id="${escapeHtml(String(dept.id))}"
+                        data-dept-name="${escapeHtml(dept.name)}"
+                        data-dept-icon="${escapeHtml(icon)}"
+                        role="radio"
+                        tabindex="0"
+                        aria-checked="${isSelected}"
+                        aria-label="${escapeHtml(dept.name)}"
+                    >
+                        <span class="department-check" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </span>
+                        <span class="department-icon" aria-hidden="true">
+                            ${icon}
+                        </span>
+                        <span class="department-name">${escapeHtml(dept.name)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Add event listeners
+            DOM.departmentGrid.querySelectorAll('.department-card').forEach(card => {
+                card.addEventListener('click', () => selectDepartment(card));
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectDepartment(card);
+                    }
+                });
+            });
+        }
+
+        /**
+         * Select a department
+         */
+        function selectDepartment(card) {
+            const deptId = card.dataset.deptId;
+            const deptName = card.dataset.deptName;
+
+            // Update selection state
+            DOM.departmentGrid.querySelectorAll('.department-card').forEach(c => {
+                c.classList.remove('selected');
+                c.setAttribute('aria-checked', 'false');
+            });
+
+            card.classList.add('selected');
+            card.setAttribute('aria-checked', 'true');
+
+            state.selectedDepartment = {
+                id: deptId,
+                name: deptName
+            };
+
+            clearError(DOM.errorDept);
+        }
+
+        /**
+         * Load queue statistics
+         */
+        async function loadQueueStats() {
+            try {
+                const result = await api.queue.stats();
+                
+                if (result.success && result.data) {
+                    state.queueStats = {
+                        waiting: result.data.waiting || result.data.queue_length || 0,
+                        called: result.data.called || 0,
+                        avgWait: result.data.average_wait_time || result.data.avg_wait_minutes || 0
+                    };
+                    updateStatsDisplay();
+                }
+            } catch (error) {
+                console.error('Failed to load queue stats:', error);
+            }
+        }
+
+        /**
+         * Update stats display
+         */
+        function updateStatsDisplay() {
+            DOM.statWaiting.textContent = state.queueStats.waiting;
+            DOM.statCalled.textContent = state.queueStats.called;
+            DOM.statAvgWait.textContent = state.queueStats.avgWait ? `${state.queueStats.avgWait}m` : '--';
+        }
+
+        // ===================================================================
+        // TICKET REGISTRATION
+        // ===================================================================
+
+        /**
+         * Register ticket
+         */
+        async function registerTicket() {
+            setLoading(true, 'Creating your ticket...');
+            clearError(DOM.errorInfo);
+
+            const name = DOM.patientName.value.trim();
+            const phone = DOM.patientPhone.value.trim() || null;
+            const email = DOM.patientEmail.value.trim() || null;
+
+            try {
+                // Create patient
+                const patientData = { name };
+                if (phone) patientData.phone = phone;
+                if (email) patientData.email = email;
+
+                const patientResult = await api.patients.create(patientData);
+                
+                if (!patientResult.success) {
+                    throw new Error(patientResult.error || 'Failed to register patient information');
+                }
+
+                // Create queue ticket
+                const queueData = {
+                    patient_id: patientResult.data.id,
+                    department_id: state.selectedDepartment.id,
+                    priority: state.hasPriority === true
+                };
+
+                const queueResult = await api.queue.create(queueData);
+                
+                if (!queueResult.success) {
+                    throw new Error(queueResult.error || 'Failed to create queue ticket');
+                }
+
+                // Success - show ticket
+                showTicket(queueResult.data);
+
+            } catch (error) {
+                console.error('Registration failed:', error);
+                showError(DOM.errorInfo, error.message || 'Registration failed. Please try again.');
+                setLoading(false);
+            }
+        }
+
+        /**
+         * Display ticket after successful registration
+         */
+        function showTicket(queueData) {
+            // Update ticket display
+            DOM.ticketNumber.textContent = queueData.ticket_number || queueData.ticketNumber || '--';
+            DOM.ticketDepartment.textContent = state.selectedDepartment.name;
+
+            // Calculate estimated wait
+            const waitEstimate = (state.queueStats.waiting + 1) * 10;
+            DOM.ticketWait.textContent = `Estimated wait: ~${waitEstimate} minutes`;
+
+            // Load fresh stats
+            loadQueueStats();
+
+            // Navigate to ticket step
+            goToStep(STEPS.TICKET);
+
+            // Auto-print after a short delay
+            setTimeout(() => {
+                if (window.matchMedia('(print)').matches === false) {
+                    // Browser supports print, show print option
+                    // Auto-print can be enabled by uncommenting below:
+                    // window.print();
+                }
+            }, 500);
+
+            setLoading(false);
+        }
+
+        /**
+         * Print ticket
+         */
+        function printTicket() {
+            window.print();
+        }
+
+        /**
+         * Start new visit - reset everything
+         */
+        function startNewVisit() {
+            // Reset state
+            state.selectedDepartment = null;
+            state.hasPriority = null;
+            state.departments = [];
+            
+            // Reset form
+            DOM.patientForm.reset();
+            DOM.patientName.classList.remove('error', 'success');
+            DOM.nameError.style.display = 'none';
+            
+            // Clear errors
+            clearError(DOM.errorDept);
+            clearError(DOM.errorInfo);
+            
+            // Navigate to welcome
+            goToStep(STEPS.WELCOME);
+        }
+
+        // ===================================================================
+        // EVENT LISTENERS
+        // ===================================================================
+
+        function initEventListeners() {
+            // Navigation buttons
+            DOM.backBtn.addEventListener('click', () => {
+                if (state.currentStep > 1) {
+                    goToStep(state.currentStep - 1);
+                }
+            });
+
+            DOM.nextBtn.addEventListener('click', () => {
+                goToStep(state.currentStep + 1);
+            });
+
+            DOM.getTicketBtn.addEventListener('click', registerTicket);
+            DOM.printBtn.addEventListener('click', printTicket);
+            DOM.newVisitBtn.addEventListener('click', startNewVisit);
+
+            // Form validation on input
+            const validateName = debounce(() => {
+                const name = DOM.patientName.value.trim();
+                DOM.patientName.classList.remove('error');
+                DOM.nameError.style.display = 'none';
+
+                if (name.length >= 2) {
+                    DOM.patientName.classList.add('success');
+                } else {
+                    DOM.patientName.classList.remove('success');
+                }
+            }, 300);
+
+            DOM.patientName.addEventListener('input', validateName);
+
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (state.isSubmitting) return;
+
+                // Enter key to proceed in details step
+                if (e.key === 'Enter' && state.currentStep === STEPS.DETAILS) {
+                    e.preventDefault();
+                    if (validateCurrentStep()) {
+                        registerTicket();
+                    }
+                }
+            });
+
+            // Handle print media query
+            if (window.matchMedia) {
+                window.matchMedia('print').addEventListener('change', (e) => {
+                    if (!e.matches) {
+                        // Print dialog closed
+                    }
+                });
+            }
+        }
+
+        // ===================================================================
+        // INITIALIZATION
+        // ===================================================================
+
+        function init() {
+            // Set initial button text
+            updateNavigation();
+            
+            // Initialize event listeners
+            initEventListeners();
+
+            // Preload queue stats
+            loadQueueStats();
+
+            console.log('[Kiosk] Patient check-in initialized');
+        }
+
+        // Expose public API for debugging/testing
+        window.KioskApp = {
+            loadDepartments,
+            loadQueueStats,
+            getState: () => ({ ...state })
+        };
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>

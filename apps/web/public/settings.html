@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/glassmorphism.css">
+    <style>
+        body { padding-top: 80px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-5) var(--space-6); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4); }
+        .page-title { display: flex; align-items: center; gap: var(--space-3); }
+        .page-title svg { width: 28px; height: 28px; color: var(--hospital-secondary); }
+        .page-title h1 { font-size: var(--text-xl); font-weight: 700; margin: 0; background: linear-gradient(135deg, var(--hospital-primary), var(--hospital-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .page-title span { font-size: var(--text-sm); color: rgba(255,255,255,0.5); }
+        .page-body { display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; padding-bottom: var(--space-8); align-items: start; }
+        @media (max-width: 768px) { .page-body { grid-template-columns: 1fr; } }
+
+        .settings-nav { display: flex; flex-direction: column; gap: 4px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); padding: var(--space-4); position: sticky; top: 96px; }
+        .settings-nav-item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); color: rgba(255,255,255,0.6); font-size: var(--text-sm); font-weight: 500; cursor: pointer; transition: all var(--transition-fast); border: none; background: transparent; text-align: left; width: 100%; font-family: inherit; }
+        .settings-nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .settings-nav-item.active { background: rgba(13,148,136,0.15); color: var(--hospital-secondary); border: 1px solid rgba(13,148,136,0.2); }
+        .settings-nav-item .icon { font-size: 1rem; }
+
+        .settings-content { display: flex; flex-direction: column; gap: 1.5rem; }
+        .settings-section { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); overflow: hidden; }
+        .settings-section-header { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.08); background: linear-gradient(135deg, rgba(13,148,136,0.06) 0%, rgba(255,255,255,0.02) 100%); }
+        .settings-section-header .icon { font-size: 1.1rem; }
+        .settings-section-header h2 { font-size: var(--text-base); font-weight: 600; margin: 0; }
+        .settings-section-header p { font-size: var(--text-xs); color: rgba(255,255,255,0.5); margin: 0; }
+        .settings-section-body { padding: var(--space-5); }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+        @media (max-width: 640px) { .settings-grid { grid-template-columns: 1fr; } }
+        .form-group { display: flex; flex-direction: column; gap: var(--space-2); }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-label { font-size: var(--text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 6px; }
+        .form-label .req { color: var(--hospital-danger); }
+        .form-hint { font-size: var(--text-xs); color: rgba(255,255,255,0.4); margin-top: 2px; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: white; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); outline: none; transition: all var(--transition-fast); font-family: inherit; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--hospital-primary); box-shadow: 0 0 0 3px rgba(13,148,136,0.15); }
+        .form-input::placeholder, .form-textarea::placeholder { color: rgba(255,255,255,0.3); }
+        .form-input.error, .form-select.error { border-color: var(--hospital-danger); }
+        .form-error { font-size: var(--text-xs); color: var(--hospital-danger); display: none; }
+        .form-error.show { display: block; }
+        .form-input.success, .form-select.success { border-color: var(--hospital-success); }
+        .form-textarea { resize: vertical; min-height: 100px; }
+        .form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2314b8a6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; padding-right: 32px; }
+        .form-select option { background: var(--bg-gradient-mid); color: white; }
+
+        /* Toggle Switch */
+        .toggle-wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: rgba(0,0,0,0.15); border-radius: var(--radius-md); margin-bottom: var(--space-3); }
+        .toggle-wrap:last-child { margin-bottom: 0; }
+        .toggle-info { flex: 1; }
+        .toggle-label { font-size: var(--text-sm); font-weight: 500; display: block; }
+        .toggle-desc { font-size: var(--text-xs); color: rgba(255,255,255,0.45); margin-top: 2px; }
+        .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.15); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+        .toggle-slider:before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: all 0.2s; }
+        .toggle input:checked + .toggle-slider { background: var(--hospital-primary); }
+        .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+        .section-divider { height: 1px; background: rgba(255,255,255,0.06); margin: var(--space-4) 0; }
+
+        .btn { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-5); font-size: var(--text-sm); font-weight: 600; border: none; border-radius: var(--radius-lg); cursor: pointer; transition: all var(--transition-fast); font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, var(--hospital-primary), var(--hospital-secondary)); color: white; box-shadow: 0 4px 12px rgba(13,148,136,0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(13,148,136,0.4); }
+        .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+        .btn-ghost { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+        .btn-danger { background: rgba(220,38,38,0.15); color: var(--hospital-danger); border: 1px solid rgba(220,38,38,0.3); }
+        .btn-danger:hover { background: rgba(220,38,38,0.25); }
+        .settings-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); }
+        .nav-links { display: flex; align-items: center; gap: var(--space-3); }
+        .nav-links a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: var(--text-sm); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); transition: all var(--transition-fast); }
+        .nav-links a:hover { color: white; background: var(--glass-bg-hover); }
+        .nav-links a.active { color: var(--hospital-secondary); background: rgba(13,148,136,0.15); }
+        .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 12px 18px; background: rgba(15,23,42,0.95); border-radius: var(--radius-lg); font-size: var(--text-sm); z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 10px; animation: toast-in 0.3s ease; border-left: 3px solid var(--hospital-primary); }
+        .toast.success { border-left-color: var(--hospital-success); }
+        .toast.error { border-left-color: var(--hospital-danger); }
+        .toast.warning { border-left-color: var(--hospital-warning); }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .saved-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.2); border-radius: 9999px; font-size: var(--text-xs); color: var(--hospital-success); }
+        .loading-overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.7); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: var(--radius-xl); }
+        .loading-overlay .spinner { width: 28px; height: 28px; border: 3px solid rgba(13,148,136,0.2); border-top-color: var(--hospital-primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <nav class="glass-nav">
+        <div class="container flex justify-between items-center">
+            <div class="flex items-center gap-3"><span class="text-2xl">🏥</span><div><h1 class="text-lg font-semibold m-0">Admin Dashboard</h1><span class="text-xs text-muted">Limuru Cottage Hospital</span></div></div>
+            <div class="nav-links">
+                <a href="/dashboard.html">Dashboard</a>
+                <a href="/rate-limits.html">Rate Limits</a>
+                <a href="/audit-logs.html">Audit Logs</a>
+                <a href="/settings.html" class="active">Settings</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="page-header">
+            <div class="page-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <div><h1>System Settings</h1><span>Configure clinic preferences and system options</span></div>
+            </div>
+            <span class="saved-badge" id="savedBadge" style="display:none;">✓ Saved</span>
+        </header>
+
+        <div class="page-body">
+            <nav class="settings-nav">
+                <button class="settings-nav-item active" data-section="general" onclick="switchSection('general')"><span class="icon">🏥</span> General</button>
+                <button class="settings-nav-item" data-section="queue" onclick="switchSection('queue')"><span class="icon">📋</span> Queue</button>
+                <button class="settings-nav-item" data-section="notifications" onclick="switchSection('notifications')"><span class="icon">🔔</span> Notifications</button>
+                <button class="settings-nav-item" data-section="system" onclick="switchSection('system')"><span class="icon">⚙️</span> System</button>
+                <button class="settings-nav-item" data-section="security" onclick="switchSection('security')"><span class="icon">🔒</span> Security</button>
+                <button class="settings-nav-item" data-section="backup" onclick="switchSection('backup')"><span class="icon">💾</span> Backup</button>
+            </nav>
+
+            <div class="settings-content">
+                <!-- General -->
+                <section id="section-general">
+                    <div class="settings-section">
+                        <div class="settings-section-header"><span class="icon">🏥</span><div><h2>Clinic Information</h2><p>Basic clinic details displayed throughout the system</p></div></div>
+                        <div class="settings-section-body">
+                            <div class="settings-grid">
+                                <div class="form-group"><label class="form-label">Clinic Name <span class="req">*</span></label><input type="text" id="clinicName" class="form-input" placeholder="Limuru Cottage Hospital" maxlength="100"><span class="form-error" id="err-clinicName">Clinic name is required</span></div>
+                                <div class="form-group"><label class="form-label">License / Registration</label><input type="text" id="clinicLicense" class="form-input" placeholder="MOH/LIC/XXXXX" maxlength="50"></div>
+                                <div class="form-group"><label class="form-label">Phone Number <span class="req">*</span></label><input type="tel" id="clinicPhone" class="form-input" placeholder="+254 700 123 456" maxlength="20"></div>
+                                <div class="form-group"><label class="form-label">Email Address</label><input type="email" id="clinicEmail" class="form-input" placeholder="info@limuruhealth.co.ke" maxlength="100"></div>
+                                <div class="form-group full"><label class="form-label">Physical Address</label><textarea id="clinicAddress" class="form-textarea" placeholder="P.O. Box 123, Limuru, Kenya" maxlength="200"></textarea></div>
+                                <div class="form-group full"><label class="form-label">Tagline</label><input type="text" id="clinicTagline" class="form-input" placeholder="Quality Healthcare, Close to Home" maxlength="100"></div>
+                            </div>
+                            <div class="settings-actions"><button class="btn btn-primary" id="saveGeneral" onclick="saveGeneral()">💾 Save Changes</button></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Queue -->
+                <section id="section-queue" style="display:none;">
+                    <div class="settings-section">
+                        <div class="settings-section-header"><span class="icon">📋</span><div><h2>Queue Configuration</h2><p>Queue numbering, timing, and operational settings</p></div></div>
+                        <div class="settings-section-body">
+                            <div class="settings-grid">
+                                <div class="form-group"><label class="form-label">Queue Prefix</label><input type="text" id="queuePrefix" class="form-input" placeholder="A" maxlength="5"><span class="form-hint">Letters before ticket numbers (e.g., A-001)</span></div>
+                                <div class="form-group"><label class="form-label">Average Visit Time (min)</label><input type="number" id="avgVisitTime" class="form-input" placeholder="15" min="1" max="120"></div>
+                                <div class="form-group"><label class="form-label">Max Queue Size</label><input type="number" id="maxQueueSize" class="form-input" placeholder="50" min="5" max="500"></div>
+                                <div class="form-group"><label class="form-label">Working Hours Start</label><input type="time" id="workStart" class="form-input" value="08:00"></div>
+                                <div class="form-group"><label class="form-label">Working Hours End</label><input type="time" id="workEnd" class="form-input" value="17:00"></div>
+                                <div class="form-group"><label class="form-label">Default Department</label><select id="defaultDept" class="form-select"><option value="">-- Select --</option><option value="general">General Medicine</option><option value="pediatric">Pediatrics</option><option value="maternity">Maternity</option><option value="dental">Dental</option><option value="ophthalmology">Ophthalmology</option></select></div>
+                                <div class="form-group"><label class="form-label">Patient No-Show Threshold (min)</label><input type="number" id="noShowThreshold" class="form-input" placeholder="30" min="5" max="120"></div>
+                                <div class="form-group"><label class="form-label">Auto-Complete After (hours)</label><input type="number" id="autoComplete" class="form-input" placeholder="2" min="1" max="24"></div>
+                            </div>
+                            <div class="section-divider"></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Auto-call next patient</span><span class="toggle-desc">Automatically call next patient when current one is completed</span></div><label class="toggle"><input type="checkbox" id="autoCall"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Enable walk-in appointments</span><span class="toggle-desc">Allow patients to join queue without prior appointment</span></div><label class="toggle"><input type="checkbox" id="enableWalkin" checked><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Show wait time estimates</span><span class="toggle-desc">Display estimated wait time to patients</span></div><label class="toggle"><input type="checkbox" id="showWaitTime" checked><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Require patient check-in</span><span class="toggle-desc">Patients must confirm arrival before joining queue</span></div><label class="toggle"><input type="checkbox" id="requireCheckin" checked><span class="toggle-slider"></span></label></div>
+                            <div class="settings-actions"><button class="btn btn-primary" id="saveQueue" onclick="saveQueue()">💾 Save Changes</button></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notifications -->
+                <section id="section-notifications" style="display:none;">
+                    <div class="settings-section">
+                        <div class="settings-section-header"><span class="icon">🔔</span><div><h2>SMS & Notifications</h2><p>Configure SMS, WhatsApp, and email notification settings</p></div></div>
+                        <div class="settings-section-body">
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Enable SMS Notifications</span><span class="toggle-desc">Send SMS when patient is called or queue updates</span></div><label class="toggle"><input type="checkbox" id="enableSMS"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Enable WhatsApp Notifications</span><span class="toggle-desc">Send WhatsApp messages for queue updates</span></div><label class="toggle"><input type="checkbox" id="enableWhatsApp"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Enable Email Notifications</span><span class="toggle-desc">Send email for appointments and reminders</span></div><label class="toggle"><input type="checkbox" id="enableEmail"><span class="toggle-slider"></span></label></div>
+                            <div class="section-divider"></div>
+                            <div class="settings-grid">
+                                <div class="form-group"><label class="form-label">SMS Sender ID</label><input type="text" id="smsSenderId" class="form-input" placeholder="LIMURUHC" maxlength="11"></div>
+                                <div class="form-group"><label class="form-label">SMS API Key</label><input type="password" id="smsApiKey" class="form-input" placeholder="••••••••••••" autocomplete="new-password"></div>
+                                <div class="form-group"><label class="form-label">WhatsApp Business ID</label><input type="text" id="waBusinessId" class="form-input" placeholder="Your Business Account ID"></div>
+                                <div class="form-group"><label class="form-label">WhatsApp Token</label><input type="password" id="waToken" class="form-input" placeholder="••••••••••••" autocomplete="new-password"></div>
+                                <div class="form-group"><label class="form-label">Email From Name</label><input type="text" id="emailFromName" class="form-input" placeholder="Limuru Cottage Hospital"></div>
+                                <div class="form-group"><label class="form-label">Email From Address</label><input type="email" id="emailFrom" class="form-input" placeholder="no-reply@limuruhealth.co.ke"></div>
+                                <div class="form-group full"><label class="form-label">Reminder Schedule (comma-separated minutes)</label><input type="text" id="reminderSchedule" class="form-input" placeholder="30, 60, 120"><span class="form-hint">Minutes before appointment to send reminders (e.g., 30 min, 1 hour, 2 hours before)</span></div>
+                            </div>
+                            <div class="settings-actions"><button class="btn btn-primary" id="saveNotifications" onclick="saveNotifications()">💾 Save Changes</button></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- System -->
+                <section id="section-system" style="display:none;">
+                    <div class="settings-section">
+                        <div class="settings-section-header"><span class="icon">⚙️</span><div><h2>System Configuration</h2><p>Timezone, language, and regional settings</p></div></div>
+                        <div class="settings-section-body">
+                            <div class="settings-grid">
+                                <div class="form-group"><label class="form-label">Timezone</label><select id="timezone" class="form-select"><option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option><option value="Africa/Kampala">Africa/Kampala (EAT, UTC+3)</option><option value="Africa/Dar_es_Salaam">Africa/Dar es Salaam (EAT, UTC+3)</option><option value="UTC">UTC</option></select></div>
+                                <div class="form-group"><label class="form-label">Date Format</label><select id="dateFormat" class="form-select"><option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option><option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option></select></div>
+                                <div class="form-group"><label class="form-label">Time Format</label><select id="timeFormat" class="form-select"><option value="12">12-hour (AM/PM)</option><option value="24">24-hour</option></select></div>
+                                <div class="form-group"><label class="form-label">Currency</label><select id="currency" class="form-select"><option value="KES">KES - Kenyan Shilling</option><option value="USD">USD - US Dollar</option><option value="EUR">EUR - Euro</option><option value="GBP">GBP - British Pound</option></select></div>
+                                <div class="form-group"><label class="form-label">Language</label><select id="language" class="form-select"><option value="en">English</option><option value="sw">Swahili</option><option value="en-sw">English / Swahili</option></select></div>
+                                <div class="form-group"><label class="form-label">Session Timeout (minutes)</label><input type="number" id="sessionTimeout" class="form-input" placeholder="30" min="5" max="480"></div>
+                                <div class="form-group"><label class="form-label">Log Retention (days)</label><input type="number" id="logRetention" class="form-input" placeholder="90" min="7" max="365"></div>
+                                <div class="form-group"><label class="form-label">API Rate Limit Window (seconds)</label><input type="number" id="rateLimitWindow" class="form-input" placeholder="60" min="10" max="3600"></div>
+                            </div>
+                            <div class="section-divider"></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Enable Debug Mode</span><span class="toggle-desc">Show detailed error messages and logging</span></div><label class="toggle"><input type="checkbox" id="debugMode"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Maintenance Mode</span><span class="toggle-desc">Temporarily disable access for non-admin users</span></div><label class="toggle"><input type="checkbox" id="maintenanceMode"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Allow Self-Registration</span><span class="toggle-desc">Let new patients register their own accounts</span></div><label class="toggle"><input type="checkbox" id="selfReg"><span class="toggle-slider"></span></label></div>
+                            <div class="settings-actions"><button class="btn btn-primary" id="saveSystem" onclick="saveSystem()">💾 Save Changes</button></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Security -->
+                <section id="section-security" style="display:none;">
+                    <div class="settings-section">
+                        <div class="settings-section-header"><span class="icon">🔒</span><div><h2>Security Settings</h2><p>Password policies and access control</p></div></div>
+                        <div class="settings-section-body">
+                            <div class="settings-grid">
+                                <div class="form-group"><label class="form-label">Min Password Length</label><input type="number" id="minPwdLength" class="form-input" placeholder="8" min="6" max="32"></div>
+                                <div class="form-group"><label class="form-label">Password Expiry (days)</label><input type="number" id="pwdExpiry" class="form-input" placeholder="90" min="0" max="365"></div>
+                                <div class="form-group"><label class="form-label">Max Login Attempts</label><input type="number" id="maxLoginAttempts" class="form-input" placeholder="5" min="3" max="10"></div>
+                                <div class="form-group"><label class="form-label">Lockout Duration (minutes)</label><input type="number" id="lockoutDuration" class="form-input" placeholder="15" min="1" max="60"></div>
+                            </div>
+                            <div class="section-divider"></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Require Uppercase in Password</span><span class="toggle-desc">Passwords must contain at least one uppercase letter</span></div><label class="toggle"><input type="checkbox" id="requireUppercase" checked><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Require Numbers in Password</span><span class="toggle-desc">Passwords must contain at least one number</span></div><label class="toggle"><input type="checkbox" id="requireNumbers" checked><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Require Special Characters</span><span class="toggle-desc">Passwords must contain at least one special character</span></div><label class="toggle"><input type="checkbox" id="requireSpecial"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Two-Factor Authentication (2FA)</span><span class="toggle-desc">Require 2FA for all admin users</span></div><label class="toggle"><input type="checkbox" id="require2FA"><span class="toggle-slider"></span></label></div>
+                            <div class="toggle-wrap"><div class="toggle-info"><span class="toggle-label">Log All Failed Login Attempts</span><span class="toggle-desc">Record failed logins in audit logs</span></div><label class="toggle"><input type="checkbox" id="logFailedLogins" checked><span class="toggle-slider"></span></label></div>
+                            <div class="settings-actions"><button class="btn btn-primary" id="saveSecurity" onclick="saveSecurity()">💾 Save Changes</button></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Backup -->
+                <section id="section-backup" style="display:none;">
+                    <div class="settings-section">
+                        <div class="settings-section-header"><span class="icon">💾</span><div><h2>Backup & Restore</h2><p>Manage database backups and system restore points</p></div></div>
+                        <div class="settings-section-body">
+                            <div class="settings-grid">
+                                <div class="form-group"><label class="form-label">Auto-Backup Frequency</label><select id="backupFrequency" class="form-select"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="disabled">Disabled</option></select></div>
+                                <div class="form-group"><label class="form-label">Backup Retention (days)</label><input type="number" id="backupRetention" class="form-input" placeholder="30" min="7" max="365"></div>
+                                <div class="form-group"><label class="form-label">Backup Storage</label><select id="backupStorage" class="form-select"><option value="local">Local Server</option><option value="s3">AWS S3</option><option value="gdrive">Google Drive</option></select></div>
+                                <div class="form-group full"><label class="form-label">S3 Bucket / Storage Path</label><input type="text" id="backupPath" class="form-input" placeholder="s3://your-bucket/backups"></div>
+                            </div>
+                            <div class="section-divider"></div>
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:1rem;">
+                                <button class="btn btn-primary" id="btnBackupNow" onclick="backupNow()">💾 Backup Now</button>
+                                <button class="btn btn-ghost" onclick="downloadBackup()">📥 Download Latest Backup</button>
+                            </div>
+                            <div class="settings-actions"><button class="btn btn-primary" id="saveBackup" onclick="saveBackup()">💾 Save Changes</button></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <div id="toastContainer"></div>
+
+    <script src="/js/api-client.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+    (function() {
+        'use strict';
+        let settingsData = {};
+
+        function init() {
+            if (!Auth.requireAuth() || !Auth.isAdmin()) return;
+            loadSettings();
+        }
+
+        async function loadSettings() {
+            try {
+                const r = await api.admin.settings();
+                if (r.success) {
+                    settingsData = r.data || {};
+                    populateForm(settingsData);
+                } else {
+                    loadDefaults();
+                }
+            } catch {
+                loadDefaults();
+            }
+        }
+
+        function loadDefaults() {
+            settingsData = {
+                clinic: { name: 'Limuru Cottage Hospital', phone: '+254 11 123 4567', email: 'info@limuruhealth.co.ke', address: 'P.O. Box 123, Limuru, Kiambu County, Kenya', tagline: 'Quality Healthcare, Close to Home' },
+                queue: { prefix: 'A', avgVisitTime: 15, maxQueueSize: 50, workStart: '08:00', workEnd: '17:00', defaultDept: 'general', noShowThreshold: 30, autoComplete: 2, autoCall: false, enableWalkin: true, showWaitTime: true, requireCheckin: true },
+                notifications: { enableSMS: false, enableWhatsApp: false, enableEmail: false, smsSenderId: '', smsApiKey: '', waBusinessId: '', waToken: '', emailFromName: 'Limuru Cottage Hospital', emailFrom: 'no-reply@limuruhealth.co.ke', reminderSchedule: '30, 60' },
+                system: { timezone: 'Africa/Nairobi', dateFormat: 'DD/MM/YYYY', timeFormat: '12', currency: 'KES', language: 'en', sessionTimeout: 30, logRetention: 90, rateLimitWindow: 60, debugMode: false, maintenanceMode: false, selfReg: false },
+                security: { minPwdLength: 8, pwdExpiry: 90, maxLoginAttempts: 5, lockoutDuration: 15, requireUppercase: true, requireNumbers: true, requireSpecial: true, require2FA: false, logFailedLogins: true },
+                backup: { frequency: 'daily', retention: 30, storage: 'local', path: '' }
+            };
+            populateForm(settingsData);
+        }
+
+        function populateForm(data) {
+            if (data.clinic) {
+                document.getElementById('clinicName').value = data.clinic.name || '';
+                document.getElementById('clinicPhone').value = data.clinic.phone || '';
+                document.getElementById('clinicEmail').value = data.clinic.email || '';
+                document.getElementById('clinicAddress').value = data.clinic.address || '';
+                document.getElementById('clinicTagline').value = data.clinic.tagline || '';
+                document.getElementById('clinicLicense').value = data.clinic.license || '';
+            }
+            if (data.queue) {
+                document.getElementById('queuePrefix').value = data.queue.prefix || '';
+                document.getElementById('avgVisitTime').value = data.queue.avgVisitTime || '';
+                document.getElementById('maxQueueSize').value = data.queue.maxQueueSize || '';
+                document.getElementById('workStart').value = data.queue.workStart || '08:00';
+                document.getElementById('workEnd').value = data.queue.workEnd || '17:00';
+                document.getElementById('defaultDept').value = data.queue.defaultDept || '';
+                document.getElementById('noShowThreshold').value = data.queue.noShowThreshold || '';
+                document.getElementById('autoComplete').value = data.queue.autoComplete || '';
+                document.getElementById('autoCall').checked = data.queue.autoCall || false;
+                document.getElementById('enableWalkin').checked = data.queue.enableWalkin !== false;
+                document.getElementById('showWaitTime').checked = data.queue.showWaitTime !== false;
+                document.getElementById('requireCheckin').checked = data.queue.requireCheckin !== false;
+            }
+            if (data.notifications) {
+                document.getElementById('enableSMS').checked = data.notifications.enableSMS || false;
+                document.getElementById('enableWhatsApp').checked = data.notifications.enableWhatsApp || false;
+                document.getElementById('enableEmail').checked = data.notifications.enableEmail || false;
+                document.getElementById('smsSenderId').value = data.notifications.smsSenderId || '';
+                document.getElementById('waBusinessId').value = data.notifications.waBusinessId || '';
+                document.getElementById('emailFromName').value = data.notifications.emailFromName || '';
+                document.getElementById('emailFrom').value = data.notifications.emailFrom || '';
+                document.getElementById('reminderSchedule').value = data.notifications.reminderSchedule || '';
+            }
+            if (data.system) {
+                document.getElementById('timezone').value = data.system.timezone || 'Africa/Nairobi';
+                document.getElementById('dateFormat').value = data.system.dateFormat || 'DD/MM/YYYY';
+                document.getElementById('timeFormat').value = data.system.timeFormat || '12';
+                document.getElementById('currency').value = data.system.currency || 'KES';
+                document.getElementById('language').value = data.system.language || 'en';
+                document.getElementById('sessionTimeout').value = data.system.sessionTimeout || '';
+                document.getElementById('logRetention').value = data.system.logRetention || '';
+                document.getElementById('rateLimitWindow').value = data.system.rateLimitWindow || '';
+                document.getElementById('debugMode').checked = data.system.debugMode || false;
+                document.getElementById('maintenanceMode').checked = data.system.maintenanceMode || false;
+                document.getElementById('selfReg').checked = data.system.selfReg || false;
+            }
+            if (data.security) {
+                document.getElementById('minPwdLength').value = data.security.minPwdLength || '';
+                document.getElementById('pwdExpiry').value = data.security.pwdExpiry || '';
+                document.getElementById('maxLoginAttempts').value = data.security.maxLoginAttempts || '';
+                document.getElementById('lockoutDuration').value = data.security.lockoutDuration || '';
+                document.getElementById('requireUppercase').checked = data.security.requireUppercase !== false;
+                document.getElementById('requireNumbers').checked = data.security.requireNumbers !== false;
+                document.getElementById('requireSpecial').checked = data.security.requireSpecial !== false;
+                document.getElementById('require2FA').checked = data.security.require2FA || false;
+                document.getElementById('logFailedLogins').checked = data.security.logFailedLogins !== false;
+            }
+            if (data.backup) {
+                document.getElementById('backupFrequency').value = data.backup.frequency || 'daily';
+                document.getElementById('backupRetention').value = data.backup.retention || '';
+                document.getElementById('backupStorage').value = data.backup.storage || 'local';
+                document.getElementById('backupPath').value = data.backup.path || '';
+            }
+        }
+
+        function switchSection(section) {
+            document.querySelectorAll('.settings-nav-item').forEach(b => b.classList.toggle('active', b.dataset.section === section));
+            document.querySelectorAll('.settings-content section').forEach(s => s.style.display = 'none');
+            document.getElementById('section-' + section).style.display = 'block';
+        }
+
+        function getVal(id) { return document.getElementById(id)?.value?.trim() || ''; }
+        function getNum(id) { return parseInt(document.getElementById(id)?.value) || 0; }
+        function getBool(id) { return document.getElementById(id)?.checked || false; }
+
+        async function saveGeneral() {
+            const btn = document.getElementById('saveGeneral');
+            const name = getVal('clinicName');
+            if (!name) { document.getElementById('clinicName').classList.add('error'); toast('Clinic name is required', 'error'); return; }
+            document.getElementById('clinicName').classList.remove('error');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            const data = { clinic: { name, phone: getVal('clinicPhone'), email: getVal('clinicEmail'), address: getVal('clinicAddress'), tagline: getVal('clinicTagline'), license: getVal('clinicLicense') } };
+            try {
+                const r = await api.admin.updateSettings(data);
+                if (r.success) { toast('General settings saved', 'success'); showSaved(); } else { toast('Failed to save: ' + (r.error || 'Unknown error'), 'error'); }
+            } catch { toast('Error saving settings', 'error'); }
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+        }
+
+        async function saveQueue() {
+            const btn = document.getElementById('saveQueue');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            const data = { queue: { prefix: getVal('queuePrefix'), avgVisitTime: getNum('avgVisitTime'), maxQueueSize: getNum('maxQueueSize'), workStart: getVal('workStart'), workEnd: getVal('workEnd'), defaultDept: getVal('defaultDept'), noShowThreshold: getNum('noShowThreshold'), autoComplete: getNum('autoComplete'), autoCall: getBool('autoCall'), enableWalkin: getBool('enableWalkin'), showWaitTime: getBool('showWaitTime'), requireCheckin: getBool('requireCheckin') } };
+            try {
+                const r = await api.admin.updateSettings(data);
+                if (r.success) { toast('Queue settings saved', 'success'); showSaved(); } else { toast('Failed to save', 'error'); }
+            } catch { toast('Error saving settings', 'error'); }
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+        }
+
+        async function saveNotifications() {
+            const btn = document.getElementById('saveNotifications');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            const data = { notifications: { enableSMS: getBool('enableSMS'), enableWhatsApp: getBool('enableWhatsApp'), enableEmail: getBool('enableEmail'), smsSenderId: getVal('smsSenderId'), smsApiKey: getVal('smsApiKey'), waBusinessId: getVal('waBusinessId'), waToken: getVal('waToken'), emailFromName: getVal('emailFromName'), emailFrom: getVal('emailFrom'), reminderSchedule: getVal('reminderSchedule') } };
+            try {
+                const r = await api.admin.updateSettings(data);
+                if (r.success) { toast('Notification settings saved', 'success'); showSaved(); } else { toast('Failed to save', 'error'); }
+            } catch { toast('Error saving settings', 'error'); }
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+        }
+
+        async function saveSystem() {
+            const btn = document.getElementById('saveSystem');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            const data = { system: { timezone: getVal('timezone'), dateFormat: getVal('dateFormat'), timeFormat: getVal('timeFormat'), currency: getVal('currency'), language: getVal('language'), sessionTimeout: getNum('sessionTimeout'), logRetention: getNum('logRetention'), rateLimitWindow: getNum('rateLimitWindow'), debugMode: getBool('debugMode'), maintenanceMode: getBool('maintenanceMode'), selfReg: getBool('selfReg') } };
+            try {
+                const r = await api.admin.updateSettings(data);
+                if (r.success) { toast('System settings saved', 'success'); showSaved(); } else { toast('Failed to save', 'error'); }
+            } catch { toast('Error saving settings', 'error'); }
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+        }
+
+        async function saveSecurity() {
+            const btn = document.getElementById('saveSecurity');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            const data = { security: { minPwdLength: getNum('minPwdLength'), pwdExpiry: getNum('pwdExpiry'), maxLoginAttempts: getNum('maxLoginAttempts'), lockoutDuration: getNum('lockoutDuration'), requireUppercase: getBool('requireUppercase'), requireNumbers: getBool('requireNumbers'), requireSpecial: getBool('requireSpecial'), require2FA: getBool('require2FA'), logFailedLogins: getBool('logFailedLogins') } };
+            try {
+                const r = await api.admin.updateSettings(data);
+                if (r.success) { toast('Security settings saved', 'success'); showSaved(); } else { toast('Failed to save', 'error'); }
+            } catch { toast('Error saving settings', 'error'); }
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+        }
+
+        async function saveBackup() {
+            const btn = document.getElementById('saveBackup');
+            btn.disabled = true; btn.textContent = '⏳ Saving...';
+            const data = { backup: { frequency: getVal('backupFrequency'), retention: getNum('backupRetention'), storage: getVal('backupStorage'), path: getVal('backupPath') } };
+            try {
+                const r = await api.admin.updateSettings(data);
+                if (r.success) { toast('Backup settings saved', 'success'); showSaved(); } else { toast('Failed to save', 'error'); }
+            } catch { toast('Error saving settings', 'error'); }
+            btn.disabled = false; btn.textContent = '💾 Save Changes';
+        }
+
+        async function backupNow() {
+            const btn = document.getElementById('btnBackupNow');
+            btn.disabled = true; btn.textContent = '⏳ Creating backup...';
+            try {
+                const r = await api.admin.backup();
+                if (r.success) { toast('Backup created successfully', 'success'); showSaved(); } else { toast('Backup failed: ' + (r.error || ''), 'error'); }
+            } catch { toast('Error creating backup', 'error'); }
+            btn.disabled = false; btn.textContent = '💾 Backup Now';
+        }
+
+        function downloadBackup() { window.open('/api/admin/backups/latest', '_blank'); toast('Preparing download...', 'success'); }
+
+        function showSaved() {
+            const el = document.getElementById('savedBadge');
+            el.style.display = 'inline-flex';
+            setTimeout(() => { el.style.display = 'none'; }, 3000);
+        }
+
+        function toast(msg, type = 'info') {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.textContent = msg;
+            document.getElementById('toastContainer').appendChild(t);
+            setTimeout(() => t.remove(), 3500);
+        }
+
+        window.switchSection = switchSection;
+        window.saveGeneral = saveGeneral;
+        window.saveQueue = saveQueue;
+        window.saveNotifications = saveNotifications;
+        window.saveSystem = saveSystem;
+        window.saveSecurity = saveSecurity;
+        window.saveBackup = saveBackup;
+        window.backupNow = backupNow;
+        window.downloadBackup = downloadBackup;
+        window.logout = function() { Auth.logout(); };
+        document.addEventListener('DOMContentLoaded', init);
+    })();
+    </script>
+</body>
+</html>

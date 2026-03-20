@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary Meta Tags -->
+    <title>Limuru Cottage Hospital — Queue Management System</title>
+    <meta name="title" content="Limuru Cottage Hospital — Queue Management System">
+    <meta name="description" content="Efficient patient queue management with real-time updates, voice calling, and seamless healthcare delivery.">
+    <meta name="keywords" content="hospital, queue management, patient management, healthcare, Kenya">
+    <meta name="author" content="Limuru Cottage Hospital">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://limuruhospital.co.ke/">
+    <meta property="og:title" content="Limuru Cottage Hospital — Queue Management System">
+    <meta property="og:description" content="Efficient patient queue management with real-time updates, voice calling, and seamless healthcare delivery.">
+    <meta property="og:image" content="/icons/icon-192.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://limuruhospital.co.ke/">
+    <meta property="twitter:title" content="Limuru Cottage Hospital — Queue Management System">
+    <meta property="twitter:description" content="Efficient patient queue management with real-time updates, voice calling, and seamless healthcare delivery.">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0d9488">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Limuru Hospital">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/glassmorphism.css">
+    
+    <style>
+        /* ==========================================================================
+           LANDING PAGE STYLES
+           ========================================================================== */
+        
+        /* Navigation */
+        .landing-nav {
+            padding: 0 var(--space-6);
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .nav-logo {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .nav-brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .nav-brand-name {
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.2;
+        }
+        
+        .nav-brand-sub {
+            font-size: 0.6875rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.2;
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 140px 0 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(13, 148, 136, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            background: rgba(13, 148, 136, 0.15);
+            border: 1px solid rgba(13, 148, 136, 0.3);
+            border-radius: 9999px;
+            font-size: 0.8125rem;
+            color: var(--hospital-secondary);
+            margin-bottom: var(--space-6);
+        }
+        
+        .hero-badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--hospital-success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .hero-title {
+            font-size: clamp(2.25rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        
+        .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 640px;
+            margin: 0 auto var(--space-8);
+            line-height: 1.7;
+        }
+        
+        .hero-actions {
+            display: flex;
+            gap: var(--space-4);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        /* Section Styles */
+        .section {
+            padding: var(--space-12) 0;
+        }
+        
+        .section-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto var(--space-8);
+        }
+        
+        .section-title {
+            font-size: 1.75rem;
+            margin-bottom: var(--space-3);
+        }
+        
+        .section-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-4);
+        }
+        
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+        
+        .stat-card .stat-icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-4);
+        }
+        
+        .stat-card.primary .stat-icon-wrapper {
+            background: rgba(13, 148, 136, 0.2);
+            color: var(--hospital-secondary);
+        }
+        
+        .stat-card.success .stat-icon-wrapper {
+            background: rgba(22, 163, 74, 0.2);
+            color: var(--hospital-success);
+        }
+        
+        .stat-card.warning .stat-icon-wrapper {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-500);
+        }
+        
+        .stat-card.danger .stat-icon-wrapper {
+            background: rgba(220, 38, 38, 0.2);
+            color: var(--hospital-danger);
+        }
+        
+        .stat-value {
+            font-size: var(--text-3xl);
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: var(--space-2);
+            min-height: 2.5rem;
+        }
+        
+        .stat-card.primary .stat-value { color: var(--hospital-secondary); }
+        .stat-card.success .stat-value { color: var(--hospital-success); }
+        .stat-card.warning .stat-value { color: var(--warning-500); }
+        .stat-card.danger .stat-value { color: var(--hospital-danger); }
+        
+        .stat-label {
+            font-size: var(--text-sm);
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Loading skeleton for stats */
+        .stat-loading {
+            display: inline-block;
+            width: 60%;
+            height: 2.5rem;
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-md);
+        }
+        
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-4);
+        }
+        
+        @media (max-width: 1024px) {
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 640px) {
+            .features-grid { grid-template-columns: 1fr; }
+        }
+        
+        .feature-card {
+            text-align: center;
+            padding: var(--space-6);
+        }
+        
+        .feature-icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-xl);
+            margin: 0 auto var(--space-4);
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(20, 184, 166, 0.08) 100%);
+            border: 1px solid rgba(13, 148, 136, 0.2);
+            color: var(--hospital-secondary);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.125rem;
+            margin-bottom: var(--space-2);
+        }
+        
+        .feature-card p {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+        }
+        
+        /* Role Cards Grid */
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-4);
+        }
+        
+        @media (max-width: 1024px) {
+            .roles-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 640px) {
+            .roles-grid { grid-template-columns: 1fr; }
+        }
+        
+        .role-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            text-decoration: none;
+            padding: var(--space-6);
+            transition: all var(--transition-base);
+        }
+        
+        .role-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--hospital-primary);
+        }
+        
+        .role-icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--space-4);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .role-card.admin .role-icon-wrapper { background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.3); }
+        .role-card.doctor .role-icon-wrapper { background: rgba(22, 163, 74, 0.15); border-color: rgba(22, 163, 74, 0.3); }
+        .role-card.nurse .role-icon-wrapper { background: rgba(236, 72, 153, 0.15); border-color: rgba(236, 72, 153, 0.3); }
+        .role-card.receptionist .role-icon-wrapper { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); }
+        
+        .role-card.admin .role-title { color: #a78bfa; }
+        .role-card.doctor .role-title { color: var(--success-500); }
+        .role-card.nurse .role-title { color: #f472b6; }
+        .role-card.receptionist .role-title { color: var(--warning-500); }
+        
+        .role-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+        }
+        
+        .role-desc {
+            font-size: 0.8125rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Patient Self-Service Section */
+        .patient-section {
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%);
+            border: 1px solid rgba(13, 148, 136, 0.2);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-8);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-6);
+        }
+        
+        @media (max-width: 768px) {
+            .patient-section {
+                flex-direction: column;
+                text-align: center;
+                padding: var(--space-6);
+            }
+        }
+        
+        .patient-content {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+        }
+        
+        @media (max-width: 768px) {
+            .patient-content {
+                flex-direction: column;
+            }
+        }
+        
+        .patient-icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-xl);
+            background: rgba(13, 148, 136, 0.2);
+            color: var(--hospital-secondary);
+            flex-shrink: 0;
+        }
+        
+        .patient-text h3 {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-1);
+        }
+        
+        .patient-text p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9375rem;
+        }
+        
+        .patient-actions {
+            display: flex;
+            gap: var(--space-3);
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 640px) {
+            .patient-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            .patient-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        /* Demo Credentials Section */
+        .demo-section {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+        }
+        
+        .demo-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-5);
+            color: var(--hospital-secondary);
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-4);
+        }
+        
+        @media (max-width: 640px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .demo-item {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+        }
+        
+        .demo-label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: var(--space-2);
+        }
+        
+        .demo-value {
+            font-family: var(--font-mono);
+            font-size: 0.9375rem;
+            color: var(--hospital-secondary);
+            word-break: break-all;
+        }
+        
+        /* Footer */
+        .site-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: var(--space-8) 0;
+            margin-top: var(--space-8);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+        }
+        
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        
+        .footer-logo {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .footer-brand-text {
+            font-weight: 600;
+            font-size: 0.9375rem;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: var(--space-6);
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color var(--transition-fast);
+        }
+        
+        .footer-links a:hover {
+            color: var(--hospital-secondary);
+        }
+        
+        .footer-bottom {
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.8125rem;
+            margin-top: var(--space-6);
+            padding-top: var(--space-6);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+        
+        /* Scroll Animations */
+        .animate-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .animate-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="glass-nav landing-nav" role="navigation" aria-label="Main navigation">
+        <a href="/" class="nav-brand">
+            <img src="/icons/icon.svg" alt="Limuru Cottage Hospital" class="nav-logo" width="40" height="40">
+            <div class="nav-brand-text">
+                <span class="nav-brand-name">Limuru Cottage Hospital</span>
+                <span class="nav-brand-sub">Queue Management System</span>
+            </div>
+        </a>
+        <a href="/login.html" class="btn btn-primary btn-sm">
+            <i data-lucide="log-in" width="16" height="16"></i>
+            Sign In
+        </a>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero container" aria-labelledby="hero-title">
+            <div class="hero-content animate-in visible">
+                <div class="hero-badge">
+                    <span class="hero-badge-dot"></span>
+                    Live Queue Status
+                </div>
+                <h1 id="hero-title" class="hero-title">
+                    <span class="text-gradient">Limuru Cottage Hospital</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Efficient patient queue management with real-time updates, voice calling, 
+                    and seamless healthcare delivery for modern hospitals.
+                </p>
+                <div class="hero-actions">
+                    <a href="/login.html" class="btn btn-primary btn-xl">
+                        <i data-lucide="layout-dashboard" width="20" height="20"></i>
+                        Open Dashboard
+                    </a>
+                    <a href="/kiosk.html" class="btn btn-ghost btn-xl">
+                        <i data-lucide="ticket" width="20" height="20"></i>
+                        Get Queue Ticket
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real-Time Queue Statistics -->
+        <section class="section container" aria-labelledby="stats-title">
+            <div class="section-header animate-in">
+                <h2 id="stats-title" class="section-title">Real-Time Queue Status</h2>
+                <p class="section-desc">Current statistics updated automatically</p>
+            </div>
+            
+            <div class="stats-grid" role="region" aria-label="Queue statistics">
+                <article class="stat-card primary animate-in">
+                    <div class="stat-icon-wrapper">
+                        <i data-lucide="users" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-value" id="stat-waiting" aria-live="polite">
+                        <span class="stat-loading"></span>
+                    </div>
+                    <div class="stat-label">Patients Waiting</div>
+                </article>
+                
+                <article class="stat-card success animate-in">
+                    <div class="stat-icon-wrapper">
+                        <i data-lucide="check-circle" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-value" id="stat-served" aria-live="polite">
+                        <span class="stat-loading"></span>
+                    </div>
+                    <div class="stat-label">Served Today</div>
+                </article>
+                
+                <article class="stat-card warning animate-in">
+                    <div class="stat-icon-wrapper">
+                        <i data-lucide="clock" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-value" id="stat-avg" aria-live="polite">
+                        <span class="stat-loading"></span>
+                    </div>
+                    <div class="stat-label">Avg Wait (min)</div>
+                </article>
+                
+                <article class="stat-card danger animate-in">
+                    <div class="stat-icon-wrapper">
+                        <i data-lucide="alert-triangle" width="24" height="24"></i>
+                    </div>
+                    <div class="stat-value" id="stat-urgent" aria-live="polite">
+                        <span class="stat-loading"></span>
+                    </div>
+                    <div class="stat-label">Urgent Cases</div>
+                </article>
+            </div>
+        </section>
+
+        <!-- System Features -->
+        <section class="section container" aria-labelledby="features-title">
+            <div class="section-header animate-in">
+                <h2 id="features-title" class="section-title">System Features</h2>
+                <p class="section-desc">Powerful tools designed for healthcare professionals</p>
+            </div>
+            
+            <div class="features-grid">
+                <article class="card feature-card animate-in">
+                    <div class="feature-icon-wrapper">
+                        <i data-lucide="list-checks" width="28" height="28"></i>
+                    </div>
+                    <h3>Smart Queue</h3>
+                    <p>Priority-based scheduling with real-time updates and automated notifications.</p>
+                </article>
+                
+                <article class="card feature-card animate-in">
+                    <div class="feature-icon-wrapper">
+                        <i data-lucide="phone-call" width="28" height="28"></i>
+                    </div>
+                    <h3>Voice Calls</h3>
+                    <p>WebRTC-powered voice communication between staff members.</p>
+                </article>
+                
+                <article class="card feature-card animate-in">
+                    <div class="feature-icon-wrapper">
+                        <i data-lucide="smartphone" width="28" height="28"></i>
+                    </div>
+                    <h3>Multi-Platform</h3>
+                    <p>Access from desktop, tablet, or mobile devices seamlessly.</p>
+                </article>
+                
+                <article class="card feature-card animate-in">
+                    <div class="feature-icon-wrapper">
+                        <i data-lucide="shield-check" width="28" height="28"></i>
+                    </div>
+                    <h3>Secure Access</h3>
+                    <p>Role-based authentication for Admin, Doctor, Nurse, and Receptionist.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- Role-Based Dashboards -->
+        <section class="section container" aria-labelledby="roles-title">
+            <div class="section-header animate-in">
+                <h2 id="roles-title" class="section-title">Staff Dashboards</h2>
+                <p class="section-desc">Role-specific interfaces for every healthcare role</p>
+            </div>
+            
+            <div class="roles-grid">
+                <a href="/login.html?role=admin" class="card role-card admin animate-in">
+                    <div class="role-icon-wrapper">
+                        <i data-lucide="settings" width="28" height="28"></i>
+                    </div>
+                    <h3 class="role-title">Administrator</h3>
+                    <p class="role-desc">System management & analytics</p>
+                </a>
+                
+                <a href="/login.html?role=doctor" class="card role-card doctor animate-in">
+                    <div class="role-icon-wrapper">
+                        <i data-lucide="stethoscope" width="28" height="28"></i>
+                    </div>
+                    <h3 class="role-title">Doctor</h3>
+                    <p class="role-desc">Patient consultations & notes</p>
+                </a>
+                
+                <a href="/login.html?role=nurse" class="card role-card nurse animate-in">
+                    <div class="role-icon-wrapper">
+                        <i data-lucide="heart-pulse" width="28" height="28"></i>
+                    </div>
+                    <h3 class="role-title">Nurse</h3>
+                    <p class="role-desc">Triage & patient care</p>
+                </a>
+                
+                <a href="/login.html?role=receptionist" class="card role-card receptionist animate-in">
+                    <div class="role-icon-wrapper">
+                        <i data-lucide="user-check" width="28" height="28"></i>
+                    </div>
+                    <h3 class="role-title">Receptionist</h3>
+                    <p class="role-desc">Check-in & queue management</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Patient Self-Service -->
+        <section class="section container" aria-labelledby="patient-title">
+            <div class="patient-section animate-in">
+                <div class="patient-content">
+                    <div class="patient-icon-wrapper">
+                        <i data-lucide="building-2" width="28" height="28"></i>
+                    </div>
+                    <div class="patient-text">
+                        <h3 id="patient-title">Patient Self-Service</h3>
+                        <p>Visit our kiosk for quick check-in or view queue status online</p>
+                    </div>
+                </div>
+                <div class="patient-actions">
+                    <a href="/kiosk.html" class="btn btn-success">
+                        <i data-lucide="monitor" width="18" height="18"></i>
+                        Kiosk Mode
+                    </a>
+                    <a href="/waiting-display.html" class="btn btn-ghost">
+                        <i data-lucide="tv" width="18" height="18"></i>
+                        Queue Display
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo Credentials -->
+        <section class="section container" aria-labelledby="demo-title">
+            <div class="demo-section animate-in">
+                <div class="demo-header">
+                    <i data-lucide="key" width="24" height="24"></i>
+                    <h3 id="demo-title" style="margin: 0;">Demo Credentials</h3>
+                </div>
+                <div class="demo-grid">
+                    <div class="demo-item">
+                        <div class="demo-label">Email</div>
+                        <div class="demo-value">admin@limuruhospital.co.ke</div>
+                    </div>
+                    <div class="demo-item">
+                        <div class="demo-label">Password</div>
+                        <div class="demo-value">password123</div>
+                    </div>
+                    <div class="demo-item">
+                        <div class="demo-label">Role</div>
+                        <div class="demo-value">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <img src="/icons/icon.svg" alt="" class="footer-logo" width="32" height="32">
+                    <span class="footer-brand-text">Limuru Cottage Hospital</span>
+                </div>
+                <nav class="footer-links" aria-label="Footer navigation">
+                    <a href="/dashboard.html">Dashboard</a>
+                    <a href="/login.html">Sign In</a>
+                    <a href="/kiosk.html">Kiosk</a>
+                    <a href="/waiting-display.html">Queue Display</a>
+                </nav>
+            </div>
+            <p class="footer-bottom">
+                Limuru Cottage Hospital Queue Management System v2.0
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/js/auth.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // ==========================================================================
+        // QUEUE STATS MODULE
+        // ==========================================================================
+        const QueueStats = {
+            interval: 30000,
+            api: '/api/queue/stats',
+            
+            elements: {
+                waiting: document.getElementById('stat-waiting'),
+                served: document.getElementById('stat-served'),
+                avg: document.getElementById('stat-avg'),
+                urgent: document.getElementById('stat-urgent')
+            },
+            
+            format(value, fallback = '--') {
+                if (value === null || value === undefined || value === '') return fallback;
+                const num = parseFloat(value);
+                return isNaN(num) ? fallback : num.toString();
+            },
+            
+            update(element, value) {
+                if (element) {
+                    element.textContent = value;
+                }
+            },
+            
+            async fetch() {
+                try {
+                    const res = await fetch(this.api);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    return data.success ? data.data : null;
+                } catch (e) {
+                    console.warn('Stats fetch failed:', e.message);
+                    return null;
+                }
+            },
+            
+            async refresh() {
+                const stats = await this.fetch();
+                if (!stats) {
+                    this.update(this.elements.waiting, '--');
+                    this.update(this.elements.served, '--');
+                    this.update(this.elements.avg, '--');
+                    this.update(this.elements.urgent, '--');
+                    return;
+                }
+                this.update(this.elements.waiting, this.format(stats.waiting));
+                this.update(this.elements.served, this.format(stats.served_today || stats.served));
+                this.update(this.elements.avg, this.format(stats.avg_wait_time, '0'));
+                this.update(this.elements.urgent, this.format(stats.urgent));
+            },
+            
+            init() {
+                this.refresh();
+                setInterval(() => this.refresh(), this.interval);
+            }
+        };
+
+        // ==========================================================================
+        // SCROLL ANIMATIONS MODULE
+        // ==========================================================================
+        const ScrollAnimations = {
+            className: 'visible',
+            grids: ['stats-grid', 'features-grid', 'roles-grid'],
+            
+            init() {
+                const elements = document.querySelectorAll('.animate-in');
+                if (!elements.length) return;
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const parent = entry.target.parentElement;
+                            const siblings = parent.querySelectorAll('.animate-in');
+                            const index = Array.from(siblings).indexOf(entry.target);
+                            
+                            if (this.grids.includes(parent.className.split(' ')[0])) {
+                                entry.target.style.transitionDelay = `${index * 100}ms`;
+                            }
+                            
+                            entry.target.classList.add(this.className);
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                
+                elements.forEach(el => observer.observe(el));
+            }
+        };
+
+        // ==========================================================================
+        // AUTH CHECK MODULE
+        // ==========================================================================
+        const AuthCheck = {
+            dashboard: '/dashboard.html',
+            
+            redirect() {
+                if (Auth && Auth.isAuthenticated()) {
+                    window.location.href = this.dashboard;
+                }
+            }
+        };
+
+        // Initialize on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            AuthCheck.redirect();
+            QueueStats.init();
+            ScrollAnimations.init();
+        });
+    </script>
+    <script src="/js/offline-indicator.js"></script>
+    <script src="/js/pwa-init.js"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+# Alertmanager Configuration for Hospital Queue Management System
+
+global:
+  # Time to wait before resolving fired alerts
+  resolve_timeout: 5m
+  
+  # SMTP configuration for email alerts
+  smtp_smarthost: 'smtp.example.com:587'
+  smtp_from: 'hqs-alerts@limuruhospital.co.ke'
+  smtp_auth_username: 'hqs-alerts'
+  smtp_auth_password: 'CHANGE_ME'
+  
+  # Slack configuration for notifications
+  slack_api_url: 'https://hooks.slack.com/services/CHANGE_ME'
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/template/*.tmpl'
+
+# Route tree - where to send alerts based on severity
+route:
+  # Default receiver
+  receiver: 'email'
+  
+  # Group alerts by severity
+  group_by: ['alertname', 'severity', 'cluster', 'service']
+  
+  # Wait this long before sending initial notifications
+  group_wait: 30s
+  
+  # Wait this long before sending new notifications for group changes
+  group_interval: 5m
+  
+  # Repeat interval for resolved alerts
+  repeat_interval: 4h
+  
+  # Child routes for different severities
+  routes:
+    # Critical alerts - page immediately
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 1h
+      continue: true
+    
+    # Warning alerts - notify during business hours
+    - match:
+        severity: warning
+      receiver: 'slack'
+      group_wait: 1m
+      continue: true
+    
+    # Info alerts - just log
+    - match:
+        severity: info
+      receiver: 'null'
+
+# Receivers define how to send notifications
+receivers:
+  # Critical alerts - multiple channels
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'ops-team@limuruhospital.co.ke'
+        headers:
+          subject: '🚨 [CRITICAL] HQS Alert: {{ .GroupLabels.alertname }}'
+        html: |
+          <h1>Critical Alert: {{ .GroupLabels.alertname }}</h1>
+          <p><strong>Description:</strong> {{ .GroupLabels.description }}</p>
+          <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+          <p><strong>Details:</strong> {{ .CommonAnnotations.description }}</p>
+          <hr>
+          <p>Time: {{ .StartsAt }}</p>
+          <p><a href="{{ .GeneratorURL }}">View in Prometheus</a></p>
+    slack_configs:
+      - channel: '#critical-alerts'
+        color: 'danger'
+        title: '🚨 Critical Alert'
+        text: |
+          *Alert:* {{ .GroupLabels.alertname }}
+          *Severity:* {{ .GroupLabels.severity }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Details:* {{ .CommonAnnotations.description }}
+        actions:
+          - type: 'button'
+            text: 'View Alert'
+            url: '{{ .GeneratorURL }}'
+          - type: 'button'
+            text: 'View Dashboard'
+            url: 'http://grafana:3000/d/hqs-overview'
+    webhook_configs:
+      - url: 'http://pagerduty:8090/webhook'
+        send_resolved: true
+
+  # Email receiver for general alerts
+  - name: 'email'
+    email_configs:
+      - to: 'hqs-team@limuruhospital.co.ke'
+        headers:
+          subject: 'HQS Alert: {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          <p>{{ .CommonAnnotations.summary }}</p>
+          <p>Details: {{ .CommonAnnotations.description }}</p>
+          <hr>
+          <p><a href="{{ .GeneratorURL }}">View in Prometheus</a></p>
+
+  # Slack receiver
+  - name: 'slack'
+    slack_configs:
+      - channel: '#hqs-alerts'
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: '{{ if eq .Status "firing" }}⚠️{{ else }}✅{{ end }} Alert'
+        text: |
+          *Alert:* {{ .GroupLabels.alertname }}
+          *Status:* {{ .Status }}
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Details:* {{ .CommonAnnotations.description }}
+        footer: 'Hospital Queue Management System'
+        fallback: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+
+  # Null receiver (for info alerts)
+  - name: 'null'
+
+# Inhibition rules - suppress less important alerts when critical ones fire
+inhibit_rules:
+  # Inhibit info alerts when critical alerts are firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'cluster', 'service']
+  
+  # Inhibit warning alerts when critical alerts are firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'cluster', 'service']

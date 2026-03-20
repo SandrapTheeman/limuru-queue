@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hospital Queue TV Display - Limuru Cottage Hospital">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Queue Display | Limuru Cottage Hospital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #0ea5e9;
+            --primary-glow: rgba(14, 165, 233, 0.5);
+            --primary-dim: rgba(14, 165, 233, 0.12);
+            --primary-subtle: rgba(14, 165, 233, 0.06);
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --surface: rgba(255, 255, 255, 0.04);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --muted: rgba(255, 255, 255, 0.5);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            line-height: 1.3;
+        }
+
+        .fullscreen-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 100;
+            width: 56px;
+            height: 56px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: var(--muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 24px;
+        }
+
+        .fullscreen-btn:hover {
+            background: var(--surface-hover);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2.5rem;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(14, 165, 233, 0.08) 0%, transparent 100%);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), #0284c7);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 0 50px var(--primary-glow);
+        }
+
+        .hospital-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .hospital-sub {
+            font-size: 1.125rem;
+            color: var(--muted);
+        }
+
+        .header-center {
+            text-align: center;
+        }
+
+        .queue-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .clock {
+            font-size: 4.5rem;
+            font-weight: 900;
+            color: var(--primary);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            text-shadow: 0 0 40px var(--primary-glow);
+        }
+
+        .date {
+            font-size: 1.25rem;
+            color: var(--muted);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .control-btn {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .control-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 480px;
+            gap: 2rem;
+            padding: 2rem 2.5rem;
+            min-height: 0;
+            height: calc(100vh - 140px);
+        }
+
+        .left { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .now-calling {
+            background: linear-gradient(135deg, var(--primary-dim) 0%, var(--primary-subtle) 100%);
+            border: 3px solid rgba(14, 165, 233, 0.4);
+            border-radius: 32px;
+            padding: 3rem;
+            text-align: center;
+            animation: glow 3s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+            flex: 0 0 auto;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 80px var(--primary-glow), inset 0 0 100px rgba(14, 165, 233, 0.05); }
+            50% { box-shadow: 0 0 120px var(--primary-glow), inset 0 0 120px rgba(14, 165, 233, 0.08); }
+        }
+
+        .now-calling::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 0%, var(--primary-glow) 0%, transparent 50%);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .now-label {
+            font-size: 1.5rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            position: relative;
+            font-weight: 600;
+        }
+
+        .now-label .pulse {
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        .ticket-number {
+            font-size: 14rem;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--primary), #7dd3fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            position: relative;
+            animation: numberPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes numberPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.015); }
+        }
+
+        .ticket-number.empty {
+            font-size: 4rem;
+            background: none;
+            -webkit-text-fill-color: var(--muted);
+            text-shadow: none;
+            animation: none;
+        }
+
+        .room-info {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .dept-info {
+            font-size: 2rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .priority-badge.critical { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .priority-badge.emergency { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .priority-badge.urgent { background: rgba(139, 92, 246, 0.2); color: var(--purple); }
+        .priority-badge.normal { background: rgba(14, 165, 233, 0.2); color: var(--primary); }
+
+        .queue-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .queue-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .queue-count {
+            background: var(--primary);
+            color: var(--bg);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .queue-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.25rem 1.5rem;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .queue-item.new {
+            animation: slideIn 0.4s ease, highlight 2s ease;
+        }
+
+        @keyframes highlight {
+            0% { background: rgba(14, 165, 233, 0.3); border-color: var(--primary); }
+            100% { background: rgba(0, 0, 0, 0.25); border-color: var(--border); }
+        }
+
+        .queue-item.critical { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.25); }
+        .queue-item.emergency { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.25); }
+        .queue-item.urgent { background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.25); }
+
+        .queue-num {
+            font-size: 2.5rem;
+            font-weight: 800;
+            min-width: 8rem;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .queue-item.critical .queue-num { color: var(--danger); }
+        .queue-item.emergency .queue-num { color: var(--warning); }
+        .queue-item.urgent .queue-num { color: var(--purple); }
+
+        .queue-details { flex: 1; }
+
+        .queue-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .queue-dept {
+            font-size: 1.125rem;
+            color: var(--muted);
+        }
+
+        .queue-status {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .queue-status.position {
+            background: var(--surface);
+            color: var(--muted);
+        }
+
+        .queue-status.waiting {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .queue-status.called {
+            background: rgba(14, 165, 233, 0.15);
+            color: var(--primary);
+        }
+
+        .right {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stats-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 1.5rem;
+        }
+
+        .stats-panel h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .stat-box.warning .stat-val { color: var(--warning); }
+        .stat-box.success .stat-val { color: var(--success); }
+        .stat-box.danger .stat-val { color: var(--danger); }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+
+        .dept-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .dept-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .dept-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+        .dept-count {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .dept-name {
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .audio-controls {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .audio-toggle {
+            width: 56px;
+            height: 56px;
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 24px;
+        }
+
+        .audio-toggle:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .audio-toggle.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .volume-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .captions-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.25rem;
+            min-height: 80px;
+        }
+
+        .captions-text {
+            font-size: 1.25rem;
+            color: var(--text);
+            text-align: center;
+            line-height: 1.6;
+            animation: captionFade 0.3s ease;
+        }
+
+        @keyframes captionFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .iptv-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+
+        .iptv-panel iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2.5rem;
+            border-top: 1px solid var(--border);
+            font-size: 1rem;
+            color: var(--muted);
+            background: linear-gradient(0deg, rgba(14, 165, 233, 0.05) 0%, transparent 100%);
+        }
+
+        .footer strong { color: var(--primary); }
+
+        .refresh-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .refresh-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .refresh-dot.error { background: var(--danger); }
+
+        .language-select {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .language-select option {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--muted);
+            text-align: center;
+            min-height: 200px;
+        }
+
+        .empty-icon { font-size: 5rem; margin-bottom: 1rem; opacity: 0.5; }
+
+        .dept-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .dept-filter label {
+            font-size: 0.875rem;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .dept-filter select {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 0.875rem;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            min-width: 180px;
+        }
+
+        .dept-filter select option {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        @media (max-width: 1400px) {
+            .main { grid-template-columns: 1fr; }
+            .right { display: none; }
+            .ticket-number { font-size: 10rem; }
+            .room-info { font-size: 3rem; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 1rem; flex-wrap: wrap; gap: 1rem; }
+            .logo { width: 64px; height: 64px; font-size: 32px; }
+            .hospital-name { font-size: 1.5rem; }
+            .clock { font-size: 3rem; }
+            .main { padding: 1rem; }
+            .ticket-number { font-size: 6rem; }
+            .room-info { font-size: 2rem; }
+            .footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+            .fullscreen-btn { width: 48px; height: 48px; }
+        }
+
+        @media (min-width: 2560px) {
+            .ticket-number { font-size: 18rem; }
+            .room-info { font-size: 5rem; }
+            .dept-info { font-size: 2.5rem; }
+            .clock { font-size: 6rem; }
+            .queue-num { font-size: 3rem; }
+            .queue-name { font-size: 2rem; }
+            .queue-dept { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen (F)" aria-label="Toggle fullscreen mode">
+        <span id="expandIcon">⛶</span>
+        <span id="compressIcon" style="display:none">✕</span>
+    </button>
+
+    <header class="header">
+        <div class="logo-section">
+            <div class="logo" aria-hidden="true">🏥</div>
+            <div>
+                <div class="hospital-name">Limuru Cottage Hospital</div>
+                <div class="hospital-sub">Queue Management System</div>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="queue-title">Live Queue Display</div>
+            <div class="dept-filter">
+                <label for="deptSelect">Department:</label>
+                <select id="deptSelect">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="clock" id="clock">--:--</div>
+            <div class="date" id="date"></div>
+            <div class="controls">
+                <select class="language-select" id="langSelect">
+                    <option value="en">English</option>
+                    <option value="sw">Kiswahili</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="left">
+            <section class="now-calling">
+                <div class="now-label">
+                    <span class="pulse"></span>
+                    Now Calling
+                    <span class="pulse"></span>
+                </div>
+                <div class="ticket-number" id="currentTicket" aria-live="polite">--</div>
+                <div class="room-info" id="currentRoom">Room --</div>
+                <div class="dept-info" id="currentDept">--</div>
+                <span class="priority-badge normal" id="priorityBadge" style="display: none;">Normal</span>
+            </section>
+
+            <section class="queue-panel">
+                <div class="queue-header">
+                    <h2>📋 Up Next</h2>
+                    <span class="queue-count" id="queueCount">0</span>
+                </div>
+                <div class="queue-list" id="queueList">
+                    <div class="empty-state">
+                        <div class="empty-icon">⏳</div>
+                        <div>Loading queue data...</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="right">
+            <section class="stats-panel">
+                <h3>📊 Live Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-val" id="statWaiting">--</div>
+                        <div class="stat-label">Waiting</div>
+                    </div>
+                    <div class="stat-box warning">
+                        <div class="stat-val" id="statCalled">--</div>
+                        <div class="stat-label">Called</div>
+                    </div>
+                    <div class="stat-box success">
+                        <div class="stat-val" id="statServing">--</div>
+                        <div class="stat-label">Serving</div>
+                    </div>
+                    <div class="stat-box danger">
+                        <div class="stat-val" id="statCompleted">--</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="stats-panel">
+                <h3>🏥 By Department</h3>
+                <div class="dept-grid" id="deptStats"></div>
+            </section>
+
+            <div class="audio-controls">
+                <button class="audio-toggle active" id="soundToggle" title="Toggle Sound (M)" aria-label="Toggle sound alerts">
+                    🔊
+                </button>
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80" aria-label="Volume">
+            </div>
+
+            <div class="captions-panel">
+                <div class="captions-text" id="captionsText">Press M to toggle audio</div>
+            </div>
+
+            <div class="iptv-panel" id="iptvPanel" style="display: none;">
+                <iframe id="iptvFrame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <span>Thank you for choosing <strong>Limuru Cottage Hospital</strong></span>
+        <div class="refresh-info">
+            <span class="refresh-dot" id="refreshDot"></span>
+            <span>Updated: <span id="lastUpdate">--:--:--</span></span>
+        </div>
+    </footer>
+
+    <script>
+    (function() {
+        'use strict';
+
+        const API_BASE = '/api';
+        const REFRESH_INTERVAL = 5000;
+        const WS_RECONNECT_DELAY = 3000;
+
+        const DOM = {
+            clock: document.getElementById('clock'),
+            date: document.getElementById('date'),
+            deptSelect: document.getElementById('deptSelect'),
+            langSelect: document.getElementById('langSelect'),
+            currentTicket: document.getElementById('currentTicket'),
+            currentRoom: document.getElementById('currentRoom'),
+            currentDept: document.getElementById('currentDept'),
+            priorityBadge: document.getElementById('priorityBadge'),
+            queueList: document.getElementById('queueList'),
+            queueCount: document.getElementById('queueCount'),
+            statWaiting: document.getElementById('statWaiting'),
+            statCalled: document.getElementById('statCalled'),
+            statServing: document.getElementById('statServing'),
+            statCompleted: document.getElementById('statCompleted'),
+            deptStats: document.getElementById('deptStats'),
+            lastUpdate: document.getElementById('lastUpdate'),
+            refreshDot: document.getElementById('refreshDot'),
+            fullscreenBtn: document.getElementById('fullscreenBtn'),
+            expandIcon: document.getElementById('expandIcon'),
+            compressIcon: document.getElementById('compressIcon'),
+            soundToggle: document.getElementById('soundToggle'),
+            volumeSlider: document.getElementById('volumeSlider'),
+            captionsText: document.getElementById('captionsText'),
+            iptvPanel: document.getElementById('iptvPanel'),
+            iptvFrame: document.getElementById('iptvFrame'),
+        };
+
+        let state = {
+            departments: [],
+            queueData: [],
+            selectedDept: null,
+            language: 'en',
+            soundEnabled: true,
+            volume: 80,
+            lastCalledTicket: null,
+            wsConnected: false,
+            displayId: null,
+            iptvUrl: null,
+        };
+
+        let ws = null;
+        let speechSynth = window.speechSynthesis || null;
+
+        const MESSAGES = {
+            en: {
+                noPatient: 'No Patient',
+                pleaseWait: 'Please Wait',
+                doctorCall: 'The doctor will call you shortly',
+                noWaiting: 'No patients waiting',
+                soundOn: 'Sound alerts: ON',
+                soundOff: 'Sound alerts: OFF',
+                called: (name, room) => `Patient ${name}, please proceed to room ${room}`,
+                recall: (name, room) => `Patient ${name}, please proceed to room ${room}. This is your second call.`,
+            },
+            sw: {
+                noPatient: 'Hakuna Mgonjwa',
+                pleaseWait: 'Tafadhali Subiri',
+                doctorCall: 'Daktari atakuita hivi punde',
+                noWaiting: 'Hakuna wagonjwa wanaosubiri',
+                soundOn: 'Maonyo ya sauti: WAMEWASHWA',
+                soundOff: 'Maonyo ya sauti: WAMEZIMWA',
+                called: (name, room) => `Mgonjwa ${name}, tafadhali nenda kwenye chumba ${room}`,
+                recall: (name, room) => `Mgonjwa ${name}, tafadhali nenda kwenye chumba ${room}. Hii ni simu yako ya pili.`,
+            },
+        };
+
+        function t(key, ...args) {
+            const msg = MESSAGES[state.language][key];
+            return typeof msg === 'function' ? msg(...args) : msg;
+        }
+
+        function formatTime(d = new Date) {
+            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        function formatDate(d = new Date) {
+            return d.toLocaleDateString(state.language === 'sw' ? 'sw-KE' : 'en-KE', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function formatTimeSeconds() {
+            return new Date().toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        }
+
+        function updateClock() {
+            DOM.clock.textContent = formatTime();
+            DOM.date.textContent = formatDate();
+        }
+
+        async function fetchData() {
+            try {
+                const url = new URL(`${API_BASE}/queue/tv/public`, window.location.origin);
+                url.searchParams.set('departments', state.selectedDept || getAllDeptIds().join(','));
+
+                const [queueRes, deptRes, statsRes] = await Promise.all([
+                    fetch(url).then(r => r.json()).catch(() => ({ success: false, data: null })),
+                    fetch(`${API_BASE}/departments`).then(r => r.json()).catch(() => ({ success: false, data: [] })),
+                    fetch(`${API_BASE}/queue/stats`).then(r => r.json()).catch(() => ({ success: false, data: {} })),
+                ]);
+
+                if (queueRes.success && queueRes.data) {
+                    const oldQueue = state.queueData;
+                    state.queueData = queueRes.data.queue || [];
+
+                    const current = queueRes.data.currentlyCalling;
+                    if (current && current.ticket_number !== state.lastCalledTicket) {
+                        state.lastCalledTicket = current.ticket_number;
+                        playAlertSound();
+                        announceCall(current.patient_name, current.room_assigned);
+                    }
+
+                    renderQueueWithAnimation(oldQueue, state.queueData);
+                    renderCurrentCall(current);
+                }
+
+                if (deptRes.success) {
+                    state.departments = deptRes.data || [];
+                    renderDeptFilter();
+                    renderDeptStats();
+                }
+
+                if (statsRes.success) updateStats(statsRes.data);
+
+                DOM.lastUpdate.textContent = formatTimeSeconds();
+                DOM.refreshDot.classList.remove('error');
+            } catch (e) {
+                console.error('Data fetch error:', e);
+                DOM.refreshDot.classList.add('error');
+                DOM.lastUpdate.textContent = 'Error';
+            }
+        }
+
+        function renderCurrentCall(current) {
+            if (current) {
+                DOM.currentTicket.textContent = current.ticket_number || '--';
+                DOM.currentTicket.classList.remove('empty');
+                DOM.currentRoom.textContent = `Room ${current.room_assigned || '--'}`;
+                DOM.currentDept.textContent = current.department_name || '';
+
+                const priority = current.priority || 4;
+                const labels = { 1: 'Critical', 2: 'Emergency', 3: 'Urgent', 4: 'Normal' };
+                const classes = { 1: 'critical', 2: 'emergency', 3: 'urgent', 4: 'normal' };
+
+                DOM.priorityBadge.textContent = labels[priority] || 'Normal';
+                DOM.priorityBadge.className = `priority-badge ${classes[priority] || 'normal'}`;
+                DOM.priorityBadge.style.display = 'inline-block';
+            } else {
+                DOM.currentTicket.textContent = t('noPatient');
+                DOM.currentTicket.classList.add('empty');
+                DOM.currentRoom.textContent = t('pleaseWait');
+                DOM.currentDept.textContent = t('doctorCall');
+                DOM.priorityBadge.style.display = 'none';
+            }
+        }
+
+        function updateStats(stats) {
+            DOM.statWaiting.textContent = stats.totalWaiting || 0;
+            DOM.statCalled.textContent = stats.totalCalled || 0;
+            DOM.statServing.textContent = stats.totalServing || 0;
+            DOM.statCompleted.textContent = stats.totalCompleted || 0;
+        }
+
+        function updateQueueCount() {
+            let filtered = state.queueData;
+            if (state.selectedDept) {
+                filtered = filtered.filter(q => q.department_id === state.selectedDept);
+            }
+            const total = filtered.filter(q => q.status === 'waiting').length;
+            DOM.queueCount.textContent = total;
+        }
+
+        function renderQueueWithAnimation(oldQueue, newQueue) {
+            let filtered = newQueue;
+            if (state.selectedDept) {
+                filtered = filtered.filter(q => q.department_id === state.selectedDept);
+            }
+            const waiting = filtered.filter(q => q.status === 'waiting').slice(0, 10);
+
+            updateQueueCount();
+
+            if (waiting.length === 0) {
+                DOM.queueList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">✓</div>
+                        <div>${t('noWaiting')}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            DOM.queueList.innerHTML = waiting.map((q, i) => {
+                const dept = state.departments.find(d => d.id === q.department_id);
+                const isNew = !oldQueue.find(o => o.id === q.id);
+                const priority = q.priority || 4;
+                const priorityClass = { 1: 'critical', 2: 'emergency', 3: 'urgent', 4: '' }[priority] || '';
+
+                return `
+                    <div class="queue-item ${priorityClass} ${isNew ? 'new' : ''}" style="animation-delay: ${i * 0.05}s">
+                        <div class="queue-num">${q.ticket_number || '---'}</div>
+                        <div class="queue-details">
+                            <div class="queue-name">${q.patient_name || '---'}</div>
+                            <div class="queue-dept">${dept ? dept.name : ''}</div>
+                        </div>
+                        <span class="queue-status position">#${i + 1}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDeptFilter() {
+            const active = state.departments.filter(d => d.is_active !== false);
+            DOM.deptSelect.innerHTML = '<option value="">All Departments</option>' +
+                active.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        }
+
+        function renderDeptStats() {
+            const active = state.departments.filter(d => d.is_active !== false).slice(0, 6);
+            DOM.deptStats.innerHTML = active.map(dept => {
+                const count = state.queueData.filter(
+                    q => q.department_id === dept.id && q.status === 'waiting'
+                ).length;
+                return `
+                    <div class="dept-card">
+                        <div class="dept-icon">${dept.icon || '🏥'}</div>
+                        <div class="dept-count">${count}</div>
+                        <div class="dept-name">${dept.name}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getAllDeptIds() {
+            return state.departments.filter(d => d.is_active !== false).map(d => d.id);
+        }
+
+        function playAlertSound() {
+            if (!state.soundEnabled) return;
+
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.frequency.value = 880;
+                oscillator.type = 'sine';
+                gainNode.gain.value = state.volume / 200;
+
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    audioCtx.close();
+                }, 200);
+            } catch (e) {
+                console.warn('Audio playback failed:', e);
+            }
+        }
+
+        function announceCall(name, room) {
+            if (!state.soundEnabled || !speechSynth) return;
+
+            try {
+                speechSynth.cancel();
+                const utterance = new SpeechSynthesisUtterance(t('called', name, room));
+                utterance.lang = state.language === 'sw' ? 'sw-KE' : 'en-US';
+                utterance.volume = state.volume / 100;
+                utterance.rate = 0.9;
+
+                DOM.captionsText.textContent = t('called', name, room);
+
+                utterance.onend = () => {
+                    setTimeout(() => {
+                        DOM.captionsText.textContent = state.soundEnabled ? t('soundOn') : t('soundOff');
+                    }, 3000);
+                };
+
+                speechSynth.speak(utterance);
+            } catch (e) {
+                console.warn('TTS failed:', e);
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+                DOM.expandIcon.style.display = 'none';
+                DOM.compressIcon.style.display = 'block';
+            } else {
+                document.exitFullscreen();
+                DOM.expandIcon.style.display = 'block';
+                DOM.compressIcon.style.display = 'none';
+            }
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            DOM.soundToggle.classList.toggle('active', state.soundEnabled);
+            DOM.soundToggle.textContent = state.soundEnabled ? '🔊' : '🔇';
+            DOM.captionsText.textContent = state.soundEnabled ? t('soundOn') : t('soundOff');
+
+            if (!state.soundEnabled && speechSynth) {
+                speechSynth.cancel();
+            }
+        }
+
+        function updateVolume() {
+            state.volume = parseInt(DOM.volumeSlider.value);
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    state.wsConnected = true;
+                    console.log('WebSocket connected');
+                    ws.send(JSON.stringify({
+                        type: 'subscribe',
+                        displayId: state.displayId,
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'queue_update') {
+                            fetchData();
+                        }
+                    } catch (e) {
+                        console.warn('WS message parse error:', e);
+                    }
+                };
+
+                ws.onclose = () => {
+                    state.wsConnected = false;
+                    console.log('WebSocket disconnected, reconnecting...');
+                    setTimeout(connectWebSocket, WS_RECONNECT_DELAY);
+                };
+
+                ws.onerror = (error) => {
+                    console.warn('WebSocket error:', error);
+                };
+            } catch (e) {
+                console.warn('WebSocket connection failed:', e);
+                setTimeout(connectWebSocket, WS_RECONNECT_DELAY);
+            }
+        }
+
+        function loadIPTV(url) {
+            if (!url) {
+                DOM.iptvPanel.style.display = 'none';
+                return;
+            }
+            DOM.iptvFrame.src = url;
+            DOM.iptvPanel.style.display = 'block';
+        }
+
+        function initFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            state.displayId = params.get('displayId') || `tv-${Date.now()}`;
+            state.selectedDept = params.get('department') || '';
+            state.iptvUrl = params.get('iptv') || null;
+            state.language = params.get('lang') || 'en';
+
+            DOM.langSelect.value = state.language;
+            if (state.selectedDept) {
+                DOM.deptSelect.value = state.selectedDept;
+            }
+            if (state.iptvUrl) {
+                loadIPTV(state.iptvUrl);
+            }
+        }
+
+        DOM.deptSelect.addEventListener('change', e => {
+            state.selectedDept = e.target.value || null;
+            updateQueueCount();
+            renderQueueWithAnimation([], state.queueData);
+        });
+
+        DOM.langSelect.addEventListener('change', e => {
+            state.language = e.target.value;
+            DOM.captionsText.textContent = state.soundEnabled ? t('soundOn') : t('soundOff');
+        });
+
+        DOM.fullscreenBtn.addEventListener('click', toggleFullscreen);
+        DOM.soundToggle.addEventListener('click', toggleSound);
+        DOM.volumeSlider.addEventListener('input', updateVolume);
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                DOM.expandIcon.style.display = 'block';
+                DOM.compressIcon.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            } else if (e.key === 'm' || e.key === 'M') {
+                toggleSound();
+            }
+        });
+
+        initFromURL();
+        updateClock();
+        setInterval(updateClock, 1000);
+        fetchData();
+        setInterval(fetchData, REFRESH_INTERVAL);
+        connectWebSocket();
+
+        if (speechSynth) {
+            speechSynth.getVoices();
+            speechSynth.addEventListener('voiceschanged', () => speechSynth.getVoices());
+        }
+    })();
+    </script>
+</body>
+</html>

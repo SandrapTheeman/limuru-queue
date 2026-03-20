@@ -1,0 +1,26 @@
+# Dockerfile for Next.js Web App
+# Build and push to Docker Hub:
+#   docker build -t your-username/hqs-web:latest .
+#   docker push your-username/hqs-web:latest
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY package.json ./
+RUN npm install next@14 react@18 react-dom@18 --prefer-offline
+
+# Copy source code
+COPY app ./app
+COPY lib ./lib
+COPY public ./public
+COPY next.config.js ./
+COPY tsconfig.json ./
+COPY tailwind.config.ts ./
+COPY postcss.config.js ./
+COPY *.css ./
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

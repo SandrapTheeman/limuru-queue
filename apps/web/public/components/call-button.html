@@ -1,0 +1,160 @@
+<!-- 
+  Voice Call Button Component
+  Usage: Include this HTML to add a call button to your page
+  
+  The button opens the staff directory modal when clicked.
+  The incoming call modal is automatically shown when there's an incoming call.
+  
+  Make sure to include voice-calls.js before this component.
+-->
+<!-- 
+  Voice Call FAB (Floating Action Button)
+  Alternative to inline button - shows in bottom right corner
+-->
+<button id="voice-calls-fab" class="voice-calls-fab" onclick="VoiceCalls.openStaffDirectory()" style="display: none;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>
+</button>
+
+<!-- 
+  Inline Call Button (for headers/toolbars)
+  Use this instead of FAB if you prefer a smaller inline button
+-->
+<!-- 
+<button class="voice-call-header-btn" onclick="VoiceCalls.openStaffDirectory()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>
+    <span>Call Staff</span>
+</button>
+-->
+
+<!-- 
+  Incoming Call Modal
+  Automatically shown when there's an incoming call
+  Created dynamically by VoiceCalls.js - no need to include manually
+  
+  Structure:
+  <div id="voice-calls-incoming-modal" class="voice-calls-modal">
+      <div class="voice-calls-modal-content voice-calls-incoming-modal-content">
+          <h2>Incoming Call</h2>
+          <div class="voice-calls-avatar voice-calls-avatar-large voice-calls-avatar-caller">
+              <svg><!-- user icon --></svg>
+          </div>
+          <p id="voice-calls-caller-name">Unknown Caller</p>
+          <p id="voice-calls-caller-priority">Normal Priority</p>
+          <div class="voice-calls-progress-bar">
+              <div id="voice-calls-progress" class="voice-calls-progress"></div>
+          </div>
+          <p>Auto-decline in <span id="voice-calls-timer">30s</span></p>
+          <div class="voice-calls-modal-actions">
+              <button onclick="VoiceCalls.rejectCall()">Reject</button>
+              <button onclick="VoiceCalls.acceptCall()">Accept</button>
+          </div>
+      </div>
+  </div>
+-->
+
+<!-- 
+  Active Call UI
+  Automatically shown when in a call
+  Created dynamically by VoiceCalls.js - no need to include manually
+  
+  Features:
+  - Call duration timer
+  - Mute/Unmute button (M key)
+  - Hold/Resume button (H key)
+  - End call button (Escape key)
+  
+  Structure:
+  <div id="voice-calls-active-modal" class="voice-calls-modal voice-calls-modal-fullscreen">
+      <div class="voice-calls-active-content">
+          <div class="voice-calls-avatar-wrapper">
+              <div class="voice-calls-avatar voice-calls-avatar-xlarge voice-calls-avatar-active">
+                  <svg><!-- user icon --></svg>
+              </div>
+              <div id="voice-calls-status" class="voice-calls-call-status">Connected</div>
+          </div>
+          <p id="voice-calls-callee-name">Unknown</p>
+          <p class="voice-calls-call-label">Voice Call</p>
+          <div class="voice-calls-duration-wrapper">
+              <svg><!-- clock icon --></svg>
+              <span id="voice-calls-duration">0:00</span>
+          </div>
+          <div class="voice-calls-control-buttons">
+              <button id="voice-calls-btn-mute" onclick="VoiceCalls.toggleMute()">Mute</button>
+              <button id="voice-calls-btn-hold" onclick="VoiceCalls.toggleHold()">Hold</button>
+          </div>
+          <button onclick="VoiceCalls.endCall()" class="voice-calls-btn voice-calls-btn-end">End Call</button>
+      </div>
+  </div>
+-->
+
+
+<!-- 
+  Required CSS Classes
+  These are automatically injected by voice-calls.js, but you can also
+  include them manually if you need custom styling.
+  
+  See voice-calls.js _getStyles() method for complete CSS.
+-->
+<style>
+/* FAB Styles */
+.voice-calls-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9998;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: none;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-calls-fab:hover {
+    transform: scale(1.1);
+    background: #2563eb;
+}
+
+.voice-calls-fab-ringing {
+    background: #fbbf24;
+    animation: voiceCallsPulse 1s infinite;
+}
+
+.voice-calls-fab-active {
+    background: #10b981;
+}
+
+@keyframes voiceCallsPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4); }
+    50% { box-shadow: 0 4px 30px rgba(251, 191, 36, 0.8); }
+}
+
+/* Header Button Style */
+.voice-call-header-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(59, 130, 246, 0.2);
+    border: none;
+    border-radius: 8px;
+    color: #3b82f6;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.voice-call-header-btn:hover {
+    background: rgba(59, 130, 246, 0.3);
+}
+</style>

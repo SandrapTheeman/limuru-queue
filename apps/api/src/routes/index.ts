@@ -1,0 +1,45 @@
+import { Hono } from 'hono';
+import { auth } from './auth';
+import { queue } from './queue';
+import { patients } from './patients';
+import { doctors } from './doctors';
+import { departments } from './departments';
+import { rooms } from './rooms';
+import { admin } from './admin';
+import { notifications } from './notifications';
+import { analytics } from './analytics';
+import { health } from './health';
+import { messages } from './messages';
+import { visits } from './visits';
+import { display } from './display';
+import { appointments } from './appointments';
+import { clinical } from './clinical';
+import { iptv } from './iptv';
+import { vitals } from './vitals';
+import { voice } from './voice';
+import { whatsapp } from './whatsapp';
+
+const routes = new Hono();
+
+routes.route('/auth', auth);
+routes.route('/queue', queue);
+routes.route('/patients', patients);
+routes.route('/departments', departments);
+routes.route('/rooms', rooms);
+routes.route('/doctors', doctors);
+routes.route('/admin', admin);
+routes.route('/notifications', notifications);
+routes.route('/analytics', analytics);
+routes.route('/health', health);
+routes.route('/messages', messages);
+routes.route('/visits', visits);
+routes.route('/display', display);
+routes.route('/appointments', appointments);
+routes.route('/clinical', clinical);
+routes.route('/iptv', iptv);
+routes.route('/vitals', vitals);
+routes.route('/voice', voice);
+routes.route('/whatsapp', whatsapp);
+
+export { routes };
+export type AppType = typeof routes;

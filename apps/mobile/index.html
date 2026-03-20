@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Limuru Health">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
+    <title>Limuru Cottage Hospital</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --card-bg: rgba(255,255,255,0.08);
+            --text: #ffffff;
+            --text-secondary: rgba(255,255,255,0.6);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .user-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            position: sticky;
+            top: 73px;
+            z-index: 99;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Content */
+        .content {
+            padding: 1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .card-sub {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Queue Status */
+        .queue-status {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .ticket-number {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 1rem 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-waiting { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .status-called { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .status-progress { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .status-completed { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #16a34a);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            padding: 0.5rem;
+            padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        /* Hidden */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🏥</div>
+                <div class="logo-text">Limuru Hospital</div>
+            </div>
+            <button class="user-btn" id="userBtn" onclick="showLogin()">👤</button>
+        </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+        <div class="tab active" data-tab="home" onclick="switchTab('home')">🏠 Home</div>
+        <div class="tab" data-tab="queue" onclick="switchTab('queue')">🎫 Queue</div>
+        <div class="tab" data-tab="book" onclick="switchTab('book')">📅 Book</div>
+        <div class="tab" data-tab="more" onclick="switchTab('more')">⚙️ More</div>
+    </nav>
+
+    <!-- Home Tab -->
+    <div id="home" class="content tab-content">
+        <div class="card">
+            <div class="card-title">Your Queue Status</div>
+            <div class="ticket-number" id="myTicket">--</div>
+            <div class="status-badge status-waiting" id="myStatus">No Active Ticket</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="card">
+                <div class="card-title">Wait Time</div>
+                <div class="card-value" id="waitTime">--</div>
+                <div class="card-sub">minutes</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Position</div>
+                <div class="card-value" id="queuePosition">--</div>
+                <div class="card-sub">in line</div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="switchTab('book')">🎫 Get New Ticket</button>
+        <button class="btn btn-outline" onclick="switchTab('queue')">📺 View Queue</button>
+    </div>
+
+    <!-- Queue Tab -->
+    <div id="queue" class="content tab-content hidden">
+        <div class="card">
+            <div class="card-title">All Departments</div>
+            <div id="deptList">Loading...</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Quick Actions</div>
+            <button class="btn btn-success" onclick="switchTab('book')">+ Get Ticket</button>
+            <button class="btn btn-outline" onclick="checkStatus()">🔍 Check Status</button>
+        </div>
+    </div>
+
+    <!-- Book Tab -->
+    <div id="book" class="content tab-content hidden">
+        <div class="card">
+            <div class="card-title">Get Queue Ticket</div>
+            
+            <div class="form-group">
+                <label class="form-label">Patient Number (Optional)</label>
+                <input type="text" class="form-input" id="patientNumber" placeholder="PT-123456">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <select class="form-input" id="deptSelect">
+                    <option value="">Select Department</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Priority</label>
+                <select class="form-input" id="prioritySelect">
+                    <option value="normal">Normal</option>
+                    <option value="elderly">Elderly (65+)</option>
+                    <option value="pregnant">Pregnant</option>
+                    <option value="disability">Disability</option>
+                    <option value="emergency">Emergency</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="getTicket()">Get Ticket</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Book Appointment</div>
+            <button class="btn btn-outline" onclick="bookAppointment()">📅 Schedule Visit</button>
+        </div>
+    </div>
+
+    <!-- More Tab -->
+    <div id="more" class="content tab-content hidden">
+        <div class="card">
+            <button class="btn btn-outline" onclick="viewHistory()">📋 Visit History</button>
+            <button class="btn btn-outline" onclick="giveFeedback()">⭐ Give Feedback</button>
+            <button class="btn btn-outline" onclick="viewPrescriptions()">💊 My Prescriptions</button>
+        </div>
+
+        <div class="card">
+            <button class="btn btn-outline" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home')">
+            <span class="nav-icon">🏠</span>
+            Home
+        </div>
+        <div class="nav-item" onclick="switchTab('queue')">
+            <span class="nav-icon">🎫</span>
+            Queue
+        </div>
+        <div class="nav-item" onclick="switchTab('book')">
+            <span class="nav-icon">📅</span>
+            Book
+        </div>
+        <div class="nav-item" onclick="switchTab('more')">
+            <span class="nav-icon">⚙️</span>
+            More
+        </div>
+    </nav>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;">
+        <div class="card" style="width:100%;max-width:400px;">
+            <div class="card-title">Patient Login</div>
+            <div class="form-group">
+                <label class="form-label">Patient Number</label>
+                <input type="text" class="form-input" id="loginPatientNumber" placeholder="PT-123456">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" class="form-input" id="loginPhone" placeholder="+254700000000">
+            </div>
+            <button class="btn btn-primary" onclick="doLogin()">Login</button>
+            <button class="btn btn-outline" onclick="hideLogin()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentUser = null;
+        let departments = [];
+        
+        // Initialize
+        async function init() {
+            await loadDepartments();
+            await loadQueueStatus();
+            
+            // Poll for updates
+            setInterval(loadQueueStatus, 10000);
+        }
+
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const navIndex = ['home', 'queue', 'book', 'more'].indexOf(tabId);
+            document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
+        }
+
+        // Load departments
+        async function loadDepartments() {
+            try {
+                const res = await fetch('/api/departments');
+                departments = await res.json();
+                
+                // Populate select
+                const select = document.getElementById('deptSelect');
+                select.innerHTML = '<option value="">Select Department</option>';
+                departments.filter(d => d.is_active).forEach(dept => {
+                    select.innerHTML += `<option value="${dept.code}">${dept.icon} ${dept.name}</option>`;
+                });
+                
+                // Populate queue list
+                const list = document.getElementById('deptList');
+                list.innerHTML = departments.filter(d => d.is_active).map(dept => `
+                    <div style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1); display:flex;justify-content:space-between;">
+                        <span>${dept.icon} ${dept.name}</span>
+                        <span style="color: var(--primary);">View →</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading departments:', e);
+            }
+        }
+
+        // Get ticket
+        async function getTicket() {
+            const patientNumber = document.getElementById('patientNumber').value;
+            const department = document.getElementById('deptSelect').value;
+            const priority = document.getElementById('prioritySelect').value;
+            
+            if (!department) {
+                alert('Please select a department');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/queue/fast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        department,
+                        priority: priority !== 'normal',
+                        priority_reason: priority,
+                        patient_number: patientNumber
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert(`Ticket: ${data.ticket.ticket_number}\nDepartment: ${data.ticket.department_name}\nPosition: ${data.ticket.position}`);
+                    loadQueueStatus();
+                    switchTab('home');
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to get ticket'));
+                }
+            } catch (e) {
+                alert('Error getting ticket');
+            }
+        }
+
+        // Check status
+        async function checkStatus() {
+            showLogin();
+        }
+
+        // Load queue status
+        async function loadQueueStatus() {
+            if (!currentUser) return;
+            
+            try {
+                const res = await fetch(`/api/queue/patient/${currentUser.patient_number}`);
+                const data = await res.json();
+                
+                if (data.ticket) {
+                    document.getElementById('myTicket').textContent = data.ticket.ticket_number;
+                    document.getElementById('waitTime').textContent = data.ticket.wait_time || '--';
+                    document.getElementById('queuePosition').textContent = data.ticket.position || '--';
+                    
+                    const statusEl = document.getElementById('myStatus');
+                    statusEl.textContent = data.ticket.status.toUpperCase();
+                    statusEl.className = 'status-badge status-' + data.ticket.status;
+                }
+            } catch (e) {
+                console.error('Error loading status:', e);
+            }
+        }
+
+        // Login
+        function showLogin() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        function hideLogin() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        async function doLogin() {
+            const patientNumber = document.getElementById('loginPatientNumber').value;
+            const phone = document.getElementById('loginPhone').value;
+            
+            if (!patientNumber || !phone) {
+                alert('Please enter patient number and phone');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/auth/patient/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ patient_number: patientNumber, phone })
+                });
+                
+                const data = await res.json();
+                
+                if (data.token) {
+                    currentUser = { patient_number: patientNumber, token: data.token };
+                    localStorage.setItem('patientUser', JSON.stringify(currentUser));
+                    document.getElementById('userBtn').textContent = '👤';
+                    hideLogin();
+                    loadQueueStatus();
+                } else {
+                    alert('Login failed');
+                }
+            } catch (e) {
+                alert('Login error');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('patientUser');
+            document.getElementById('userBtn').textContent = '👤';
+            document.getElementById('myTicket').textContent = '--';
+            document.getElementById('myStatus').textContent = 'No Active Ticket';
+            document.getElementById('waitTime').textContent = '--';
+            document.getElementById('queuePosition').textContent = '--';
+            switchTab('home');
+        }
+
+        function bookAppointment() {
+            alert('Appointment booking coming soon!');
+        }
+
+        function viewHistory() {
+            alert('Visit history coming soon!');
+        }
+
+        function giveFeedback() {
+            alert('Feedback form coming soon!');
+        }
+
+        function viewPrescriptions() {
+            alert('Prescriptions coming soon!');
+        }
+
+        // Check for existing session
+        const savedUser = localStorage.getItem('patientUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((reg) => console.log('SW registered:', reg.scope))
+                    .catch((err) => console.error('SW registration failed:', err));
+            });
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>

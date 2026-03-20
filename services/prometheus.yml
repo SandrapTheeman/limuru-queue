@@ -1,0 +1,57 @@
+# Hospital Queue Management System - Monitoring Configuration
+
+## Prometheus Configuration
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'limuru-cottage-hospital'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - 'prometheus-alerts.yml'
+
+scrape_configs:
+  # HQS API Server
+  - job_name: 'hqs-api'
+    static_configs:
+      - targets: ['hqs-api:8787']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'hospital-queue-api'
+
+  # HQS Web Application
+  - job_name: 'hqs-web'
+    static_configs:
+      - targets: ['hqs-web:80']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # PostgreSQL Database
+  - job_name: 'hqs-database'
+    static_configs:
+      - targets: ['hqs-db:5432']
+    scrape_interval: 30s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter (if running on hosts)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']

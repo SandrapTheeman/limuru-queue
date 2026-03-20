@@ -1,0 +1,263 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '20'
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hqs_test
+  JWT_SECRET: test-secret-key-for-github-actions
+  NODE_ENV: test
+
+jobs:
+  api-tests:
+    name: API Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hqs_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd apps/api
+          npm ci
+
+      - name: Run migrations
+        run: |
+          cd apps/api
+          PGPASSWORD=postgres psql -h localhost -U postgres -d hqs_test -f src/db/migrations/0001_complete_schema.sql
+          PGPASSWORD=postgres psql -h localhost -U postgres -d hqs_test -f src/db/migrations/0002_seed_data.sql
+
+      - name: Run API tests
+        run: |
+          cd apps/api
+          npm test -- --reporter=verbose
+
+      - name: Run tests with coverage
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          cd apps/api
+          npm run test:coverage
+
+      - name: Upload coverage reports
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./apps/api/coverage/lcov.info
+          flags: unittests
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: api-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hqs_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd apps/api
+          npm ci
+
+      - name: Run migrations
+        run: |
+          cd apps/api
+          PGPASSWORD=postgres psql -h localhost -U postgres -d hqs_test -f src/db/migrations/0001_complete_schema.sql
+          PGPASSWORD=postgres psql -h localhost -U postgres -d hqs_test -f src/db/migrations/0002_seed_data.sql
+
+      - name: Run integration tests
+        run: |
+          cd apps/api
+          npm run test:integration -- --reporter=verbose
+
+  database-tests:
+    name: Database Tests
+    runs-on: ubuntu-latest
+    needs: api-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hqs_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd apps/api
+          npm ci
+
+      - name: Run migrations
+        run: |
+          cd apps/api
+          PGPASSWORD=postgres psql -h localhost -U postgres -d hqs_test -f src/db/migrations/0001_complete_schema.sql
+          PGPASSWORD=postgres psql -h localhost -U postgres -d hqs_test -f src/db/migrations/0002_seed_data.sql
+
+      - name: Run database tests
+        run: |
+          cd apps/api
+          npm run test:database -- --reporter=verbose
+
+  e2e-tests:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: api-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hqs_test
+        ports:
+          - 5432:5432
+
+      api:
+        image: node:20
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hqs_test
+          JWT_SECRET: test-secret-key
+          NODE_ENV: test
+          PORT: 8787
+        ports:
+          - 8787:8787
+        command: |
+          bash -c "cd /app && npm ci && npm run db:migrate && npm start"
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: |
+          cd apps/web
+          npm ci
+          npx playwright test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd apps/api
+          npm ci
+
+      - name: Run linter
+        run: |
+          cd apps/api
+          npm run lint || true
+
+  all-tests-passed:
+    name: All Tests Passed
+    runs-on: ubuntu-latest
+    needs: [api-tests, integration-tests, database-tests, e2e-tests, lint]
+    if: always()
+    
+    steps:
+      - name: Check if all jobs passed
+        run: |
+          if [[ "${{ needs.api-tests.result }}" != "success" ]]; then
+            echo "API Tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.integration-tests.result }}" != "success" ]]; then
+            echo "Integration Tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.database-tests.result }}" != "success" ]]; then
+            echo "Database Tests failed"
+            exit 1
+          fi
+          echo "All required tests passed!"

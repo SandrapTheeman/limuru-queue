@@ -1,0 +1,13 @@
+import { Hono } from 'hono';
+import type { Bindings } from '../types';
+
+const health = new Hono<{ Bindings: Bindings }>();
+
+health.get('/', async (c) => {
+  return c.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+export { health };

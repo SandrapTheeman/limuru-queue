@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications | Limuru Cottage Hospital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/glassmorphism.css">
+    <style>
+        :root {
+            --bg-gradient-start: #030712;
+            --bg-gradient-mid: #0f172a;
+            --teal: #14b8a6;
+            --teal-dark: #0d9488;
+            --surface: rgba(255, 255, 255, 0.04);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --muted: rgba(255, 255, 255, 0.5);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --whatsapp: #25D366;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 50%, #134e4a 100%);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background: linear-gradient(180deg, rgba(13, 148, 136, 0.08) 0%, rgba(3, 7, 18, 0.98) 100%);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            margin-bottom: 32px;
+        }
+
+        .sidebar-logo .icon { font-size: 2rem; }
+        .sidebar-logo .text { font-weight: 700; font-size: 0.875rem; }
+        .sidebar-logo .sub { font-size: 0.6875rem; color: var(--muted); }
+
+        .nav-section { margin-bottom: 24px; }
+        .nav-section-title {
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            padding: 0 16px;
+            margin-bottom: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 4px;
+            transition: all 150ms ease;
+            font-size: 0.875rem;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: rgba(13, 148, 136, 0.2);
+            color: var(--teal);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* MAIN CONTENT */
+        .main {
+            padding: 24px 32px;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .header-meta {
+            font-size: 0.8125rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.6875rem;
+        }
+
+        /* STATS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            text-align: center;
+            transition: all 200ms ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(13, 148, 136, 0.4);
+        }
+
+        .stat-card .icon { font-size: 1.5rem; margin-bottom: 8px; }
+        .stat-card .value { font-size: 1.75rem; font-weight: 700; color: var(--teal); }
+        .stat-card .label {
+            font-size: 0.6875rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 4px;
+        }
+
+        /* TABS */
+        .tabs-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 6px;
+            margin-bottom: 24px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+        }
+
+        .tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 16px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--muted);
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: var(--surface-hover);
+        }
+
+        .tab.active {
+            color: var(--text);
+        }
+
+        .tab[data-tab="sms"].active { background: linear-gradient(135deg, rgba(13, 148, 136, 0.4), rgba(20, 184, 166, 0.3)); }
+        .tab[data-tab="whatsapp"].active { background: linear-gradient(135deg, rgba(37, 211, 102, 0.4), rgba(18, 140, 126, 0.3)); }
+        .tab[data-tab="email"].active { background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(37, 99, 235, 0.3)); }
+        .tab[data-tab="templates"].active { background: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(139, 92, 246, 0.3)); }
+        .tab[data-tab="history"].active { background: linear-gradient(135deg, rgba(245, 158, 11, 0.4), rgba(217, 119, 6, 0.3)); }
+
+        .tab-icon { width: 20px; height: 20px; }
+
+        /* TAB CONTENT */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* SEND FORM */
+        .send-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            outline: none;
+            transition: all 150ms ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .form-textarea { min-height: 120px; resize: vertical; }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2314b8a6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .form-select option { background: #0f172a; }
+
+        /* Multi-select for bulk */
+        .multi-select {
+            position: relative;
+        }
+
+        .multi-select-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px 12px;
+            min-height: 44px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .multi-select-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(13, 148, 136, 0.2);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--teal);
+        }
+
+        .multi-select-tag button {
+            background: none;
+            border: none;
+            color: var(--teal);
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-top: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .multi-select-dropdown.show { display: block; }
+
+        .multi-select-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 100ms;
+        }
+
+        .multi-select-option:hover { background: var(--surface-hover); }
+
+        /* Character Count */
+        .char-count {
+            font-size: 0.6875rem;
+            color: var(--muted);
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .char-count.warn { color: var(--warning); }
+        .char-count.danger { color: var(--danger); }
+
+        /* Preview Box */
+        .preview-box {
+            padding: 14px;
+            background: rgba(13, 148, 136, 0.08);
+            border: 1px solid rgba(13, 148, 136, 0.2);
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            min-height: 80px;
+        }
+
+        .preview-box.whatsapp {
+            background: rgba(37, 211, 102, 0.08);
+            border-color: rgba(37, 211, 102, 0.2);
+        }
+
+        .preview-box.email {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: inherit;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-sms {
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+        }
+
+        .btn-sms:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-whatsapp {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+        }
+
+        .btn-whatsapp:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-email {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-email:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-templates {
+            background: linear-gradient(135deg, #a855f7, #8b5cf6);
+            color: white;
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--surface-hover);
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 0.75rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* History Table */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .table th {
+            padding: 14px 16px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--teal);
+            text-align: left;
+            background: rgba(13, 148, 136, 0.1);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table td {
+            padding: 14px 16px;
+            font-size: 0.8125rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table tr:last-child td { border-bottom: none; }
+        .table tr:hover td { background: rgba(13, 148, 136, 0.05); }
+
+        .channel-icon { margin-right: 6px; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-radius: 20px;
+        }
+
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-sent { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-delivered { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-failed { background: rgba(220, 38, 38, 0.2); color: var(--danger); }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--muted);
+        }
+
+        .empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
+
+        /* Templates Grid */
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .template-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .template-card:hover {
+            border-color: rgba(168, 85, 247, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .template-card.selected {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .template-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+
+        .template-desc {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .template-preview {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            line-height: 1.5;
+        }
+
+        .template-vars {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .var-tag {
+            font-size: 0.625rem;
+            padding: 2px 6px;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border-radius: 4px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 14px 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .toast.success { border: 1px solid rgba(16, 185, 129, 0.5); }
+        .toast.error { border: 1px solid rgba(220, 38, 38, 0.5); }
+        .toast.info { border: 1px solid rgba(59, 130, 246, 0.5); }
+
+        .toast-icon { font-size: 1.125rem; }
+        .toast-msg { font-size: 0.875rem; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 1024px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .send-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .tabs { flex-wrap: wrap; }
+            .tab { flex: none; width: calc(50% - 2px); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(13, 148, 136, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(13, 148, 136, 0.5); }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="icon">🏥</span>
+                <div>
+                    <div class="text">Limuru Cottage</div>
+                    <div class="sub">Queue Management</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="/dashboard.html" class="nav-item"><span>📊</span> Dashboard</a>
+                <a href="/queue.html" class="nav-item"><span>📋</span> Queue</a>
+                <a href="/patients.html" class="nav-item"><span>👥</span> Patients</a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Communication</div>
+                <a href="/notifications.html" class="nav-item active"><span>🔔</span> Notifications</a>
+                <a href="/reports.html" class="nav-item"><span>📈</span> Reports</a>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item" onclick="Auth.logout(); return false;"><span>🚪</span> Logout</a>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="header">
+                <div>
+                    <h1>Notifications</h1>
+                    <div class="header-meta" id="dateTime"></div>
+                </div>
+                <div class="user-badge">
+                    <div class="user-avatar" id="userAvatar">--</div>
+                    <span id="userRole">Loading...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon">📱</div>
+                    <div class="value" id="statTotal">0</div>
+                    <div class="label">Total Sent</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">✅</div>
+                    <div class="value" id="statDelivered">0</div>
+                    <div class="label">Delivered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">⏳</div>
+                    <div class="value" id="statPending">0</div>
+                    <div class="label">Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">❌</div>
+                    <div class="value" id="statFailed">0</div>
+                    <div class="label">Failed</div>
+                </div>
+            </div>
+
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab active" data-tab="sms">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/></svg>
+                        SMS
+                    </button>
+                    <button class="tab" data-tab="whatsapp">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        WhatsApp
+                    </button>
+                    <button class="tab" data-tab="email">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        Email
+                    </button>
+                    <button class="tab" data-tab="templates">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                        Templates
+                    </button>
+                    <button class="tab" data-tab="history">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                        History
+                    </button>
+                </div>
+            </div>
+
+            <!-- SMS Tab -->
+            <div class="tab-content active" id="tab-sms">
+                <div class="send-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><span>📱</span> Send SMS</h3>
+                            <button class="btn btn-secondary btn-sm" onclick="sendTest('sms')">Send Test</button>
+                        </div>
+                        <form id="smsForm" onsubmit="sendMessage(event, 'sms')">
+                            <div class="form-group">
+                                <label class="form-label">Recipients</label>
+                                <select class="form-select" id="smsRecipientType" onchange="toggleRecipientType('sms')">
+                                    <option value="single">Single Recipient</option>
+                                    <option value="bulk">Bulk Send</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="smsSingleGroup">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="smsPhone" placeholder="+254700000000">
+                            </div>
+                            <div class="form-group" id="smsBulkGroup" style="display:none">
+                                <label class="form-label">Select Recipients</label>
+                                <select class="form-select" id="smsBulkSelect" multiple size="4">
+                                    <option value="all_waiting">All Waiting Patients</option>
+                                    <option value="all_called">All Called Patients</option>
+                                    <option value="priority">Priority Patients</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Template</label>
+                                <select class="form-select" id="smsTemplate" onchange="updatePreview('sms')">
+                                    <option value="">Select template...</option>
+                                    <option value="queue_called">Queue Called</option>
+                                    <option value="queue_updated">Queue Updated</option>
+                                    <option value="appointment_reminder">Appointment Reminder</option>
+                                    <option value="custom">Custom Message</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Message</label>
+                                <textarea class="form-textarea" id="smsMessage" placeholder="Your message..." oninput="updateCharCount('sms')"></textarea>
+                                <div class="char-count" id="smsCharCount">0 / 160</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Preview</label>
+                                <div class="preview-box" id="smsPreview">Select a template to preview...</div>
+                            </div>
+                            <button type="submit" class="btn btn-sms btn-block" id="smsSendBtn">📱 Send SMS</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><span>📜</span> Recent SMS</h3>
+                            <button class="btn btn-secondary btn-sm" onclick="loadHistory()">🔄 Refresh</button>
+                        </div>
+                        <div id="smsHistoryList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WhatsApp Tab -->
+            <div class="tab-content" id="tab-whatsapp">
+                <div class="send-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><span>💬</span> Send WhatsApp</h3>
+                            <button class="btn btn-secondary btn-sm" onclick="sendTest('whatsapp')">Send Test</button>
+                        </div>
+                        <form id="whatsappForm" onsubmit="sendMessage(event, 'whatsapp')">
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="whatsappPhone" placeholder="+254700000000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Template</label>
+                                <select class="form-select" id="whatsappTemplate" onchange="updatePreview('whatsapp')">
+                                    <option value="">Select template...</option>
+                                    <option value="queue_called">Queue Called</option>
+                                    <option value="queue_updated">Queue Updated</option>
+                                    <option value="appointment_reminder">Appointment Reminder</option>
+                                    <option value="custom">Custom Message</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Message</label>
+                                <textarea class="form-textarea" id="whatsappMessage" placeholder="Your message..." oninput="updateCharCount('whatsapp')"></textarea>
+                                <div class="char-count" id="whatsappCharCount">0 / 1024</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Preview</label>
+                                <div class="preview-box whatsapp" id="whatsappPreview">Select a template to preview...</div>
+                            </div>
+                            <button type="submit" class="btn btn-whatsapp btn-block" id="whatsappSendBtn">💬 Send WhatsApp</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><span>📜</span> Recent WhatsApp</h3>
+                        </div>
+                        <div id="whatsappHistoryList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Tab -->
+            <div class="tab-content" id="tab-email">
+                <div class="send-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><span>📧</span> Send Email</h3>
+                            <button class="btn btn-secondary btn-sm" onclick="sendTest('email')">Send Test</button>
+                        </div>
+                        <form id="emailForm" onsubmit="sendMessage(event, 'email')">
+                            <div class="form-group">
+                                <label class="form-label">To Email</label>
+                                <input type="email" class="form-input" id="emailAddress" placeholder="patient@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Subject</label>
+                                <input type="text" class="form-input" id="emailSubject" placeholder="Appointment Reminder">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Template</label>
+                                <select class="form-select" id="emailTemplate" onchange="updatePreview('email')">
+                                    <option value="">Select template...</option>
+                                    <option value="queue_called">Queue Called</option>
+                                    <option value="queue_updated">Queue Updated</option>
+                                    <option value="appointment_reminder">Appointment Reminder</option>
+                                    <option value="custom">Custom Message</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Message</label>
+                                <textarea class="form-textarea" id="emailMessage" style="min-height:150px" placeholder="Your message..." oninput="updateCharCount('email')"></textarea>
+                                <div class="char-count" id="emailCharCount">0 / 5000</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Preview</label>
+                                <div class="preview-box email" id="emailPreview">Select a template to preview...</div>
+                            </div>
+                            <button type="submit" class="btn btn-email btn-block" id="emailSendBtn">📧 Send Email</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><span>📜</span> Recent Emails</h3>
+                        </div>
+                        <div id="emailHistoryList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div class="tab-content" id="tab-templates">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><span>📝</span> Notification Templates</h3>
+                        <p style="font-size:0.75rem;color:var(--muted);margin:0">Click a template to use it. Variables will be substituted automatically.</p>
+                    </div>
+                    <div class="templates-grid" id="templatesGrid"></div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="tab-content" id="tab-history">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><span>📋</span> Notification History</h3>
+                        <div class="btn-group">
+                            <select class="form-select" id="historyChannel" style="width:auto;padding:8px 12px">
+                                <option value="">All Channels</option>
+                                <option value="sms">SMS</option>
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="email">Email</option>
+                            </select>
+                            <button class="btn btn-secondary btn-sm" onclick="loadHistory()">🔄 Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Recipient</th>
+                                    <th>Channel</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Sent</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTable">
+                                <tr><td colspan="6" class="empty-state">Loading history...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/api-client.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        const TEMPLATES = {
+            queue_called: {
+                name: 'Queue Called',
+                desc: 'Notify patient when their number is called',
+                template: 'Hello {name}, your ticket #{ticket} has been called. Please proceed to Room {room} immediately.',
+                vars: ['{name}', '{ticket}', '{room}']
+            },
+            queue_updated: {
+                name: 'Queue Updated',
+                desc: 'Update patient on their queue position',
+                template: 'Hello {name}, your queue position is now #{position}. Estimated wait: {wait} minutes. Thank you for your patience.',
+                vars: ['{name}', '{position}', '{wait}']
+            },
+            appointment_reminder: {
+                name: 'Appointment Reminder',
+                desc: 'Remind patient of upcoming appointment',
+                template: 'Reminder: Your appointment at Limuru Cottage Hospital is scheduled for {date} at {time}. Please arrive 15 minutes early.',
+                vars: ['{date}', '{time}']
+            },
+            queue_complete: {
+                name: 'Service Complete',
+                desc: 'Notify patient their service is complete',
+                template: 'Hello {name}, your service at {department} is complete. Thank you for choosing Limuru Cottage Hospital.',
+                vars: ['{name}', '{department}']
+            },
+            wait_time_alert: {
+                name: 'Wait Time Alert',
+                desc: 'Alert patient about extended wait time',
+                template: 'Hello {name}, we apologize for the longer wait. Your estimated wait time is now {wait} minutes. Thank you for understanding.',
+                vars: ['{name}', '{wait}']
+            },
+            custom: {
+                name: 'Custom Message',
+                desc: 'Write your own message',
+                template: '',
+                vars: []
+            }
+        };
+
+        let currentTab = 'sms';
+        let historyData = [];
+        let selectedTemplate = null;
+
+        Auth.requireAuth();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = Auth.getUser();
+            if (user) {
+                document.getElementById('userAvatar').textContent = (user.name || 'U').substring(0, 2).toUpperCase();
+                document.getElementById('userRole').textContent = user.role || 'User';
+            }
+
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+
+            setupTabs();
+            renderTemplates();
+            loadHistory();
+            setInterval(loadHistory, 30000);
+        });
+
+        function updateDateTime() {
+            document.getElementById('dateTime').textContent = new Date().toLocaleDateString('en-KE', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tab}`);
+            });
+        }
+
+        function renderTemplates() {
+            const grid = document.getElementById('templatesGrid');
+            grid.innerHTML = Object.entries(TEMPLATES).map(([key, template]) => `
+                <div class="template-card" data-template="${key}" onclick="selectTemplate('${key}')">
+                    <div class="template-name">${template.name}</div>
+                    <div class="template-desc">${template.desc}</div>
+                    <div class="template-preview">${template.template || 'Enter your custom message...'}</div>
+                    ${template.vars.length ? `<div class="template-vars">${template.vars.map(v => `<span class="var-tag">${v}</span>`).join('')}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function selectTemplate(key) {
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.template === key);
+            });
+
+            selectedTemplate = key;
+            const template = TEMPLATES[key];
+
+            if (currentTab === 'sms') {
+                document.getElementById('smsTemplate').value = key;
+                updatePreview('sms');
+            } else if (currentTab === 'whatsapp') {
+                document.getElementById('whatsappTemplate').value = key;
+                updatePreview('whatsapp');
+            } else if (currentTab === 'email') {
+                document.getElementById('emailTemplate').value = key;
+                updatePreview('email');
+            }
+        }
+
+        function updatePreview(channel) {
+            let templateKey, messageInput, previewBox;
+
+            if (channel === 'sms') {
+                templateKey = document.getElementById('smsTemplate').value;
+                messageInput = document.getElementById('smsMessage');
+                previewBox = document.getElementById('smsPreview');
+            } else if (channel === 'whatsapp') {
+                templateKey = document.getElementById('whatsappTemplate').value;
+                messageInput = document.getElementById('whatsappMessage');
+                previewBox = document.getElementById('whatsappPreview');
+            } else {
+                templateKey = document.getElementById('emailTemplate').value;
+                messageInput = document.getElementById('emailMessage');
+                previewBox = document.getElementById('emailPreview');
+            }
+
+            if (!templateKey) {
+                previewBox.textContent = 'Select a template to preview...';
+                messageInput.value = '';
+                return;
+            }
+
+            const template = TEMPLATES[templateKey];
+            if (template && template.template) {
+                const preview = template.template
+                    .replace('{name}', 'John Doe')
+                    .replace('{ticket}', 'A001')
+                    .replace('{room}', '101')
+                    .replace('{position}', '5')
+                    .replace('{wait}', '15')
+                    .replace('{date}', 'March 25, 2026')
+                    .replace('{time}', '10:00 AM')
+                    .replace('{department}', 'General');
+
+                previewBox.textContent = preview;
+                messageInput.value = template.template;
+            } else {
+                previewBox.textContent = 'Type your custom message below...';
+                messageInput.value = '';
+                messageInput.placeholder = 'Type your custom message...';
+            }
+
+            updateCharCount(channel);
+        }
+
+        function updateCharCount(channel) {
+            let messageInput, charCountEl, limit;
+
+            if (channel === 'sms') {
+                messageInput = document.getElementById('smsMessage');
+                charCountEl = document.getElementById('smsCharCount');
+                limit = 160;
+            } else if (channel === 'whatsapp') {
+                messageInput = document.getElementById('whatsappMessage');
+                charCountEl = document.getElementById('whatsappCharCount');
+                limit = 1024;
+            } else {
+                messageInput = document.getElementById('emailMessage');
+                charCountEl = document.getElementById('emailCharCount');
+                limit = 5000;
+            }
+
+            const len = messageInput.value.length;
+            charCountEl.textContent = `${len} / ${limit}`;
+            charCountEl.className = 'char-count' + (len > limit ? ' danger' : len > limit * 0.9 ? ' warn' : '');
+        }
+
+        function toggleRecipientType(channel) {
+            const type = document.getElementById(`${channel}RecipientType`)?.value;
+            const singleGroup = document.getElementById(`${channel}SingleGroup`);
+            const bulkGroup = document.getElementById(`${channel}BulkGroup`);
+
+            if (type === 'bulk') {
+                singleGroup.style.display = 'none';
+                bulkGroup.style.display = 'block';
+            } else {
+                singleGroup.style.display = 'block';
+                bulkGroup.style.display = 'none';
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const result = await api.notifications.list({ limit: 50 });
+                if (result.success) {
+                    historyData = result.data || [];
+                    renderHistory();
+                    updateStats();
+                } else {
+                    renderHistoryError('Failed to load history');
+                }
+            } catch (e) {
+                renderHistoryError('Connection error');
+            }
+        }
+
+        function renderHistory() {
+            const filtered = historyData.filter(n => !document.getElementById('historyChannel').value || n.type === document.getElementById('historyChannel').value);
+            
+            if (filtered.length === 0) {
+                document.getElementById('historyTable').innerHTML = `
+                    <tr><td colspan="6" class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        No notifications sent yet
+                    </td></tr>
+                `;
+                return;
+            }
+
+            document.getElementById('historyTable').innerHTML = filtered.map(n => {
+                const date = new Date(n.created_at || n.sent_at).toLocaleString('en-KE', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const icon = n.type === 'sms' ? '📱' : n.type === 'whatsapp' ? '💬' : '📧';
+                const msg = (n.message || n.content || '').substring(0, 50) + (n.message?.length > 50 ? '...' : '');
+
+                return `
+                    <tr>
+                        <td>${escHtml(n.recipient || n.phone || n.email || '--')}</td>
+                        <td><span class="channel-icon">${icon}</span>${(n.type || 'sms').toUpperCase()}</td>
+                        <td>${escHtml(msg)}</td>
+                        <td><span class="badge badge-${n.status || 'pending'}">${n.status || 'pending'}</span></td>
+                        <td>${date}</td>
+                        <td><button class="btn btn-secondary btn-sm" onclick="resendNotification('${n.id}')">Resend</button></td>
+                    </tr>
+                `;
+            }).join('');
+
+            renderRecentLists();
+        }
+
+        function renderRecentLists() {
+            const sms = historyData.filter(n => n.type === 'sms').slice(0, 5);
+            const whatsapp = historyData.filter(n => n.type === 'whatsapp').slice(0, 5);
+            const email = historyData.filter(n => n.type === 'email').slice(0, 5);
+
+            const renderList = (items, type) => {
+                if (items.length === 0) {
+                    return '<div class="empty-state"><div class="empty-icon">📭</div>No recent messages</div>';
+                }
+                return items.map(n => `
+                    <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                            <span style="font-weight:500">${escHtml(n.recipient || n.phone || n.email || '--')}</span>
+                            <span class="badge badge-${n.status || 'pending'}">${n.status || 'pending'}</span>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--muted)">${new Date(n.created_at).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            };
+
+            document.getElementById('smsHistoryList').innerHTML = renderList(sms, 'sms');
+            document.getElementById('whatsappHistoryList').innerHTML = renderList(whatsapp, 'whatsapp');
+            document.getElementById('emailHistoryList').innerHTML = renderList(email, 'email');
+        }
+
+        function renderHistoryError(msg) {
+            document.getElementById('historyTable').innerHTML = `
+                <tr><td colspan="6" class="empty-state">
+                    <div class="empty-icon">⚠️</div>
+                    ${msg}
+                </td></tr>
+            `;
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').textContent = historyData.length;
+            document.getElementById('statDelivered').textContent = historyData.filter(n => n.status === 'delivered').length;
+            document.getElementById('statPending').textContent = historyData.filter(n => n.status === 'pending').length;
+            document.getElementById('statFailed').textContent = historyData.filter(n => n.status === 'failed').length;
+        }
+
+        async function sendMessage(e, channel) {
+            e.preventDefault();
+            
+            const btn = document.getElementById(`${channel}SendBtn`);
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner"></span> Sending...';
+            btn.disabled = true;
+
+            let phone, email, subject, message, template;
+
+            if (channel === 'sms') {
+                phone = document.getElementById('smsPhone').value.trim();
+                message = document.getElementById('smsMessage').value.trim();
+                template = document.getElementById('smsTemplate').value;
+            } else if (channel === 'whatsapp') {
+                phone = document.getElementById('whatsappPhone').value.trim();
+                message = document.getElementById('whatsappMessage').value.trim();
+                template = document.getElementById('whatsappTemplate').value;
+            } else {
+                email = document.getElementById('emailAddress').value.trim();
+                subject = document.getElementById('emailSubject').value.trim();
+                message = document.getElementById('emailMessage').value.trim();
+                template = document.getElementById('emailTemplate').value;
+            }
+
+            if (!message) {
+                showToast('Please enter a message', 'error');
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                return;
+            }
+
+            if (channel !== 'sms' && !phone && !email) {
+                showToast('Please enter recipient', 'error');
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                let result;
+                const data = { template, message };
+
+                if (channel === 'sms') {
+                    data.phone = phone;
+                    result = await api.notifications.sms(data);
+                } else if (channel === 'whatsapp') {
+                    data.phone = phone;
+                    result = await api.notifications.whatsapp(data);
+                } else {
+                    data.email = email;
+                    data.subject = subject || 'Notification from Limuru Cottage Hospital';
+                    result = await api.notifications.email(data);
+                }
+
+                if (result.success) {
+                    showToast(`${channel === 'whatsapp' ? 'WhatsApp' : channel === 'email' ? 'Email' : 'SMS'} sent successfully!`, 'success');
+                    
+                    if (channel === 'sms') {
+                        document.getElementById('smsPhone').value = '';
+                    } else if (channel === 'whatsapp') {
+                        document.getElementById('whatsappPhone').value = '';
+                    } else {
+                        document.getElementById('emailAddress').value = '';
+                        document.getElementById('emailSubject').value = '';
+                    }
+                    
+                    await loadHistory();
+                } else {
+                    showToast(result.error || 'Failed to send', 'error');
+                }
+            } catch (e) {
+                showToast('Connection error', 'error');
+            }
+
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
+
+        async function sendTest(channel) {
+            const user = Auth.getUser();
+            if (!user) return;
+
+            showToast(`Sending test ${channel} to your registered contact...`, 'info');
+
+            const data = {
+                template: 'queue_called',
+                message: TEMPLATES.queue_called.template.replace('{name}', user.name || 'Test User').replace('{ticket}', 'TEST').replace('{room}', '1')
+            };
+
+            if (channel === 'email' && user.email) {
+                data.email = user.email;
+                data.subject = 'Test Email from Limuru Cottage Hospital';
+                await api.notifications.email(data);
+            } else if (user.phone) {
+                data.phone = user.phone;
+                await api.notifications.sms(data);
+            } else {
+                showToast('No contact info found for test', 'error');
+                return;
+            }
+
+            showToast('Test message sent!', 'success');
+        }
+
+        async function resendNotification(id) {
+            const notification = historyData.find(n => n.id === id);
+            if (!notification) return;
+
+            showToast('Resending notification...', 'info');
+
+            try {
+                const data = {
+                    template: notification.template,
+                    message: notification.message
+                };
+
+                let result;
+                if (notification.type === 'email') {
+                    data.email = notification.email || notification.recipient;
+                    data.subject = notification.subject;
+                    result = await api.notifications.email(data);
+                } else {
+                    data.phone = notification.phone || notification.recipient;
+                    if (notification.type === 'whatsapp') {
+                        result = await api.notifications.whatsapp(data);
+                    } else {
+                        result = await api.notifications.sms(data);
+                    }
+                }
+
+                if (result.success) {
+                    showToast('Notification resent!', 'success');
+                    await loadHistory();
+                } else {
+                    showToast('Failed to resend', 'error');
+                }
+            } catch (e) {
+                showToast('Failed to resend', 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            toast.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-msg">${escHtml(message)}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s || '';
+            return d.innerHTML;
+        }
+
+        document.getElementById('historyChannel').addEventListener('change', renderHistory);
+
+        window.switchTab = switchTab;
+        window.updatePreview = updatePreview;
+        window.updateCharCount = updateCharCount;
+        window.loadHistory = loadHistory;
+        window.sendMessage = sendMessage;
+        window.sendTest = sendTest;
+        window.toggleRecipientType = toggleRecipientType;
+        window.selectTemplate = selectTemplate;
+        window.resendNotification = resendNotification;
+    })();
+    </script>
+</body>
+</html>

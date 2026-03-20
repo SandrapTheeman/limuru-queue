@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d9488">
+    <title>Login | Limuru Cottage Hospital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/glassmorphism.css">
+    <style>
+        :root {
+            --card-width: 440px;
+            --card-padding: 2.5rem;
+            --input-height: 56px;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: var(--space-4);
+            background: var(--bg-gradient);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(13, 148, 136, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, -2%) rotate(1deg); }
+            66% { transform: translate(-1%, 1%) rotate(-1deg); }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: var(--card-width);
+        }
+
+        .login-card {
+            width: 100%;
+            background: linear-gradient(145deg, rgba(13, 148, 136, 0.12) 0%, rgba(255, 255, 255, 0.04) 50%, rgba(13, 148, 136, 0.06) 100%);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(13, 148, 136, 0.25);
+            border-radius: var(--radius-2xl);
+            padding: var(--card-padding);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: var(--space-5);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--hospital-primary), var(--hospital-secondary));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 10px 40px rgba(13, 148, 136, 0.4),
+                0 0 0 4px rgba(255, 255, 255, 0.05);
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .logo svg {
+            width: 44px;
+            height: 44px;
+            color: white;
+        }
+
+        .hospital-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: var(--space-1);
+            letter-spacing: -0.02em;
+        }
+
+        .title {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            background: rgba(13, 148, 136, 0.2);
+            border: 1px solid rgba(13, 148, 136, 0.3);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--hospital-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: var(--space-4);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .role-badge.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .role-badge svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .error-container {
+            margin-bottom: var(--space-5);
+        }
+
+        .error {
+            display: none;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-4);
+            background: rgba(220, 38, 38, 0.12);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: var(--radius-lg);
+            color: #fca5a5;
+            font-size: 0.875rem;
+        }
+
+        .error.visible {
+            display: flex;
+            animation: shakeError 0.5s ease;
+        }
+
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+            20%, 40%, 60%, 80% { transform: translateX(6px); }
+        }
+
+        .error svg {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .error-icon {
+            color: #ef4444;
+        }
+
+        .rate-limit-warning {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fcd34d;
+        }
+
+        .form {
+            margin-bottom: var(--space-6);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: var(--space-5);
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: var(--space-2);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: var(--space-4);
+            width: 20px;
+            height: 20px;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .input-group input {
+            width: 100%;
+            height: var(--input-height);
+            padding: 0 var(--space-4) 0 3rem;
+            font-size: 1rem;
+            font-family: var(--font-family);
+            color: white;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .input-group input:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .input-group input:focus {
+            border-color: var(--hospital-primary);
+            background: rgba(13, 148, 136, 0.1);
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+        }
+
+        .input-group input:focus + .input-icon,
+        .input-group input:focus ~ .input-icon {
+            color: var(--hospital-secondary);
+        }
+
+        .input-group.has-error input {
+            border-color: rgba(220, 38, 38, 0.5);
+            background: rgba(220, 38, 38, 0.08);
+        }
+
+        .input-group.has-error .input-icon {
+            color: rgba(220, 38, 38, 0.6);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: var(--space-4);
+            width: 24px;
+            height: 24px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .password-toggle:focus-visible {
+            outline: 2px solid var(--hospital-secondary);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-6);
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .remember-me input:checked + .checkbox-custom {
+            background: var(--hospital-primary);
+            border-color: var(--hospital-primary);
+        }
+
+        .checkbox-custom svg {
+            width: 14px;
+            height: 14px;
+            color: white;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s ease;
+        }
+
+        .remember-me input:checked + .checkbox-custom svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .remember-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+            user-select: none;
+        }
+
+        .forgot-password {
+            font-size: 0.875rem;
+            color: var(--hospital-secondary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-password:hover {
+            color: var(--hospital-primary);
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            height: var(--input-height);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: var(--font-family);
+            color: white;
+            background: linear-gradient(135deg, var(--hospital-primary), var(--hospital-secondary));
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(13, 148, 136, 0.45);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-loading {
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .demo-credentials {
+            margin-top: var(--space-6);
+            padding: var(--space-5);
+            background: rgba(13, 148, 136, 0.08);
+            border: 1px solid rgba(13, 148, 136, 0.2);
+            border-radius: var(--radius-lg);
+        }
+
+        .demo-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--hospital-secondary);
+            margin-bottom: var(--space-4);
+        }
+
+        .demo-header svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .demo-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8125rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: var(--space-2);
+        }
+
+        .demo-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .demo-row code {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+            padding: var(--space-1) var(--space-2);
+            border-radius: 6px;
+        }
+
+        .footer {
+            margin-top: var(--space-6);
+            padding-top: var(--space-6);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+        }
+
+        .footer a {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer a:hover {
+            color: var(--hospital-secondary);
+        }
+
+        .footer a svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .session-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: var(--space-4);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95));
+            color: #1e293b;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+            z-index: 1000;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .session-warning.visible {
+            transform: translateY(0);
+        }
+
+        .session-warning svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .reset-success {
+            background: rgba(22, 163, 74, 0.12);
+            border-color: rgba(22, 163, 74, 0.3);
+            color: #86efac;
+        }
+
+        @media (max-width: 480px) {
+            :root { --card-padding: 1.5rem; }
+            .logo { width: 64px; height: 64px; }
+            .logo svg { width: 36px; height: 36px; }
+            .hospital-name { font-size: 1.25rem; }
+            .title { font-size: 1rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="session-warning" id="sessionWarning" role="alert" aria-live="polite">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="sessionWarningText">Your session will expire in 5 minutes. Click to extend.</span>
+    </div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-container">
+                    <div class="logo" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="hospital-name">Limuru Cottage Hospital</h1>
+                <p class="title">Sign in to access your dashboard</p>
+                <div class="role-badge" id="roleBadge">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span id="roleText">Admin</span>
+                </div>
+            </div>
+
+            <div class="error-container">
+                <div id="error" class="error" role="alert">
+                    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span id="errorMsg">Invalid credentials. Please try again.</span>
+                </div>
+            </div>
+
+            <form class="form" id="loginForm" novalidate>
+                <div class="input-group" id="emailGroup">
+                    <label class="input-label" for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="email" placeholder="Enter your email" autocomplete="email" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    </div>
+                </div>
+
+                <div class="input-group" id="passwordGroup">
+                    <label class="input-label" for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg id="eyeOffIcon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <span class="checkbox-custom">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        <span class="remember-label">Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password" id="forgotPassword">Forgot password?</a>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn">
+                    <span id="btnText">Sign In</span>
+                </button>
+            </form>
+
+            <div class="demo-credentials">
+                <div class="demo-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    Demo Credentials
+                </div>
+                <div class="demo-row">
+                    <span>Email:</span>
+                    <code>admin@limuruhospital.co.ke</code>
+                </div>
+                <div class="demo-row">
+                    <span>Password:</span>
+                    <code>password123</code>
+                </div>
+            </div>
+
+            <div class="footer">
+                <a href="/">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        (function() {
+            'use strict';
+
+            const DOM = {
+                form: document.getElementById('loginForm'),
+                email: document.getElementById('email'),
+                password: document.getElementById('password'),
+                emailGroup: document.getElementById('emailGroup'),
+                passwordGroup: document.getElementById('passwordGroup'),
+                togglePassword: document.getElementById('togglePassword'),
+                eyeIcon: document.getElementById('eyeIcon'),
+                eyeOffIcon: document.getElementById('eyeOffIcon'),
+                rememberMe: document.getElementById('rememberMe'),
+                forgotPassword: document.getElementById('forgotPassword'),
+                submitBtn: document.getElementById('submitBtn'),
+                btnText: document.getElementById('btnText'),
+                error: document.getElementById('error'),
+                errorMsg: document.getElementById('errorMsg'),
+                roleBadge: document.getElementById('roleBadge'),
+                roleText: document.getElementById('roleText'),
+                sessionWarning: document.getElementById('sessionWarning'),
+                sessionWarningText: document.getElementById('sessionWarningText')
+            };
+
+            let loginAttempts = 0;
+            let lockoutUntil = null;
+            let sessionTimeout = null;
+            let warningTimeout = null;
+
+            function init() {
+                checkAuth();
+                setupEventListeners();
+                loadSavedCredentials();
+                checkURLParams();
+            }
+
+            function checkAuth() {
+                if (Auth.isAuthenticated()) {
+                    window.location.href = '/dashboard.html';
+                }
+            }
+
+            function checkURLParams() {
+                const params = new URLSearchParams(window.location.search);
+                
+                if (params.get('reset') === 'success') {
+                    showSuccess('Password reset email sent! Check your inbox.');
+                }
+                if (params.get('reason') === 'session_expired') {
+                    showError('Your session has expired. Please sign in again.');
+                }
+            }
+
+            function setupEventListeners() {
+                DOM.form.addEventListener('submit', handleSubmit);
+                DOM.togglePassword.addEventListener('click', togglePasswordVisibility);
+                DOM.forgotPassword.addEventListener('click', handleForgotPassword);
+                
+                ['email', 'password'].forEach(id => {
+                    document.getElementById(id).addEventListener('input', clearError);
+                });
+            }
+
+            function togglePasswordVisibility() {
+                const isPassword = DOM.password.type === 'password';
+                DOM.password.type = isPassword ? 'text' : 'password';
+                DOM.eyeIcon.style.display = isPassword ? 'none' : 'block';
+                DOM.eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+            }
+
+            function handleSubmit(e) {
+                e.preventDefault();
+
+                if (lockoutUntil && Date.now() < lockoutUntil) {
+                    const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000 / 60);
+                    showError(`Too many attempts. Try again in ${remaining} minute${remaining !== 1 ? 's' : ''}.`, true);
+                    return;
+                }
+
+                const email = DOM.email.value.trim();
+                const password = DOM.password.value;
+
+                if (!email || !password) {
+                    showError('Please enter both email and password.');
+                    if (!email) {
+                        DOM.emailGroup.classList.add('has-error');
+                        DOM.email.focus();
+                    } else {
+                        DOM.passwordGroup.classList.add('has-error');
+                        DOM.password.focus();
+                    }
+                    return;
+                }
+
+                login(email, password);
+            }
+
+            async function login(email, password) {
+                setLoading(true);
+                hideError();
+
+                try {
+                    await Auth.login(email, password);
+                    
+                    if (DOM.rememberMe.checked) {
+                        localStorage.setItem('hospital_queue_remember', email);
+                    } else {
+                        localStorage.removeItem('hospital_queue_remember');
+                    }
+
+                    loginAttempts = 0;
+                    showSuccess('Login successful! Redirecting...');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 500);
+
+                } catch (err) {
+                    loginAttempts++;
+                    
+                    if (loginAttempts >= 5) {
+                        lockoutUntil = Date.now() + 15 * 60 * 1000;
+                        showError('Too many failed attempts. Please wait 15 minutes.', true);
+                    } else {
+                        let msg = err.message || 'Login failed. Please try again.';
+                        if (msg.toLowerCase().includes('network')) {
+                            msg = 'Unable to connect. Check your internet connection.';
+                        } else if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
+                            msg = 'Invalid email or password.';
+                        }
+                        showError(msg);
+                    }
+
+                    DOM.password.value = '';
+                    DOM.password.focus();
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            async function handleForgotPassword(e) {
+                e.preventDefault();
+                
+                const email = DOM.email.value.trim();
+                
+                if (!email) {
+                    showError('Please enter your email address first.');
+                    DOM.email.focus();
+                    return;
+                }
+
+                try {
+                    const result = await api.auth.requestPasswordReset(email);
+                    
+                    if (result.success) {
+                        showSuccess('Password reset instructions sent to your email!');
+                    } else {
+                        showError(result.error || 'Failed to send reset email. Please try again.');
+                    }
+                } catch (err) {
+                    showError('Failed to send reset email. Please try again.');
+                }
+            }
+
+            function setLoading(loading) {
+                DOM.submitBtn.disabled = loading;
+                DOM.submitBtn.classList.toggle('btn-loading', loading);
+                DOM.btnText.innerHTML = loading 
+                    ? '<span class="spinner"></span> Signing in...' 
+                    : 'Sign In';
+            }
+
+            function showError(message, isRateLimit = false) {
+                DOM.errorMsg.textContent = message;
+                DOM.error.classList.add('visible');
+                if (isRateLimit) {
+                    DOM.error.classList.add('rate-limit-warning');
+                } else {
+                    DOM.error.classList.remove('rate-limit-warning');
+                }
+                
+                DOM.error.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function showSuccess(message) {
+                DOM.errorMsg.textContent = message;
+                DOM.error.classList.remove('rate-limit-warning');
+                DOM.error.classList.add('visible', 'reset-success');
+                
+                setTimeout(() => {
+                    hideError();
+                }, 5000);
+            }
+
+            function hideError() {
+                DOM.error.classList.remove('visible', 'rate-limit-warning', 'reset-success');
+            }
+
+            function clearError() {
+                DOM.emailGroup.classList.remove('has-error');
+                DOM.passwordGroup.classList.remove('has-error');
+                DOM.error.classList.remove('visible');
+            }
+
+            function loadSavedCredentials() {
+                const savedEmail = localStorage.getItem('hospital_queue_remember');
+                if (savedEmail) {
+                    DOM.email.value = savedEmail;
+                    DOM.rememberMe.checked = true;
+                }
+            }
+
+            function setupSessionWarning(token) {
+                clearTimeout(sessionTimeout);
+                clearTimeout(warningTimeout);
+
+                const payload = Auth._decodeToken(token);
+                if (!payload || !payload.exp) return;
+
+                const expiresAt = payload.exp * 1000;
+                const now = Date.now();
+                const warningDelay = expiresAt - now - (5 * 60 * 1000);
+                const logoutDelay = expiresAt - now;
+
+                if (warningDelay > 0) {
+                    warningTimeout = setTimeout(() => {
+                        showSessionWarning();
+                    }, warningDelay);
+                } else if (logoutDelay > 0) {
+                    showSessionWarning();
+                }
+
+                sessionTimeout = setTimeout(() => {
+                    Auth.logout();
+                }, logoutDelay);
+            }
+
+            function showSessionWarning() {
+                DOM.sessionWarning.classList.add('visible');
+                DOM.sessionWarningText.textContent = 'Your session will expire in 5 minutes. Click anywhere to extend.';
+                
+                const extendSession = async () => {
+                    const refreshed = await Auth.refreshToken();
+                    if (refreshed) {
+                        DOM.sessionWarning.classList.remove('visible');
+                        setupSessionWarning(Auth.getToken());
+                    }
+                };
+
+                const dismissWarning = () => {
+                    DOM.sessionWarning.classList.remove('visible');
+                    extendSession();
+                };
+
+                DOM.sessionWarning.onclick = dismissWarning;
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>

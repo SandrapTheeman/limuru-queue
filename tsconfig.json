@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "importHelpers": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "paths": {
+      "@hq/v2-api/*": ["./apps/api/src/*"],
+      "@hq/v2-web/*": ["./apps/web/src/*"],
+      "@hq/v2-shared/*": ["./packages/shared/src/*"],
+      "@hq/v2/db": ["./packages/db/src/index.ts"],
+      "@hq/v2/validators": ["./packages/validators/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next", "coverage", "*.test-output"]
+}

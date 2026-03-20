@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Limuru Queue",
+    "slug": "limuru-queue",
+    "version": "1.0.0",
+    "sdkVersion": "52.0.0",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "icon": "./icons/icon-512.png",
+    "splash": {
+      "backgroundColor": "#1E40AF"
+    },
+    "privacyConfig": "@experience/privacy/privacy-config",
+    "permissions": ["CAMERA", "NOTIFICATIONS"],
+    "extra": {
+      "eas": {
+        "projectId": "limuru-queue"
+      }
+    },
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "co.ke.limuruhospital.queue",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to scan QR codes.",
+        "NSUserNotificationUsageDescription": "We send notifications when your turn is near."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1E40AF"
+      },
+      "package": "co.ke.limuruhospital.queue",
+      "permissions": [
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1E40AF"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
+        }
+      ]
+    ],
+    "scheme": "hospitalqueue"
+  }
+}

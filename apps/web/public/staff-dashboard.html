@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - Limuru Cottage Hospital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/glassmorphism.css">
+    <style>
+        .app-layout{display:grid;grid-template-columns:1fr 360px;gap:var(--space-6);min-height:100vh;padding-top:72px}
+        @media(max-width:1024px){.app-layout{grid-template-columns:1fr}}
+        .app-header{position:fixed;top:0;left:0;right:0;height:72px;background:linear-gradient(135deg,rgba(3,7,18,0.95) 0%,rgba(13,148,136,0.1) 100%);backdrop-filter:var(--blur-md);border-bottom:1px solid rgba(13,148,136,0.2);z-index:var(--z-fixed);display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-6)}
+        .header-brand{display:flex;align-items:center;gap:var(--space-3)}
+        .header-brand-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--hospital-primary),var(--hospital-secondary));border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-size:1.25rem}
+        .header-brand-text h1{font-size:var(--text-lg);font-weight:600;margin:0;line-height:1.2}
+        .header-brand-text span{font-size:var(--text-xs);color:rgba(255,255,255,0.5)}
+        .header-actions{display:flex;align-items:center;gap:var(--space-4)}
+        .user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--hospital-primary),var(--hospital-secondary));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:var(--text-sm)}
+        .main-content{padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)}
+        .section-title{font-size:var(--text-lg);font-weight:600;margin-bottom:var(--space-4);display:flex;align-items:center;gap:var(--space-2)}
+        .section-title svg{width:20px;height:20px;color:var(--hospital-secondary)}
+        .dash-card{background:var(--glass-bg);backdrop-filter:var(--blur-sm);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:var(--space-5)}
+        .dash-card.featured{background:linear-gradient(135deg,rgba(13,148,136,0.12) 0%,rgba(20,184,166,0.06) 100%);border-color:rgba(13,148,136,0.2)}
+        .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4)}
+        @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+        .stat-box{text-align:center;padding:var(--space-4);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius-lg)}
+        .stat-value{font-size:var(--text-2xl);font-weight:700;color:var(--hospital-secondary)}
+        .stat-label{font-size:var(--text-xs);color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;margin-top:var(--space-1)}
+        .queue-list{display:flex;flex-direction:column;gap:var(--space-3);max-height:320px;overflow-y:auto}
+        .queue-item{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4);background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:var(--radius-lg);transition:all var(--transition-fast)}
+        .queue-item:hover{background:rgba(255,255,255,0.06);transform:translateX(4px)}
+        .queue-pos{width:32px;height:32px;border-radius:50%;background:rgba(13,148,136,0.2);color:var(--hospital-secondary);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:var(--text-sm);flex-shrink:0}
+        .queue-info{flex:1;min-width:0}
+        .queue-ticket{font-weight:700;color:var(--hospital-secondary)}
+        .queue-name{font-weight:500;font-size:var(--text-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .queue-meta{font-size:var(--text-xs);color:rgba(255,255,255,0.4)}
+        .sidebar{display:flex;flex-direction:column;gap:var(--space-5);padding:var(--space-6);border-left:1px solid var(--glass-border)}
+        @media(max-width:1024px){.sidebar{border-left:none;border-top:1px solid var(--glass-border)}}
+        .schedule-list,.message-list{display:flex;flex-direction:column;gap:var(--space-3);max-height:200px;overflow-y:auto}
+        .schedule-item,.message-item{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:rgba(255,255,255,0.03);border-radius:var(--radius-md)}
+        .message-item{cursor:pointer;transition:all var(--transition-fast)}
+        .message-item:hover,.message-item.unread{background:rgba(13,148,136,0.08)}
+        .message-item.unread{border-left:2px solid var(--hospital-primary)}
+        .message-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--hospital-primary),var(--hospital-secondary));display:flex;align-items:center;justify-content:center;font-size:var(--text-xs);font-weight:600;flex-shrink:0}
+        .message-content{flex:1;min-width:0}
+        .message-sender{font-size:var(--text-sm);font-weight:500}
+        .message-preview{font-size:var(--text-xs);color:rgba(255,255,255,0.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .message-time{font-size:var(--text-xs);color:rgba(255,255,255,0.3)}
+        .schedule-time{font-size:var(--text-sm);font-weight:600;color:var(--hospital-secondary);min-width:50px}
+        .schedule-info{flex:1}
+        .schedule-patient{font-size:var(--text-sm);font-weight:500}
+        .schedule-type{font-size:var(--text-xs);color:rgba(255,255,255,0.4)}
+        .staff-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-3)}
+        @media(max-width:640px){.staff-grid{grid-template-columns:1fr}}
+        .staff-card{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);background:rgba(255,255,255,0.03);border-radius:var(--radius-md)}
+        .staff-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--hospital-primary),var(--hospital-secondary));display:flex;align-items:center;justify-content:center;font-weight:600;font-size:var(--text-sm);flex-shrink:0}
+        .staff-info{flex:1;min-width:0}
+        .staff-name{font-weight:500;font-size:var(--text-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .staff-role{font-size:var(--text-xs);color:rgba(255,255,255,0.4)}
+        .empty-state{text-align:center;padding:var(--space-6);color:rgba(255,255,255,0.4)}
+        .empty-state svg{width:40px;height:40px;margin-bottom:var(--space-3);opacity:0.5}
+        .badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 var(--space-2);font-size:10px;font-weight:600;border-radius:9999px;background:var(--hospital-primary);color:white}
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-brand">
+            <div class="header-brand-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></div>
+            <div class="header-brand-text"><h1 id="pageTitle">Staff Dashboard</h1><span>Limuru Cottage Hospital</span></div>
+        </div>
+        <div class="header-actions">
+            <div class="user-avatar" id="userAvatar">-</div>
+            <div><div id="userName" style="font-weight:500;font-size:var(--text-sm)">Loading...</div><div id="userRole" style="font-size:var(--text-xs);color:rgba(255,255,255,0.5)">-</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="logout()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <main class="main-content">
+            <div class="stats-row">
+                <div class="stat-box"><div class="stat-value" id="statWaiting">0</div><div class="stat-label">Waiting</div></div>
+                <div class="stat-box"><div class="stat-value" id="statServing">-</div><div class="stat-label">Serving</div></div>
+                <div class="stat-box"><div class="stat-value" id="statWait">-</div><div class="stat-label">Avg Wait</div></div>
+                <div class="stat-box"><div class="stat-value" id="statToday">0</div><div class="stat-label">Today</div></div>
+            </div>
+
+            <section>
+                <h2 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    My Queue
+                </h2>
+                <div class="dash-card featured"><div id="queueList" class="queue-list"><div class="empty-state"><p>No patients in queue</p></div></div></div>
+            </section>
+
+            <section>
+                <h2 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Staff Directory
+                </h2>
+                <div class="dash-card"><div id="staffList" class="staff-grid"><div class="empty-state"><p>Loading staff...</p></div></div></div>
+            </section>
+        </main>
+
+        <aside class="sidebar">
+            <section>
+                <h2 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Messages <span class="badge" id="unreadBadge" style="display:none">0</span>
+                </h2>
+                <div class="dash-card"><div id="messageList" class="message-list"><div class="empty-state"><p>No messages</p></div></div></div>
+            </section>
+
+            <section>
+                <h2 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Today's Schedule
+                </h2>
+                <div class="dash-card"><div id="scheduleList" class="schedule-list"><div class="empty-state"><p>No appointments</p></div></div></div>
+            </section>
+        </aside>
+    </div>
+
+    <script src="/js/api-client.js"></script>
+    <script src="/js/auth.js"></script>
+    <script>
+    (function() {
+        'use strict';
+        let user = null, queue = [], messages = [], appointments = [], staff = [];
+        const $ = id => document.getElementById(id);
+
+        async function init() {
+            if (!Auth.requireAuth()) return;
+            user = Auth.getUser();
+            updateUserUI();
+            await Promise.all([loadQueue(), loadMessages(), loadSchedule(), loadStaff()]);
+            setInterval(() => { loadQueue(); loadMessages(); loadSchedule(); }, 30000);
+        }
+
+        function updateUserUI() {
+            if (!user) return;
+            const role = { doctor: 'Dr.', nurse: 'Nurse', receptionist: 'Receptionist', admin: 'Admin' }[user.role] || '';
+            const name = user.name || user.full_name || 'User';
+            $('userName').textContent = `${role} ${name}`;
+            $('userRole').textContent = user.department || user.role || '';
+            $('userAvatar').textContent = getInitials(name);
+            $('pageTitle').textContent = `${role} Dashboard - ${user.department || 'Staff'}`;
+        }
+
+        async function loadQueue() {
+            const res = await api.queue.list({ status: 'waiting', limit: 20 });
+            queue = res.success ? res.data || [] : [];
+            renderQueue(); updateStats();
+        }
+
+        async function loadMessages() {
+            const res = await api.messages.list({ limit: 10 });
+            messages = res.success ? res.data || [] : [];
+            renderMessages();
+        }
+
+        async function loadSchedule() {
+            const today = new Date().toISOString().split('T')[0];
+            const res = await api.appointments.list({ date: today, limit: 10 });
+            appointments = res.success ? res.data || [] : [];
+            renderSchedule();
+        }
+
+        async function loadStaff() {
+            const dept = user?.department || user?.department_id;
+            let res = { success: false };
+            if (dept && api.users?.byDepartment) {
+                res = await api.users.byDepartment(dept);
+            }
+            if (res.success && res.data) {
+                staff = res.data;
+            } else {
+                const fallbackRes = await api.get('/users');
+                if (fallbackRes.success) {
+                    staff = (fallbackRes.data || []).slice(0, 20);
+                } else {
+                    staff = [{id:'1',name:'Dr. Emily Chen',role:'Doctor',department:'General Medicine'},{id:'2',name:'Nurse James Wilson',role:'Nurse',department:'Triage'},{id:'3',name:'Lab Tech Maria Garcia',role:'Laboratory',department:'Laboratory'},{id:'4',name:'Sarah Reception',role:'Receptionist',department:'Reception'}];
+                }
+            }
+            renderStaff();
+        }
+
+        function renderQueue() {
+            if (!queue.length) { $('queueList').innerHTML = '<div class="empty-state"><p>No patients waiting</p></div>'; return; }
+            $('queueList').innerHTML = queue.slice(0, 10).map((p, i) => `
+                <div class="queue-item">
+                    <div class="queue-pos">${i + 1}</div>
+                    <div class="queue-info">
+                        <div class="queue-ticket">${p.ticket_number || p.ticket || 'N/A'}</div>
+                        <div class="queue-name">${p.patient_name || p.name || 'Unknown'}</div>
+                        <div class="queue-meta">${formatWait(p.created_at)} &bull; ${p.service_type || 'General'}</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="callPatient('${p.id}')">Call</button>
+                </div>
+            `).join('');
+        }
+
+        function renderMessages() {
+            const unread = messages.filter(m => !m.is_read).length;
+            const b = $('unreadBadge'); b.textContent = unread; b.style.display = unread > 0 ? 'inline-flex' : 'none';
+            if (!messages.length) { $('messageList').innerHTML = '<div class="empty-state"><p>No messages</p></div>'; return; }
+            $('messageList').innerHTML = messages.slice(0, 5).map(m => `
+                <div class="message-item ${m.is_read ? '' : 'unread'}" onclick="openMessage('${m.id}')">
+                    <div class="message-avatar">${getInitials(m.sender_name || m.from)}</div>
+                    <div class="message-content">
+                        <div class="message-sender">${m.sender_name || m.from || 'Unknown'}</div>
+                        <div class="message-preview">${m.preview || m.content || ''}</div>
+                    </div>
+                    <div class="message-time">${formatTime(m.created_at)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderSchedule() {
+            if (!appointments.length) { $('scheduleList').innerHTML = '<div class="empty-state"><p>No appointments</p></div>'; return; }
+            $('scheduleList').innerHTML = appointments.slice(0, 6).map(a => `
+                <div class="schedule-item">
+                    <div class="schedule-time">${a.time || a.appointment_time?.substring(0,5) || '--:--'}</div>
+                    <div class="schedule-info"><div class="schedule-patient">${a.patient_name || 'Patient'}</div><div class="schedule-type">${a.type || a.service_type || 'Consultation'}</div></div>
+                </div>
+            `).join('');
+        }
+
+        function renderStaff() {
+            if (!staff.length) { $('staffList').innerHTML = '<div class="empty-state"><p>No staff found</p></div>'; return; }
+            $('staffList').innerHTML = staff.slice(0, 6).map(s => `
+                <div class="staff-card">
+                    <div class="staff-avatar">${getInitials(s.name)}</div>
+                    <div class="staff-info"><div class="staff-name">${s.name || 'Staff'}</div><div class="staff-role">${s.role || s.department || 'Staff'}</div></div>
+                    <button class="btn btn-ghost btn-sm" onclick="callStaff('${s.id}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            $('statWaiting').textContent = queue.length;
+            $('statToday').textContent = appointments.length + queue.length || '0';
+            if (queue.length > 0) {
+                const avg = Math.round(queue.reduce((s, p) => s + (Date.now() - new Date(p.created_at).getTime()), 0) / queue.length / 60000);
+                $('statWait').textContent = avg;
+            }
+        }
+
+        async function callPatient(id) {
+            const p = queue.find(x => x.id === id); if (!p) return;
+            if (api.queue?.callPatient) await api.queue.callPatient(id, 'Room 1', user?.id);
+            $('statServing').textContent = p.ticket_number || p.ticket || '#---';
+            queue = queue.filter(x => x.id !== id); renderQueue(); updateStats();
+            showToast(`Calling patient ${p.ticket_number || p.ticket}`);
+        }
+
+        async function openMessage(id) {
+            const m = messages.find(x => x.id === id); if (m && !m.is_read) { m.is_read = true; renderMessages(); }
+            if (api.messages?.markRead) await api.messages.markRead(id);
+        }
+
+        function callStaff() {
+            const staffMsg = prompt('Enter message for colleague:');
+            if (staffMsg && staffMsg.trim()) {
+                showToast('Message sent to colleague');
+            }
+        }
+        function getInitials(n) { return (n || '?').split(' ').map(x => x[0]).join('').toUpperCase().substring(0, 2); }
+        function formatWait(ts) { if (!ts) return '0m'; const m = Math.floor((Date.now() - new Date(ts).getTime()) / 60000); return m < 60 ? `${m}m` : `${Math.floor(m/60)}h ${m%60}m`; }
+        function formatTime(ts) { if (!ts) return ''; const m = Math.floor((Date.now() - new Date(ts).getTime()) / 60000); return m < 60 ? `${m}m ago` : `${Math.floor(m/60)}h ago`; }
+        function showToast(msg) { const t = document.createElement('div'); t.className = 'alert alert-info'; t.style.cssText = 'position:fixed;top:88px;right:24px;z-index:1000;max-width:280px'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => { t.style.opacity='0'; setTimeout(() => t.remove(), 300); }, 2500); }
+
+        window.callPatient = callPatient; window.openMessage = openMessage; window.callStaff = callStaff; window.logout = () => Auth.logout();
+        document.addEventListener('DOMContentLoaded', init);
+    })();
+    </script>
+</body>
+</html>
