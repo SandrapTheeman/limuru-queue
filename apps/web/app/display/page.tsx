@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDisplayStore } from '@/lib/stores/display';
 import { apiClient } from '@/lib/api/client';
 
@@ -17,21 +17,29 @@ const HEALTH_TIPS = [
   "Report any unusual symptoms to your doctor promptly",
 ];
 
-const M3U_PLAYLIST_URL = 'https://iptv-org.github.io/iptv/index.m3u';
+interface QueuePatient {
+  id: string;
+  ticket_number: string;
+  patient_number: string;
+  patient_name?: string;
+  department?: string;
+  priority: boolean;
+  wait_time: number;
+  position: number;
+  status: string;
+  room_assigned?: string;
+}
 
-interface Channel {
+interface Department {
   id: string;
   name: string;
-  url: string;
-  category: string;
-  is_active: boolean;
-  display_order: number;
+  code: string;
 }
 
 export default function DisplayPage() {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
-  const queueRef = useRef<HTMLDivElement>(null);
   
   const {
     departments,
@@ -39,27 +47,30 @@ export default function DisplayPage() {
     currentPatient,
     waitingPatients,
     announcement,
-    activeChannel,
-    channels,
     fetchDepartments,
     selectDepartment,
     fetchQueue,
     setAnnouncement,
-    setActiveChannel,
-    setChannels,
   } = useDisplayStore();
 
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [streamError, setStreamError] = useState<string | null>(null);
   const [tickerPosition, setTickerPosition] = useState(0);
   const [healthTipIndex, setHealthTipIndex] = useState(0);
   const [prevPatientId, setPrevPatientId] = useState<string | null>(null);
   const [isPatientChanged, setIsPatientChanged] = useState(false);
+  const [isNightMode, setIsNightMode] = useState(false);
+  const [videoBackground, setVideoBackground] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const checkNightHours = useCallback(() => {
+    const hour = new Date().getHours();
+    return hour >= 21 || hour < 6;
+  }, []);
 
   useEffect(() => {
+    setIsNightMode(checkNightHours());
     fetchDepartments();
-    fetchPlaylist();
-  }, []);
+  }, [fetchDepartments, checkNightHours]);
 
   useEffect(() => {
     if (selectedDepartment) {
@@ -67,13 +78,11 @@ export default function DisplayPage() {
     }
   }, [selectedDepartment, fetchQueue]);
 
-  // Update clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-cycle departments
   useEffect(() => {
     const deptTimer = setInterval(() => {
       if (departments.length > 0) {
@@ -85,92 +94,45 @@ export default function DisplayPage() {
     return () => clearInterval(deptTimer);
   }, [departments, selectedDepartment, selectDepartment]);
 
-  // Health tips rotation
   useEffect(() => {
     const tipTimer = setInterval(() => {
       setHealthTipIndex(prev => (prev + 1) % HEALTH_TIPS.length);
-    }, 10000);
+    }, 8000);
     return () => clearInterval(tipTimer);
   }, []);
 
-  // Ticker animation
   useEffect(() => {
     const tickerAnimation = setInterval(() => {
       setTickerPosition(prev => {
         if (prev <= -100) return 100;
-        return prev - 0.5;
+        return prev - 0.3;
       });
     }, 50);
     return () => clearInterval(tickerAnimation);
   }, []);
 
-  // Video stream
   useEffect(() => {
-    if (videoRef.current && activeChannel?.url) {
-      videoRef.current.src = activeChannel.url;
-      videoRef.current.load();
-      videoRef.current.play().catch(() => {
-        setStreamError('Stream unavailable');
-      });
-    }
-  }, [activeChannel]);
+    const refreshTimer = setInterval(() => {
+      if (selectedDepartment) {
+        fetchQueue(selectedDepartment.id);
+      }
+    }, 5000);
+    return () => clearInterval(refreshTimer);
+  }, [selectedDepartment, fetchQueue]);
 
-  // Detect patient change for animation
   useEffect(() => {
     if (currentPatient?.id && currentPatient.id !== prevPatientId) {
       setIsPatientChanged(true);
       setPrevPatientId(currentPatient.id);
-      setTimeout(() => setIsPatientChanged(false), 1000);
+      playAnnouncement();
+      setTimeout(() => setIsPatientChanged(false), 1500);
     }
   }, [currentPatient?.id, prevPatientId]);
 
-  const fetchPlaylist = async () => {
-    try {
-      const response = await fetch(M3U_PLAYLIST_URL);
-      if (!response.ok) throw new Error('Failed to fetch playlist');
-      const content = await response.text();
-      const parsedChannels = parseM3U(content);
-      const validChannels = parsedChannels.filter((ch: Channel) => ch.url && ch.url.startsWith('http'));
-      setChannels(validChannels);
-      if (validChannels.length > 0 && !activeChannel) {
-        setActiveChannel(validChannels[0]);
-      }
-    } catch (error) {
-      console.error('Failed to load M3U playlist:', error);
+  const playAnnouncement = () => {
+    if (audioRef.current && currentPatient) {
+      audioRef.current.play().catch(() => {});
     }
-  };
-
-  const parseM3U = (content: string): Channel[] => {
-    const lines = content.split('\n');
-    const channels: Channel[] = [];
-    let currentChannel: Channel | null = null;
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('#EXTINF:')) {
-        const info = trimmed.replace('#EXTINF:', '');
-        const [, attributes] = info.split(',');
-        const attrs: Record<string, string> = {};
-        const attrRegex = /([a-zA-Z0-9-]+)="([^"]*)"/g;
-        let match;
-        while ((match = attrRegex.exec(info)) !== null) {
-          attrs[match[1]] = match[2];
-        }
-        currentChannel = {
-          id: attrs['tvg-id'] || `channel-${channels.length}`,
-          name: attributes?.trim() || 'Unknown Channel',
-          url: '',
-          category: attrs['group-title'] || 'Uncategorized',
-          is_active: true,
-          display_order: channels.length + 1,
-        };
-      } else if (trimmed && !trimmed.startsWith('#') && currentChannel) {
-        currentChannel.url = trimmed;
-        channels.push(currentChannel);
-        currentChannel = null;
-      }
-    }
-    return channels;
   };
 
   const formatTime = (date: Date) => {
@@ -183,7 +145,7 @@ export default function DisplayPage() {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-KE', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -191,32 +153,52 @@ export default function DisplayPage() {
     });
   };
 
-  // Calculate estimated wait time
   const estimatedWaitMinutes = waitingPatients.length * 12;
 
+  const nightModeClass = isNightMode 
+    ? 'bg-slate-950' 
+    : 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900';
+
+  const headerBg = isNightMode 
+    ? 'bg-slate-950/95 border-slate-800/50' 
+    : 'bg-slate-900/95 border-slate-700/50';
+
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Top Header Bar */}
-      <header className="bg-slate-900/95 border-b border-slate-700/50 py-3 px-6 flex-shrink-0 backdrop-blur-md">
+    <div className={`min-h-screen flex flex-col overflow-hidden ${nightModeClass}`}>
+      <audio ref={audioRef} preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleVcQNpHW+NueZVQ1Yqzk/5VkTTZgr+j/q2tTP2Kr5f+kaVQ5Zavm/6NnVD5kq+f/n2hVPmSr5v+gaFU+Z6vm/59pVT5mq+f/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU+Z6vm/6BpVT5nq+b/oGlVPmer5v+gaVU=" type="audio/wav" />
+      </audio>
+
+      {videoBackground && (
+        <video
+          ref={videoRef}
+          className="fixed inset-0 w-full h-full object-cover opacity-20 pointer-events-none z-0"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+      )}
+
+      <header className={`${headerBg} border-b py-4 px-8 flex-shrink-0 backdrop-blur-md z-10 relative`}>
         <div className="flex justify-between items-center max-w-[1920px] mx-auto">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-2xl shadow-lg shadow-teal-500/30">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center text-4xl shadow-lg shadow-teal-500/30">
               🏥
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Limuru Cottage Hospital</h1>
-              <p className="text-slate-400 text-sm">Digital Queuing System</p>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Limuru Cottage Hospital</h1>
+              <p className="text-slate-400 text-base">Digital Queue Display</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-8">
-            {/* Department Tabs */}
+          <div className="flex items-center gap-10">
             <div className="flex gap-2">
-              {departments.slice(0, 5).map((dept) => (
+              {departments.slice(0, 6).map((dept) => (
                 <button
                   key={dept.id}
                   onClick={() => selectDepartment(dept)}
-                  className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                  className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${
                     selectedDepartment?.id === dept.id
                       ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
                       : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:scale-102'
@@ -227,250 +209,174 @@ export default function DisplayPage() {
               ))}
             </div>
 
-            {/* Date & Time */}
-            <div className="text-right bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">
-              <div className="text-2xl font-bold text-white tabular-nums tracking-wider">
+            <div className={`text-right px-5 py-3 rounded-xl border ${isNightMode ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-800/50 border-slate-700/50'}`}>
+              <div className="text-3xl font-bold text-white tabular-nums tracking-wider">
                 {formatTime(currentTime)}
               </div>
-              <div className="text-slate-400 text-xs">{formatDate(currentTime)}</div>
+              <div className="text-slate-400 text-sm">{formatDate(currentTime)}</div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Announcement Banner */}
       {announcement && (
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 py-2 px-6 flex-shrink-0 animate-pulse">
-          <div className="flex items-center justify-center gap-3 max-w-[1920px] mx-auto">
-            <span className="text-xl">📢</span>
-            <span className="text-white font-semibold text-lg uppercase tracking-wide">
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 py-3 px-6 flex-shrink-0 animate-pulse z-10 relative">
+          <div className="flex items-center justify-center gap-4 max-w-[1920px] mx-auto">
+            <span className="text-2xl">📢</span>
+            <span className="text-white font-bold text-xl uppercase tracking-wide">
               {announcement}
             </span>
-            <span className="text-xl">📢</span>
+            <span className="text-2xl">📢</span>
           </div>
         </div>
       )}
 
-      {/* Main Content - Split Screen */}
-      <main className="flex-1 flex gap-4 p-4 max-w-[1920px] mx-auto w-full overflow-hidden">
-        {/* Left Panel - Queue Display */}
-        <div className="w-[40%] flex flex-col gap-4">
-          {/* Current Patient Card */}
+      <main className="flex-1 flex gap-6 p-6 max-w-[1920px] mx-auto w-full overflow-hidden relative z-10">
+        <div className="flex-1 flex flex-col gap-6">
           <div className={`
-            bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-6 flex-shrink-0 shadow-2xl
-            transition-all duration-500
-            ${isPatientChanged ? 'scale-[1.02] shadow-teal-500/40' : ''}
+            bg-gradient-to-br from-teal-600 to-teal-800 rounded-3xl p-8 flex-shrink-0 shadow-2xl
+            transition-all duration-500 border-2 border-teal-400/30
+            ${isPatientChanged ? 'scale-[1.02] shadow-teal-500/50' : ''}
           `}>
-            <div className="text-teal-200 text-sm font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span className="w-2 h-2 bg-teal-300 rounded-full animate-pulse"></span>
-              Now Serving
+            <div className="text-teal-200 text-lg font-semibold uppercase tracking-wider mb-4 flex items-center gap-3">
+              <span className="w-3 h-3 bg-teal-300 rounded-full animate-pulse"></span>
+              Now Calling
             </div>
             {currentPatient ? (
               <div className="text-center">
                 <div className={`
-                  text-8xl font-black text-white mb-2
+                  text-[12rem] font-black text-white leading-none mb-4
                   transition-all duration-300
                   ${isPatientChanged ? 'scale-110' : ''}
                 `}>
                   {currentPatient.ticket_number}
                 </div>
-                <div className="text-3xl font-bold text-teal-100">
-                  Patient #{currentPatient.patient_number || currentPatient.id?.slice(-4)}
+                <div className="text-4xl font-bold text-teal-100">
+                  {currentPatient.patient_name || `Patient #${currentPatient.patient_number || currentPatient.id?.slice(-4)}`}
+                </div>
+                <div className="text-2xl font-semibold text-teal-200 mt-2">
+                  Room {currentPatient.room_assigned || '--'} • {selectedDepartment?.name || currentPatient.department || 'General'}
                 </div>
                 {currentPatient.priority && (
-                  <div className="mt-3 inline-block px-4 py-1 bg-amber-400 text-amber-900 rounded-full font-bold text-sm uppercase shadow-lg">
+                  <div className="mt-4 inline-block px-6 py-2 bg-amber-400 text-amber-900 rounded-full font-bold text-lg uppercase shadow-lg animate-pulse">
                     ⚠️ Priority
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <div className="text-6xl text-teal-300/50 mb-2">--</div>
-                <div className="text-teal-200 text-xl">No patient called</div>
+              <div className="text-center py-12">
+                <div className="text-8xl text-teal-300/50 mb-4">--</div>
+                <div className="text-teal-200 text-3xl">No patient called</div>
+                <div className="text-teal-300/70 text-xl mt-2">Please wait for your number</div>
               </div>
             )}
           </div>
 
-          {/* Stats Row */}
           <div className="grid grid-cols-3 gap-4 flex-shrink-0">
-            <div className="bg-slate-800/80 rounded-2xl p-4 text-center border border-slate-700/50 backdrop-blur-sm hover:border-teal-500/30 transition-colors">
-              <div className="text-4xl font-black text-teal-400">
+            <div className={`rounded-2xl p-5 text-center border backdrop-blur-sm ${isNightMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-800/80 border-slate-700/50'}`}>
+              <div className="text-5xl font-black text-teal-400">
                 {waitingPatients.length}
               </div>
-              <div className="text-slate-400 text-sm mt-1 uppercase tracking-wide">
+              <div className="text-slate-400 text-sm mt-2 uppercase tracking-wide font-semibold">
                 Waiting
               </div>
             </div>
-            <div className="bg-slate-800/80 rounded-2xl p-4 text-center border border-slate-700/50 backdrop-blur-sm hover:border-amber-500/30 transition-colors">
-              <div className="text-4xl font-black text-amber-400">
+            <div className={`rounded-2xl p-5 text-center border backdrop-blur-sm ${isNightMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-800/80 border-slate-700/50'}`}>
+              <div className="text-5xl font-black text-amber-400">
                 ~{estimatedWaitMinutes}
               </div>
-              <div className="text-slate-400 text-sm mt-1 uppercase tracking-wide">
+              <div className="text-slate-400 text-sm mt-2 uppercase tracking-wide font-semibold">
                 Est. Minutes
               </div>
             </div>
-            <div className="bg-slate-800/80 rounded-2xl p-4 text-center border border-slate-700/50 backdrop-blur-sm hover:border-blue-500/30 transition-colors">
-              <div className="text-2xl font-bold text-white">
+            <div className={`rounded-2xl p-5 text-center border backdrop-blur-sm ${isNightMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-800/80 border-slate-700/50'}`}>
+              <div className="text-3xl font-bold text-white">
                 {selectedDepartment?.code || 'N/A'}
               </div>
-              <div className="text-slate-400 text-sm mt-1 uppercase tracking-wide">
-                Dept
+              <div className="text-slate-400 text-sm mt-2 uppercase tracking-wide font-semibold">
+                Department
               </div>
             </div>
           </div>
 
-          {/* Waiting Queue List */}
-          <div className="bg-slate-800/80 rounded-2xl p-4 flex-1 flex flex-col border border-slate-700/50 overflow-hidden backdrop-blur-sm">
+          <div className={`flex-1 rounded-2xl p-5 flex flex-col border overflow-hidden backdrop-blur-sm ${isNightMode ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-800/80 border-slate-700/50'}`}>
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <h2 className="text-xl font-bold text-white uppercase tracking-wide flex items-center gap-2">
-                <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
+              <h2 className="text-2xl font-bold text-white uppercase tracking-wide flex items-center gap-3">
+                <span className="w-3 h-3 bg-teal-400 rounded-full"></span>
                 Up Next
               </h2>
-              <div className="text-slate-400 text-sm bg-slate-700/50 px-3 py-1 rounded-full">
+              <div className="text-slate-400 text-sm bg-slate-700/50 px-4 py-2 rounded-full font-medium">
                 {waitingPatients.length} patients
               </div>
             </div>
-            <div ref={queueRef} className="flex-1 overflow-y-auto space-y-2 pr-2">
-              {waitingPatients.slice(0, 12).map((patient, index) => (
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+              {waitingPatients.slice(0, 8).map((patient, index) => (
                 <div
                   key={patient.id || index}
                   className={`
-                    flex items-center justify-between p-3 
-                    bg-slate-700/50 rounded-xl
-                    transition-all duration-300
-                    hover:bg-slate-700/80 hover:translate-x-1
-                    ${index === 0 ? 'border-l-2 border-l-teal-400 bg-teal-500/10' : ''}
+                    flex items-center justify-between p-4 
+                    rounded-xl transition-all duration-300
+                    hover:translate-x-2
+                    ${index === 0 ? 'border-l-4 border-l-teal-400 bg-teal-500/10' : 'bg-slate-700/30'}
                   `}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <span className={`
-                      w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                      w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg
                       ${index === 0 ? 'bg-teal-500 text-white' : 'bg-slate-600 text-slate-300'}
                     `}>
                       {index + 1}
                     </span>
                     {patient.priority && (
-                      <span className="px-2 py-0.5 bg-amber-500/20 rounded text-amber-400 text-xs font-bold uppercase animate-pulse">
-                        !
+                      <span className="px-3 py-1 bg-amber-500/20 rounded-full text-amber-400 text-sm font-bold uppercase animate-pulse">
+                        ! Priority
                       </span>
                     )}
                   </div>
                   <div className="flex-1 text-center">
-                    <span className="text-2xl font-bold text-white font-mono tracking-wider">
+                    <span className="text-3xl font-bold text-white font-mono tracking-wider">
                       {patient.ticket_number}
                     </span>
                   </div>
-                  <div className="text-slate-400 text-sm w-16 text-right flex items-center justify-end gap-1">
+                  <div className="text-slate-400 text-lg font-medium flex items-center gap-2">
                     <span>⏱️</span>
                     <span>{patient.wait_time || 0}m</span>
                   </div>
                 </div>
               ))}
               {waitingPatients.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-5xl mb-3 opacity-30">✓</div>
-                  <div className="text-slate-500 text-lg">No patients waiting</div>
+                <div className="text-center py-16">
+                  <div className="text-6xl mb-4 opacity-30">✓</div>
+                  <div className="text-slate-500 text-2xl">No patients waiting</div>
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Right Panel - IPTV */}
-        <div className="w-[60%] flex flex-col gap-4">
-          {/* Channel Info Bar */}
-          <div className="bg-slate-800/80 rounded-xl p-4 flex items-center justify-between border border-slate-700/50 flex-shrink-0 backdrop-blur-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-xl shadow-lg">
-                📺
-              </div>
-              <div>
-                <div className="text-slate-400 text-xs uppercase tracking-wide">Now Playing</div>
-                <div className="text-white font-bold text-lg">
-                  {activeChannel?.name || 'No Channel Selected'}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-slate-400 text-sm bg-slate-700/50 px-3 py-1 rounded-full">
-                {activeChannel?.category || 'Entertainment'}
-              </div>
-              <div className="flex gap-1">
-                {channels.slice(0, 5).map((ch) => (
-                  <button
-                    key={ch.id}
-                    onClick={() => setActiveChannel(ch)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                      activeChannel?.id === ch.id
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white'
-                    }`}
-                  >
-                    {ch.name.substring(0, 6)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Video Player */}
-          <div className="flex-1 bg-black rounded-2xl overflow-hidden relative border border-slate-700/50">
-            {activeChannel?.url ? (
-              <>
-                <video
-                  ref={videoRef}
-                  className="w-full h-full object-contain"
-                  autoPlay
-                  muted
-                  playsInline
-                  onError={() => setStreamError('Stream unavailable')}
-                />
-                {streamError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm">
-                    <div className="text-center">
-                      <div className="text-6xl mb-4">📡</div>
-                      <div className="text-red-400 text-xl font-semibold mb-2">{streamError}</div>
-                      <div className="text-slate-400">Please try another channel</div>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
-                <div className="text-center">
-                  <div className="text-8xl mb-4 opacity-50">📺</div>
-                  <div className="text-slate-400 text-2xl font-semibold">No Channel Selected</div>
-                  <div className="text-slate-500 mt-2">Select a channel to begin</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </main>
 
-      {/* Health Tips Ticker */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 border-t border-slate-700/50 py-3 px-6 flex-shrink-0">
+      <div className={`border-t py-4 px-8 flex-shrink-0 ${isNightMode ? 'bg-slate-950 border-slate-800' : 'bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700/50'}`}>
         <div className="flex items-center gap-6 max-w-[1920px] mx-auto">
-          <div className="flex items-center gap-2 flex-shrink-0 bg-gradient-to-r from-teal-500/20 to-teal-500/10 px-3 py-1.5 rounded-full border border-teal-500/20">
-            <span className="text-xl">💡</span>
-            <span className="text-teal-400 font-bold uppercase tracking-wide text-sm">
+          <div className="flex items-center gap-3 flex-shrink-0 bg-gradient-to-r from-teal-500/20 to-teal-500/10 px-4 py-2 rounded-full border border-teal-500/20">
+            <span className="text-2xl">💡</span>
+            <span className="text-teal-400 font-bold uppercase tracking-wide text-base">
               Health Tip
             </span>
           </div>
           <div className="flex-1 overflow-hidden">
             <div
               ref={tickerRef}
-              className="text-white text-lg transition-transform duration-100"
+              className="text-white text-xl transition-transform duration-100 whitespace-nowrap"
               style={{ transform: `translateX(${tickerPosition}%)` }}
             >
               {HEALTH_TIPS[healthTipIndex]}
             </div>
           </div>
-          <div className="flex gap-1.5 flex-shrink-0">
+          <div className="flex gap-2 flex-shrink-0">
             {HEALTH_TIPS.map((_, idx) => (
               <div
                 key={idx}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   idx === healthTipIndex ? 'bg-teal-400 scale-125' : 'bg-slate-600'
                 }`}
               />
@@ -479,15 +385,30 @@ export default function DisplayPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="bg-slate-900/95 py-2 px-6 flex justify-between items-center text-slate-500 text-sm flex-shrink-0 border-t border-slate-800">
+      <div className={`py-3 px-8 flex justify-between items-center text-slate-500 text-sm flex-shrink-0 border-t ${isNightMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-900/95 border-slate-800'}`}>
         <div className="flex items-center gap-4">
-          <span>Auto-refresh: <span className="text-teal-400 font-semibold">30s</span></span>
-          <span>|</span>
-          <span>Next update: <span className="text-white">{formatTime(new Date(currentTime.getTime() + 30000))}</span></span>
+          <span>Auto-refresh: <span className="text-teal-400 font-semibold">5s</span></span>
+          <span className="text-slate-600">|</span>
+          <span>Next update: <span className="text-white">{formatTime(new Date(currentTime.getTime() + 5000))}</span></span>
         </div>
-        <div>
-          Powered by <span className="text-teal-400 font-semibold">Limuru Cottage Hospital</span> | Queue Management System
+        <div className="flex items-center gap-4">
+          {isNightMode && (
+            <button 
+              onClick={() => setIsNightMode(false)}
+              className="text-amber-400 hover:text-amber-300 text-sm"
+            >
+              ☀️ Day Mode
+            </button>
+          )}
+          {!isNightMode && (
+            <button 
+              onClick={() => setIsNightMode(true)}
+              className="text-slate-400 hover:text-slate-300 text-sm"
+            >
+              🌙 Night Mode
+            </button>
+          )}
+          <span>Powered by <span className="text-teal-400 font-semibold">Limuru Cottage Hospital</span> | Queue Management</span>
         </div>
       </div>
     </div>

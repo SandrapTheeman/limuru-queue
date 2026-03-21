@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0d9488">
+    <meta name="description" content="Login to Limuru Cottage Hospital Queuing Management System">
     <title>Login | Limuru Cottage Hospital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,8 +13,12 @@
     <style>
         :root {
             --card-width: 440px;
-            --card-padding: 2.5rem;
-            --input-height: 56px;
+            --card-padding: 2rem;
+            --input-height: 52px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
         }
 
         body {
@@ -22,9 +27,10 @@
             justify-content: center;
             min-height: 100vh;
             padding: var(--space-4);
-            background: var(--bg-gradient);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             position: relative;
             overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         body::before {
@@ -36,7 +42,8 @@
             height: 200%;
             background: 
                 radial-gradient(circle at 20% 80%, rgba(13, 148, 136, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(13, 148, 136, 0.05) 0%, transparent 70%);
             animation: bgFloat 20s ease-in-out infinite;
             pointer-events: none;
         }
@@ -60,7 +67,7 @@
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid rgba(13, 148, 136, 0.25);
-            border-radius: var(--radius-2xl);
+            border-radius: 1.5rem;
             padding: var(--card-padding);
             box-shadow: 
                 0 25px 50px -12px rgba(0, 0, 0, 0.5),
@@ -75,20 +82,20 @@
 
         .login-header {
             text-align: center;
-            margin-bottom: var(--space-8);
+            margin-bottom: 1.75rem;
         }
 
         .logo-container {
             display: flex;
             justify-content: center;
-            margin-bottom: var(--space-5);
+            margin-bottom: 1.25rem;
         }
 
         .logo {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, var(--hospital-primary), var(--hospital-secondary));
-            border-radius: 20px;
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            border-radius: 1.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -113,57 +120,74 @@
             font-size: 1.5rem;
             font-weight: 700;
             color: white;
-            margin-bottom: var(--space-1);
+            margin-bottom: 0.25rem;
             letter-spacing: -0.02em;
         }
 
         .title {
-            font-size: 1.125rem;
+            font-size: 1rem;
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.6);
         }
 
-        .role-badge {
-            display: inline-flex;
+        .tab-list {
+            display: flex;
+            margin-bottom: 1.5rem;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 0.75rem;
+            padding: 0.375rem;
+            gap: 0.25rem;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 0.625rem 0.5rem;
+            border: none;
+            background: transparent;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
             align-items: center;
-            gap: var(--space-2);
-            padding: var(--space-2) var(--space-4);
-            background: rgba(13, 148, 136, 0.2);
-            border: 1px solid rgba(13, 148, 136, 0.3);
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--hospital-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: var(--space-4);
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
+            justify-content: center;
+            gap: 0.375rem;
         }
 
-        .role-badge.visible {
-            opacity: 1;
-            transform: translateY(0);
+        .tab-button:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        .role-badge svg {
-            width: 14px;
-            height: 14px;
+        .tab-button:focus-visible {
+            outline: 2px solid rgba(13, 148, 136, 0.5);
+            outline-offset: 2px;
+        }
+
+        .tab-button[aria-selected="true"] {
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
+            color: white;
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.35);
+        }
+
+        .tab-icon {
+            font-size: 1rem;
         }
 
         .error-container {
-            margin-bottom: var(--space-5);
+            margin-bottom: 1.25rem;
         }
 
         .error {
             display: none;
             align-items: center;
-            gap: var(--space-3);
-            padding: var(--space-4);
+            gap: 0.75rem;
+            padding: 1rem;
             background: rgba(220, 38, 38, 0.12);
             border: 1px solid rgba(220, 38, 38, 0.3);
-            border-radius: var(--radius-lg);
+            border-radius: 0.75rem;
             color: #fca5a5;
             font-size: 0.875rem;
         }
@@ -189,19 +213,13 @@
             color: #ef4444;
         }
 
-        .rate-limit-warning {
-            background: rgba(245, 158, 11, 0.12);
-            border-color: rgba(245, 158, 11, 0.3);
-            color: #fcd34d;
-        }
-
         .form {
-            margin-bottom: var(--space-6);
+            margin-bottom: 1.5rem;
         }
 
         .input-group {
             position: relative;
-            margin-bottom: var(--space-5);
+            margin-bottom: 1.25rem;
         }
 
         .input-label {
@@ -209,7 +227,12 @@
             font-size: 0.8125rem;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.7);
-            margin-bottom: var(--space-2);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-label .required {
+            color: #ef4444;
+            margin-left: 2px;
         }
 
         .input-wrapper {
@@ -220,7 +243,7 @@
 
         .input-icon {
             position: absolute;
-            left: var(--space-4);
+            left: 1rem;
             width: 20px;
             height: 20px;
             color: rgba(255, 255, 255, 0.4);
@@ -228,52 +251,70 @@
             transition: color 0.2s ease;
         }
 
-        .input-group input {
+        .input-wrapper input {
             width: 100%;
             height: var(--input-height);
-            padding: 0 var(--space-4) 0 3rem;
+            padding: 0 3rem 0 3rem;
             font-size: 1rem;
-            font-family: var(--font-family);
+            font-family: inherit;
             color: white;
             background: rgba(255, 255, 255, 0.06);
             border: 1.5px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-lg);
+            border-radius: 0.75rem;
             outline: none;
             transition: all 0.2s ease;
         }
 
-        .input-group input::placeholder {
+        .input-wrapper input::placeholder {
             color: rgba(255, 255, 255, 0.35);
         }
 
-        .input-group input:hover {
+        .input-wrapper input:hover {
             border-color: rgba(255, 255, 255, 0.2);
             background: rgba(255, 255, 255, 0.08);
         }
 
-        .input-group input:focus {
-            border-color: var(--hospital-primary);
+        .input-wrapper input:focus {
+            border-color: #0d9488;
             background: rgba(13, 148, 136, 0.1);
             box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
         }
 
-        .input-group input:focus + .input-icon,
-        .input-group input:focus ~ .input-icon {
-            color: var(--hospital-secondary);
+        .input-wrapper input:focus + .input-icon,
+        .input-wrapper input:focus ~ .input-icon {
+            color: #14b8a6;
         }
 
-        .input-group.has-error input {
+        .input-wrapper.has-error input {
             border-color: rgba(220, 38, 38, 0.5);
             background: rgba(220, 38, 38, 0.08);
         }
 
-        .input-group.has-error .input-icon {
+        .input-wrapper.has-error .input-icon {
             color: rgba(220, 38, 38, 0.6);
+        }
+
+        .input-error {
+            display: none;
+            margin-top: 0.375rem;
+            font-size: 0.75rem;
+            color: #f87171;
+        }
+
+        .input-group.has-error .input-error {
+            display: block;
+        }
+
+        .pin-input {
+            text-align: center;
+            font-size: 1.5rem !important;
+            letter-spacing: 0.5em;
+            padding-left: 2rem !important;
         }
 
         .password-toggle {
             position: absolute;
-            right: var(--space-4);
+            right: 1rem;
             width: 24px;
             height: 24px;
             background: none;
@@ -292,27 +333,35 @@
         }
 
         .password-toggle:focus-visible {
-            outline: 2px solid var(--hospital-secondary);
+            outline: 2px solid #14b8a6;
             outline-offset: 2px;
             border-radius: 4px;
+        }
+
+        .password-toggle svg {
+            width: 20px;
+            height: 20px;
         }
 
         .form-options {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: var(--space-6);
+            margin-bottom: 1.5rem;
         }
 
         .remember-me {
             display: flex;
             align-items: center;
-            gap: var(--space-3);
+            gap: 0.625rem;
             cursor: pointer;
         }
 
         .remember-me input[type="checkbox"] {
-            display: none;
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
         .checkbox-custom {
@@ -327,8 +376,8 @@
         }
 
         .remember-me input:checked + .checkbox-custom {
-            background: var(--hospital-primary);
-            border-color: var(--hospital-primary);
+            background: #0d9488;
+            border-color: #0d9488;
         }
 
         .checkbox-custom svg {
@@ -345,6 +394,11 @@
             transform: scale(1);
         }
 
+        .remember-me input:focus-visible + .checkbox-custom {
+            outline: 2px solid #14b8a6;
+            outline-offset: 2px;
+        }
+
         .remember-label {
             font-size: 0.875rem;
             color: rgba(255, 255, 255, 0.7);
@@ -353,14 +407,20 @@
 
         .forgot-password {
             font-size: 0.875rem;
-            color: var(--hospital-secondary);
+            color: #14b8a6;
             text-decoration: none;
             transition: color 0.2s ease;
         }
 
         .forgot-password:hover {
-            color: var(--hospital-primary);
+            color: #0d9488;
             text-decoration: underline;
+        }
+
+        .forgot-password:focus-visible {
+            outline: 2px solid #14b8a6;
+            outline-offset: 2px;
+            border-radius: 2px;
         }
 
         .btn {
@@ -368,18 +428,18 @@
             height: var(--input-height);
             font-size: 1rem;
             font-weight: 600;
-            font-family: var(--font-family);
+            font-family: inherit;
             color: white;
-            background: linear-gradient(135deg, var(--hospital-primary), var(--hospital-secondary));
+            background: linear-gradient(135deg, #0d9488, #14b8a6);
             border: none;
-            border-radius: var(--radius-lg);
+            border-radius: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 4px 16px rgba(13, 148, 136, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: var(--space-3);
+            gap: 0.625rem;
         }
 
         .btn:hover:not(:disabled) {
@@ -397,13 +457,14 @@
             transform: none;
         }
 
-        .btn-loading {
-            pointer-events: none;
+        .btn:focus-visible {
+            outline: 2px solid #14b8a6;
+            outline-offset: 2px;
         }
 
         .spinner {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             border: 2.5px solid rgba(255, 255, 255, 0.3);
             border-top-color: white;
             border-radius: 50%;
@@ -414,24 +475,54 @@
             to { transform: rotate(360deg); }
         }
 
+        .btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .register-link {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .register-link a {
+            color: #14b8a6;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .register-link a:hover {
+            color: #0d9488;
+            text-decoration: underline;
+        }
+
+        .register-link a:focus-visible {
+            outline: 2px solid #14b8a6;
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
         .demo-credentials {
-            margin-top: var(--space-6);
-            padding: var(--space-5);
+            margin-top: 1.5rem;
+            padding: 1.25rem;
             background: rgba(13, 148, 136, 0.08);
             border: 1px solid rgba(13, 148, 136, 0.2);
-            border-radius: var(--radius-lg);
+            border-radius: 0.75rem;
         }
 
         .demo-header {
             display: flex;
             align-items: center;
-            gap: var(--space-2);
+            gap: 0.5rem;
             font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: var(--hospital-secondary);
-            margin-bottom: var(--space-4);
+            color: #14b8a6;
+            margin-bottom: 1rem;
         }
 
         .demo-header svg {
@@ -439,31 +530,36 @@
             height: 14px;
         }
 
-        .demo-row {
+        .demo-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
             font-size: 0.8125rem;
             color: rgba(255, 255, 255, 0.6);
-            margin-bottom: var(--space-2);
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0.625rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 0.5rem;
         }
 
-        .demo-row:last-child {
+        .demo-item:last-child {
             margin-bottom: 0;
         }
 
-        .demo-row code {
-            font-family: var(--font-mono);
+        .demo-role {
+            font-weight: 500;
+            color: #14b8a6;
+        }
+
+        .demo-item code {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.75rem;
-            color: white;
-            background: rgba(255, 255, 255, 0.08);
-            padding: var(--space-1) var(--space-2);
-            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .footer {
-            margin-top: var(--space-6);
-            padding-top: var(--space-6);
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             text-align: center;
         }
@@ -471,7 +567,7 @@
         .footer a {
             display: inline-flex;
             align-items: center;
-            gap: var(--space-2);
+            gap: 0.5rem;
             font-size: 0.875rem;
             color: rgba(255, 255, 255, 0.6);
             text-decoration: none;
@@ -479,7 +575,13 @@
         }
 
         .footer a:hover {
-            color: var(--hospital-secondary);
+            color: #14b8a6;
+        }
+
+        .footer a:focus-visible {
+            outline: 2px solid #14b8a6;
+            outline-offset: 2px;
+            border-radius: 2px;
         }
 
         .footer a svg {
@@ -487,66 +589,46 @@
             height: 16px;
         }
 
-        .session-warning {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: var(--space-4);
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95));
-            color: #1e293b;
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--space-3);
-            z-index: 1000;
-            transform: translateY(-100%);
-            transition: transform 0.3s ease;
+        .tab-panel {
+            display: none;
         }
 
-        .session-warning.visible {
-            transform: translateY(0);
+        .tab-panel.active {
+            display: block;
         }
 
-        .session-warning svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .reset-success {
-            background: rgba(22, 163, 74, 0.12);
-            border-color: rgba(22, 163, 74, 0.3);
-            color: #86efac;
+        .hint {
+            margin-top: 0.375rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
         }
 
         @media (max-width: 480px) {
-            :root { --card-padding: 1.5rem; }
+            :root { 
+                --card-padding: 1.5rem;
+                --input-height: 48px;
+            }
             .logo { width: 64px; height: 64px; }
             .logo svg { width: 36px; height: 36px; }
             .hospital-name { font-size: 1.25rem; }
-            .title { font-size: 1rem; }
+            .title { font-size: 0.9375rem; }
+            .tab-button { padding: 0.5rem 0.375rem; font-size: 0.8125rem; }
+            .tab-icon { font-size: 0.875rem; }
         }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
             }
         }
     </style>
 </head>
 <body>
-    <div class="session-warning" id="sessionWarning" role="alert" aria-live="polite">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span id="sessionWarningText">Your session will expire in 5 minutes. Click to extend.</span>
-    </div>
-
     <div class="login-container">
         <div class="login-card">
-            <div class="login-header">
+            <header class="login-header">
                 <div class="logo-container">
                     <div class="logo" aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -555,78 +637,218 @@
                     </div>
                 </div>
                 <h1 class="hospital-name">Limuru Cottage Hospital</h1>
-                <p class="title">Sign in to access your dashboard</p>
-                <div class="role-badge" id="roleBadge">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <span id="roleText">Admin</span>
-                </div>
-            </div>
+                <p class="title">Queuing Management System</p>
+            </header>
 
             <div class="error-container">
-                <div id="error" class="error" role="alert">
-                    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div id="error" class="error" role="alert" aria-live="assertive">
+                    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
                     <span id="errorMsg">Invalid credentials. Please try again.</span>
                 </div>
             </div>
 
-            <form class="form" id="loginForm" novalidate>
-                <div class="input-group" id="emailGroup">
-                    <label class="input-label" for="email">Email Address</label>
+            <div class="tab-list" role="tablist" aria-label="Login type">
+                <button type="button" class="tab-button" role="tab" id="staff-tab" aria-selected="true" aria-controls="staff-panel" data-tab="staff">
+                    <span class="tab-icon" aria-hidden="true">👨‍⚕️</span>
+                    <span>Staff</span>
+                </button>
+                <button type="button" class="tab-button" role="tab" id="patient-tab" aria-selected="false" aria-controls="patient-panel" data-tab="patient">
+                    <span class="tab-icon" aria-hidden="true">👤</span>
+                    <span>Patient</span>
+                </button>
+                <button type="button" class="tab-button" role="tab" id="doctor-tab" aria-selected="false" aria-controls="doctor-panel" data-tab="doctor">
+                    <span class="tab-icon" aria-hidden="true">🔐</span>
+                    <span>Doctor</span>
+                </button>
+            </div>
+
+            <form id="staff-panel" class="tab-panel active" role="tabpanel" aria-labelledby="staff-tab" data-form="staff" novalidate>
+                <div class="input-group" id="staff-email-group">
+                    <label class="input-label" for="staff-email">Email Address <span class="required">*</span></label>
                     <div class="input-wrapper">
-                        <input type="email" id="email" placeholder="Enter your email" autocomplete="email" required>
-                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        <input type="email" id="staff-email" placeholder="staff@limuruhospital.co.ke" autocomplete="email" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="16" x="2" y="4" rx="2"/>
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                        </svg>
                     </div>
+                    <p class="input-error" id="staff-email-error" role="alert"></p>
                 </div>
 
-                <div class="input-group" id="passwordGroup">
-                    <label class="input-label" for="password">Password</label>
+                <div class="input-group" id="staff-password-group">
+                    <label class="input-label" for="staff-password">Password <span class="required">*</span></label>
                     <div class="input-wrapper">
-                        <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required>
-                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
-                            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                            <svg id="eyeOffIcon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                        <input type="password" id="staff-password" placeholder="Enter your password" autocomplete="current-password" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <button type="button" class="password-toggle" id="toggleStaffPassword" aria-label="Toggle password visibility" data-target="staff-password">
+                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-off-icon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                <line x1="2" y1="2" x2="22" y2="22"/>
+                            </svg>
                         </button>
                     </div>
+                    <p class="input-error" id="staff-password-error" role="alert"></p>
                 </div>
-
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" id="rememberMe">
-                        <span class="checkbox-custom">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        </span>
-                        <span class="remember-label">Remember me</span>
-                    </label>
-                    <a href="#" class="forgot-password" id="forgotPassword">Forgot password?</a>
-                </div>
-
-                <button type="submit" id="submitBtn" class="btn">
-                    <span id="btnText">Sign In</span>
-                </button>
             </form>
+
+            <form id="patient-panel" class="tab-panel" role="tabpanel" aria-labelledby="patient-tab" data-form="patient" novalidate>
+                <div class="input-group" id="patient-identifier-group">
+                    <label class="input-label" for="patient-identifier">Patient ID / Phone Number <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <input type="text" id="patient-identifier" placeholder="PT-12345 or 0712345678" autocomplete="username" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="16" x="2" y="4" rx="2"/>
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                        </svg>
+                    </div>
+                    <p class="input-error" id="patient-identifier-error" role="alert"></p>
+                </div>
+
+                <div class="input-group" id="patient-password-group">
+                    <label class="input-label" for="patient-password">Password <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <input type="password" id="patient-password" placeholder="Enter your password" autocomplete="current-password" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <button type="button" class="password-toggle" id="togglePatientPassword" aria-label="Toggle password visibility" data-target="patient-password">
+                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-off-icon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                <line x1="2" y1="2" x2="22" y2="22"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="input-error" id="patient-password-error" role="alert"></p>
+                </div>
+            </form>
+
+            <form id="doctor-panel" class="tab-panel" role="tabpanel" aria-labelledby="doctor-tab" data-form="doctor" novalidate>
+                <div class="input-group" id="doctor-email-group">
+                    <label class="input-label" for="doctor-email">Doctor Email <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <input type="email" id="doctor-email" placeholder="doctor@limuruhospital.co.ke" autocomplete="email" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="16" x="2" y="4" rx="2"/>
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                        </svg>
+                    </div>
+                    <p class="input-error" id="doctor-email-error" role="alert"></p>
+                </div>
+
+                <div class="input-group" id="doctor-pin-group">
+                    <label class="input-label" for="doctor-pin">PIN Code <span class="required">*</span></label>
+                    <div class="input-wrapper">
+                        <input type="password" id="doctor-pin" class="pin-input" placeholder="••••" maxlength="6" autocomplete="off" required>
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <button type="button" class="password-toggle" id="toggleDoctorPin" aria-label="Toggle PIN visibility" data-target="doctor-pin">
+                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-off-icon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                                <line x1="2" y1="2" x2="22" y2="22"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="hint">Enter your 4-6 digit doctor PIN</p>
+                    <p class="input-error" id="doctor-pin-error" role="alert"></p>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" for="doctor-station">Station ID <span style="color: rgba(255,255,255,0.4);">(Optional)</span></label>
+                    <div class="input-wrapper">
+                        <input type="text" id="doctor-station" placeholder="e.g., STATION-01">
+                        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                    </div>
+                </div>
+            </form>
+
+            <div class="form-options">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <span class="checkbox-custom">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <span class="remember-label">Remember me</span>
+                </label>
+                <a href="/forgot-password.html" class="forgot-password">Forgot password?</a>
+            </div>
+
+            <button type="button" id="submitBtn" class="btn">
+                <span id="btnText">Sign In</span>
+                <svg id="btnArrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"/>
+                    <path d="m12 5 7 7-7 7"/>
+                </svg>
+            </button>
+
+            <div id="patient-register" class="register-link" style="display: none;">
+                <p>New patient? <a href="/register.html">Register here</a></p>
+            </div>
 
             <div class="demo-credentials">
                 <div class="demo-header">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4"/>
+                        <path d="M12 8h.01"/>
+                    </svg>
                     Demo Credentials
                 </div>
-                <div class="demo-row">
-                    <span>Email:</span>
-                    <code>admin@limuruhospital.co.ke</code>
+                <div class="demo-item">
+                    <span class="demo-role">Staff</span>
+                    <code>admin@limuruhospital.co.ke / password123</code>
                 </div>
-                <div class="demo-row">
-                    <span>Password:</span>
-                    <code>password123</code>
+                <div class="demo-item">
+                    <span class="demo-role">Patient</span>
+                    <code>PT-00001 / patient123</code>
+                </div>
+                <div class="demo-item">
+                    <span class="demo-role">Doctor</span>
+                    <code>dr.smith@limuruhospital.co.ke / 1234</code>
                 </div>
             </div>
 
-            <div class="footer">
+            <footer class="footer">
                 <a href="/">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5"/>
+                        <path d="m12 19-7-7 7-7"/>
+                    </svg>
                     Back to Home
                 </a>
-            </div>
+            </footer>
         </div>
     </div>
 
@@ -635,31 +857,22 @@
         (function() {
             'use strict';
 
-            const DOM = {
-                form: document.getElementById('loginForm'),
-                email: document.getElementById('email'),
-                password: document.getElementById('password'),
-                emailGroup: document.getElementById('emailGroup'),
-                passwordGroup: document.getElementById('passwordGroup'),
-                togglePassword: document.getElementById('togglePassword'),
-                eyeIcon: document.getElementById('eyeIcon'),
-                eyeOffIcon: document.getElementById('eyeOffIcon'),
-                rememberMe: document.getElementById('rememberMe'),
-                forgotPassword: document.getElementById('forgotPassword'),
-                submitBtn: document.getElementById('submitBtn'),
-                btnText: document.getElementById('btnText'),
-                error: document.getElementById('error'),
-                errorMsg: document.getElementById('errorMsg'),
-                roleBadge: document.getElementById('roleBadge'),
-                roleText: document.getElementById('roleText'),
-                sessionWarning: document.getElementById('sessionWarning'),
-                sessionWarningText: document.getElementById('sessionWarningText')
+            const state = {
+                currentTab: 'staff',
+                isSubmitting: false
             };
 
-            let loginAttempts = 0;
-            let lockoutUntil = null;
-            let sessionTimeout = null;
-            let warningTimeout = null;
+            const DOM = {
+                tabs: document.querySelectorAll('.tab-button'),
+                panels: document.querySelectorAll('.tab-panel'),
+                submitBtn: document.getElementById('submitBtn'),
+                btnText: document.getElementById('btnText'),
+                btnArrow: document.getElementById('btnArrow'),
+                error: document.getElementById('error'),
+                errorMsg: document.getElementById('errorMsg'),
+                rememberMe: document.getElementById('rememberMe'),
+                patientRegister: document.getElementById('patient-register')
+            };
 
             function init() {
                 checkAuth();
@@ -676,9 +889,12 @@
 
             function checkURLParams() {
                 const params = new URLSearchParams(window.location.search);
-                
+                const type = params.get('type');
+                if (type === 'staff' || type === 'patient' || type === 'doctor') {
+                    switchTab(type);
+                }
                 if (params.get('reset') === 'success') {
-                    showSuccess('Password reset email sent! Check your inbox.');
+                    showError('Password reset email sent! Check your inbox.', true);
                 }
                 if (params.get('reason') === 'session_expired') {
                     showError('Your session has expired. Please sign in again.');
@@ -686,207 +902,317 @@
             }
 
             function setupEventListeners() {
-                DOM.form.addEventListener('submit', handleSubmit);
-                DOM.togglePassword.addEventListener('click', togglePasswordVisibility);
-                DOM.forgotPassword.addEventListener('click', handleForgotPassword);
-                
-                ['email', 'password'].forEach(id => {
-                    document.getElementById(id).addEventListener('input', clearError);
+                DOM.tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        switchTab(tab.dataset.tab);
+                    });
+                    tab.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            switchTab(tab.dataset.tab);
+                        }
+                    });
+                });
+
+                DOM.submitBtn.addEventListener('click', handleSubmit);
+
+                document.querySelectorAll('.password-toggle').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        togglePasswordVisibility(btn.dataset.target);
+                    });
+                });
+
+                document.querySelectorAll('.tab-panel input').forEach(input => {
+                    input.addEventListener('input', () => {
+                        clearFieldError(input.closest('.input-group'));
+                        hideError();
+                    });
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSubmit();
+                        }
+                    });
+                });
+
+                DOM.rememberMe.addEventListener('change', () => {
+                    if (!DOM.rememberMe.checked) {
+                        localStorage.removeItem('hospital_queue_remember');
+                        localStorage.removeItem('hospital_queue_remember_id');
+                    }
                 });
             }
 
-            function togglePasswordVisibility() {
-                const isPassword = DOM.password.type === 'password';
-                DOM.password.type = isPassword ? 'text' : 'password';
-                DOM.eyeIcon.style.display = isPassword ? 'none' : 'block';
-                DOM.eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+            function switchTab(tabName) {
+                state.currentTab = tabName;
+                hideError();
+                clearAllErrors();
+
+                DOM.tabs.forEach(tab => {
+                    const isSelected = tab.dataset.tab === tabName;
+                    tab.setAttribute('aria-selected', isSelected);
+                    tab.classList.toggle('active', isSelected);
+                });
+
+                DOM.panels.forEach(panel => {
+                    const isActive = panel.dataset.form === tabName;
+                    panel.classList.toggle('active', isActive);
+                });
+
+                DOM.patientRegister.style.display = tabName === 'patient' ? 'block' : 'none';
+
+                const firstInput = document.querySelector(`#${tabName}-panel input`);
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 100);
+                }
             }
 
-            function handleSubmit(e) {
-                e.preventDefault();
+            function togglePasswordVisibility(inputId) {
+                const input = document.getElementById(inputId);
+                const btn = document.querySelector(`[data-target="${inputId}"]`);
+                if (!input || !btn) return;
 
-                if (lockoutUntil && Date.now() < lockoutUntil) {
-                    const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000 / 60);
-                    showError(`Too many attempts. Try again in ${remaining} minute${remaining !== 1 ? 's' : ''}.`, true);
-                    return;
-                }
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
 
-                const email = DOM.email.value.trim();
-                const password = DOM.password.value;
+                const eyeIcon = btn.querySelector('.eye-icon');
+                const eyeOffIcon = btn.querySelector('.eye-off-icon');
 
-                if (!email || !password) {
-                    showError('Please enter both email and password.');
-                    if (!email) {
-                        DOM.emailGroup.classList.add('has-error');
-                        DOM.email.focus();
-                    } else {
-                        DOM.passwordGroup.classList.add('has-error');
-                        DOM.password.focus();
+                if (eyeIcon) eyeIcon.style.display = isPassword ? 'none' : 'block';
+                if (eyeOffIcon) eyeOffIcon.style.display = isPassword ? 'block' : 'none';
+            }
+
+            function validateForm() {
+                let isValid = true;
+                clearAllErrors();
+
+                if (state.currentTab === 'staff') {
+                    const email = document.getElementById('staff-email');
+                    const password = document.getElementById('staff-password');
+
+                    if (!email.value.trim()) {
+                        showFieldError(email, 'Email is required');
+                        isValid = false;
+                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+                        showFieldError(email, 'Please enter a valid email');
+                        isValid = false;
                     }
-                    return;
+
+                    if (!password.value) {
+                        showFieldError(password, 'Password is required');
+                        isValid = false;
+                    } else if (password.value.length < 6) {
+                        showFieldError(password, 'Password must be at least 6 characters');
+                        isValid = false;
+                    }
+                } else if (state.currentTab === 'patient') {
+                    const identifier = document.getElementById('patient-identifier');
+                    const password = document.getElementById('patient-password');
+
+                    if (!identifier.value.trim()) {
+                        showFieldError(identifier, 'Patient ID or phone number is required');
+                        isValid = false;
+                    }
+
+                    if (!password.value) {
+                        showFieldError(password, 'Password is required');
+                        isValid = false;
+                    }
+                } else if (state.currentTab === 'doctor') {
+                    const email = document.getElementById('doctor-email');
+                    const pin = document.getElementById('doctor-pin');
+
+                    if (!email.value.trim()) {
+                        showFieldError(email, 'Email is required');
+                        isValid = false;
+                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+                        showFieldError(email, 'Please enter a valid email');
+                        isValid = false;
+                    }
+
+                    if (!pin.value.trim()) {
+                        showFieldError(pin, 'PIN is required');
+                        isValid = false;
+                    } else if (pin.value.length < 4 || pin.value.length > 6) {
+                        showFieldError(pin, 'PIN must be 4-6 digits');
+                        isValid = false;
+                    } else if (!/^\d+$/.test(pin.value)) {
+                        showFieldError(pin, 'PIN must contain only digits');
+                        isValid = false;
+                    }
                 }
 
-                login(email, password);
+                return isValid;
             }
 
-            async function login(email, password) {
+            function showFieldError(input, message) {
+                const group = input.closest('.input-group');
+                if (!group) return;
+
+                group.classList.add('has-error');
+                const errorEl = group.querySelector('.input-error');
+                if (errorEl) {
+                    errorEl.textContent = message;
+                }
+            }
+
+            function clearFieldError(group) {
+                if (!group) return;
+                group.classList.remove('has-error');
+                const errorEl = group.querySelector('.input-error');
+                if (errorEl) {
+                    errorEl.textContent = '';
+                }
+            }
+
+            function clearAllErrors() {
+                document.querySelectorAll('.input-group.has-error').forEach(g => {
+                    g.classList.remove('has-error');
+                });
+                document.querySelectorAll('.input-error').forEach(e => {
+                    e.textContent = '';
+                });
+            }
+
+            async function handleSubmit() {
+                if (state.isSubmitting) return;
+                if (!validateForm()) return;
+
+                state.isSubmitting = true;
                 setLoading(true);
                 hideError();
 
                 try {
-                    await Auth.login(email, password);
-                    
-                    if (DOM.rememberMe.checked) {
-                        localStorage.setItem('hospital_queue_remember', email);
-                    } else {
-                        localStorage.removeItem('hospital_queue_remember');
+                    let response;
+                    const baseUrl = '/api';
+
+                    if (state.currentTab === 'staff') {
+                        const email = document.getElementById('staff-email').value.trim().toLowerCase();
+                        const password = document.getElementById('staff-password').value;
+
+                        response = await fetch(`${baseUrl}/auth/staff/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                    } else if (state.currentTab === 'patient') {
+                        const identifier = document.getElementById('patient-identifier').value.trim();
+                        const password = document.getElementById('patient-password').value;
+
+                        response = await fetch(`${baseUrl}/auth/patient/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ identifier, password })
+                        });
+                    } else if (state.currentTab === 'doctor') {
+                        const email = document.getElementById('doctor-email').value.trim().toLowerCase();
+                        const pin = document.getElementById('doctor-pin').value;
+
+                        response = await fetch(`${baseUrl}/auth/pin/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, pin })
+                        });
                     }
 
-                    loginAttempts = 0;
-                    showSuccess('Login successful! Redirecting...');
-                    
-                    setTimeout(() => {
-                        window.location.href = '/dashboard.html';
-                    }, 500);
+                    const data = await response.json();
 
-                } catch (err) {
-                    loginAttempts++;
-                    
-                    if (loginAttempts >= 5) {
-                        lockoutUntil = Date.now() + 15 * 60 * 1000;
-                        showError('Too many failed attempts. Please wait 15 minutes.', true);
-                    } else {
-                        let msg = err.message || 'Login failed. Please try again.';
-                        if (msg.toLowerCase().includes('network')) {
-                            msg = 'Unable to connect. Check your internet connection.';
-                        } else if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
-                            msg = 'Invalid email or password.';
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || data.message || 'Login failed. Please check your credentials.');
+                    }
+
+                    if (data.success && data.data) {
+                        localStorage.setItem('hospital_queue_token', data.data.token);
+                        localStorage.setItem('hospital_queue_user', JSON.stringify(data.data.user));
+
+                        if (DOM.rememberMe.checked) {
+                            if (state.currentTab === 'staff' || state.currentTab === 'doctor') {
+                                localStorage.setItem('hospital_queue_remember', 
+                                    state.currentTab === 'staff' 
+                                        ? document.getElementById('staff-email').value 
+                                        : document.getElementById('doctor-email').value
+                                );
+                            } else {
+                                localStorage.setItem('hospital_queue_remember_id',
+                                    document.getElementById('patient-identifier').value
+                                );
+                            }
                         }
-                        showError(msg);
-                    }
 
-                    DOM.password.value = '';
-                    DOM.password.focus();
-                } finally {
-                    setLoading(false);
-                }
-            }
-
-            async function handleForgotPassword(e) {
-                e.preventDefault();
-                
-                const email = DOM.email.value.trim();
-                
-                if (!email) {
-                    showError('Please enter your email address first.');
-                    DOM.email.focus();
-                    return;
-                }
-
-                try {
-                    const result = await api.auth.requestPasswordReset(email);
-                    
-                    if (result.success) {
-                        showSuccess('Password reset instructions sent to your email!');
-                    } else {
-                        showError(result.error || 'Failed to send reset email. Please try again.');
+                        window.location.href = '/dashboard.html';
                     }
                 } catch (err) {
-                    showError('Failed to send reset email. Please try again.');
+                    let message = err.message || 'Login failed. Please try again.';
+                    if (message.toLowerCase().includes('network') || message.toLowerCase().includes('fetch')) {
+                        message = 'Unable to connect. Check your internet connection.';
+                    }
+                    showError(message);
+                } finally {
+                    state.isSubmitting = false;
+                    setLoading(false);
                 }
             }
 
             function setLoading(loading) {
                 DOM.submitBtn.disabled = loading;
-                DOM.submitBtn.classList.toggle('btn-loading', loading);
-                DOM.btnText.innerHTML = loading 
-                    ? '<span class="spinner"></span> Signing in...' 
-                    : 'Sign In';
+                if (loading) {
+                    DOM.btnText.textContent = 'Signing in...';
+                    DOM.btnArrow.style.display = 'none';
+                    const spinner = document.createElement('span');
+                    spinner.className = 'spinner';
+                    spinner.id = 'btnSpinner';
+                    DOM.submitBtn.insertBefore(spinner, DOM.btnText);
+                } else {
+                    DOM.btnText.textContent = 'Sign In';
+                    DOM.btnArrow.style.display = 'block';
+                    const spinner = document.getElementById('btnSpinner');
+                    if (spinner) spinner.remove();
+                }
             }
 
-            function showError(message, isRateLimit = false) {
+            function showError(message, isSuccess = false) {
                 DOM.errorMsg.textContent = message;
                 DOM.error.classList.add('visible');
-                if (isRateLimit) {
-                    DOM.error.classList.add('rate-limit-warning');
+                if (isSuccess) {
+                    DOM.error.style.background = 'rgba(22, 163, 74, 0.12)';
+                    DOM.error.style.borderColor = 'rgba(22, 163, 74, 0.3)';
+                    DOM.error.style.color = '#86efac';
                 } else {
-                    DOM.error.classList.remove('rate-limit-warning');
+                    DOM.error.style.background = '';
+                    DOM.error.style.borderColor = '';
+                    DOM.error.style.color = '';
                 }
-                
                 DOM.error.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
-            function showSuccess(message) {
-                DOM.errorMsg.textContent = message;
-                DOM.error.classList.remove('rate-limit-warning');
-                DOM.error.classList.add('visible', 'reset-success');
-                
-                setTimeout(() => {
-                    hideError();
-                }, 5000);
-            }
-
             function hideError() {
-                DOM.error.classList.remove('visible', 'rate-limit-warning', 'reset-success');
-            }
-
-            function clearError() {
-                DOM.emailGroup.classList.remove('has-error');
-                DOM.passwordGroup.classList.remove('has-error');
                 DOM.error.classList.remove('visible');
+                DOM.error.style.background = '';
+                DOM.error.style.borderColor = '';
+                DOM.error.style.color = '';
             }
 
             function loadSavedCredentials() {
                 const savedEmail = localStorage.getItem('hospital_queue_remember');
+                const savedId = localStorage.getItem('hospital_queue_remember_id');
+
                 if (savedEmail) {
-                    DOM.email.value = savedEmail;
+                    const emailInput = document.getElementById('staff-email');
+                    if (emailInput) emailInput.value = savedEmail;
+                    DOM.rememberMe.checked = true;
+                }
+                if (savedId) {
+                    const idInput = document.getElementById('patient-identifier');
+                    if (idInput) idInput.value = savedId;
                     DOM.rememberMe.checked = true;
                 }
             }
 
-            function setupSessionWarning(token) {
-                clearTimeout(sessionTimeout);
-                clearTimeout(warningTimeout);
-
-                const payload = Auth._decodeToken(token);
-                if (!payload || !payload.exp) return;
-
-                const expiresAt = payload.exp * 1000;
-                const now = Date.now();
-                const warningDelay = expiresAt - now - (5 * 60 * 1000);
-                const logoutDelay = expiresAt - now;
-
-                if (warningDelay > 0) {
-                    warningTimeout = setTimeout(() => {
-                        showSessionWarning();
-                    }, warningDelay);
-                } else if (logoutDelay > 0) {
-                    showSessionWarning();
-                }
-
-                sessionTimeout = setTimeout(() => {
-                    Auth.logout();
-                }, logoutDelay);
-            }
-
-            function showSessionWarning() {
-                DOM.sessionWarning.classList.add('visible');
-                DOM.sessionWarningText.textContent = 'Your session will expire in 5 minutes. Click anywhere to extend.';
-                
-                const extendSession = async () => {
-                    const refreshed = await Auth.refreshToken();
-                    if (refreshed) {
-                        DOM.sessionWarning.classList.remove('visible');
-                        setupSessionWarning(Auth.getToken());
-                    }
-                };
-
-                const dismissWarning = () => {
-                    DOM.sessionWarning.classList.remove('visible');
-                    extendSession();
-                };
-
-                DOM.sessionWarning.onclick = dismissWarning;
+            const pinInput = document.getElementById('doctor-pin');
+            if (pinInput) {
+                pinInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                });
             }
 
             init();

@@ -37,7 +37,7 @@ export type Bindings = {
 };
 
 export type UserRole = 'super_admin' | 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'patient' | 'pharmacist' | 'lab_tech' | 'facility_manager' | 'it_support';
-export type VisitStatus = 'waiting' | 'called' | 'in_progress' | 'completed' | 'no_show' | 'transferred';
+export type VisitStatus = 'waiting' | 'called' | 'serving' | 'completed' | 'no_show' | 'transferred';
 
 export interface Patient {
   id: string;

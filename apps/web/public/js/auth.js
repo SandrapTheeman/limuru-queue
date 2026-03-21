@@ -5,7 +5,7 @@
 
 const Auth = {
     // Configuration
-    baseUrl: '/api',
+    baseUrl: 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api',
     loginPage: '/login.html',
 
     // Token storage keys (aligned with API module)
@@ -13,11 +13,15 @@ const Auth = {
     refreshKey: 'hospital_queue_refresh_token',
     userKey: 'hospital_queue_user',
 
+    // Loading state
+    _loading: false,
+
     // Event types
     events: {
         LOGIN: 'auth-login',
         LOGOUT: 'auth-logout',
-        TOKEN_REFRESH: 'auth-token-refresh'
+        TOKEN_REFRESH: 'auth-token-refresh',
+        LOADING: 'auth-loading'
     },
 
     /**
@@ -111,7 +115,9 @@ const Auth = {
             throw new Error('Email and password are required');
         }
 
-        // Sanitize inputs
+        this._loading = true;
+        this._dispatchEvent(this.events.LOADING, { loading: true });
+
         const sanitizedEmail = email.trim().toLowerCase();
 
         try {
@@ -133,10 +139,8 @@ const Auth = {
             }
 
             if (data.success && data.data) {
-                // Store credentials
                 this._storeCredentials(data.data);
 
-                // Dispatch login event
                 this._dispatchEvent(this.events.LOGIN, {
                     user: data.data.user,
                     token: data.data.token
@@ -152,6 +156,9 @@ const Auth = {
                 throw new Error('Network error. Please check your connection.');
             }
             throw error;
+        } finally {
+            this._loading = false;
+            this._dispatchEvent(this.events.LOADING, { loading: false });
         }
     },
 
@@ -166,6 +173,9 @@ const Auth = {
         if (!identifier || !password) {
             throw new Error('Patient ID/Phone and password are required');
         }
+
+        this._loading = true;
+        this._dispatchEvent(this.events.LOADING, { loading: true });
 
         try {
             const response = await fetch(`${this.baseUrl}/auth/patient/login`, {
@@ -201,31 +211,39 @@ const Auth = {
                 throw new Error('Network error. Please check your connection.');
             }
             throw error;
+        } finally {
+            this._loading = false;
+            this._dispatchEvent(this.events.LOADING, { loading: false });
         }
     },
 
     /**
      * Doctor PIN login
-     * @param {string} email - Doctor email
      * @param {string} pin - 4-digit PIN
+     * @param {string} stationId - Optional station ID for break mode
      * @returns {Promise<Object>} Resolves with user data and tokens
      * @throws {Error} If login fails
      */
-    async pinLogin(email, pin) {
-        if (!email || !pin || pin.length !== 4) {
-            throw new Error('Email and 4-digit PIN are required');
+    async pinLogin(pin, stationId = null) {
+        if (!pin || pin.length !== 4) {
+            throw new Error('4-digit PIN is required');
         }
 
+        this._loading = true;
+        this._dispatchEvent(this.events.LOADING, { loading: true });
+
         try {
+            const body = { pin };
+            if (stationId) {
+                body.stationId = stationId;
+            }
+
             const response = await fetch(`${this.baseUrl}/auth/pin/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    email: email.trim().toLowerCase(),
-                    pin: pin
-                })
+                body: JSON.stringify(body)
             });
 
             const data = await response.json();
@@ -250,6 +268,9 @@ const Auth = {
                 throw new Error('Network error. Please check your connection.');
             }
             throw error;
+        } finally {
+            this._loading = false;
+            this._dispatchEvent(this.events.LOADING, { loading: false });
         }
     },
 
@@ -261,9 +282,6 @@ const Auth = {
         if (data.token) {
             localStorage.setItem(this.tokenKey, data.token);
         }
-        if (data.accessToken) {
-            localStorage.setItem(this.tokenKey, data.accessToken);
-        }
         if (data.refreshToken) {
             localStorage.setItem(this.refreshKey, data.refreshToken);
         }
@@ -273,12 +291,12 @@ const Auth = {
     },
 
     /**
-     * Refresh access token using refresh token
+     * Refresh access token
      * @returns {Promise<boolean>} True if refresh successful
      */
     async refreshToken() {
-        const refreshToken = this.getRefreshToken();
-        if (!refreshToken) {
+        const token = this.getToken();
+        if (!token) {
             return false;
         }
 
@@ -286,9 +304,9 @@ const Auth = {
             const response = await fetch(`${this.baseUrl}/auth/refresh`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ refreshToken })
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             const data = await response.json();
@@ -296,11 +314,12 @@ const Auth = {
             if (data.success && data.data) {
                 this._storeCredentials(data.data);
                 this._dispatchEvent(this.events.TOKEN_REFRESH, {
-                    token: data.data.accessToken
+                    token: data.data.token
                 });
                 return true;
             }
 
+            this.logout(false);
             return false;
 
         } catch (error) {
@@ -310,19 +329,59 @@ const Auth = {
     },
 
     /**
+     * Initialize authentication - restore session from localStorage
+     * Call this on page load
+     * @returns {Object|null} User data if authenticated, null otherwise
+     */
+    init() {
+        const token = this.getToken();
+        const user = this.getUser();
+        
+        if (token && user) {
+            if (this.isAuthenticated()) {
+                this._dispatchEvent(this.events.LOGIN, { user, token });
+                return user;
+            } else {
+                this.logout(false);
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Check if auth operation is in progress
+     * @returns {boolean} True if loading
+     */
+    isLoading() {
+        return this._loading;
+    },
+
+    /**
      * Logout current user
      * @param {boolean} redirect - Whether to redirect to login page (default: true)
+     * @param {boolean} callApi - Whether to call logout API (default: true)
      */
-    logout(redirect = true) {
-        // Clear stored credentials
+    async logout(redirect = true, callApi = true) {
+        if (callApi) {
+            try {
+                await fetch(`${this.baseUrl}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.getToken()}`
+                    }
+                });
+            } catch (error) {
+                console.warn('Auth: Logout API call failed', error);
+            }
+        }
+
         localStorage.removeItem(this.tokenKey);
         localStorage.removeItem(this.refreshKey);
         localStorage.removeItem(this.userKey);
 
-        // Dispatch logout event
         this._dispatchEvent(this.events.LOGOUT, {});
 
-        // Redirect to login page if requested
         if (redirect && typeof window !== 'undefined') {
             const currentPage = window.location.pathname;
             if (currentPage !== this.loginPage) {
@@ -431,6 +490,69 @@ const Auth = {
             return () => window.removeEventListener(eventName, (e) => callback(e.detail));
         }
         return () => {};
+    },
+
+    /**
+     * Make authenticated API request with automatic token refresh
+     * @param {string} endpoint - API endpoint (will be appended to baseUrl)
+     * @param {Object} options - Fetch options
+     * @returns {Promise<Object>} API response data
+     * @throws {Error} If request fails after token refresh
+     */
+    async request(endpoint, options = {}) {
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        };
+
+        const token = this.getToken();
+        if (token) {
+            defaultOptions.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const mergedOptions = {
+            ...defaultOptions,
+            ...options,
+            headers: {
+                ...defaultOptions.headers,
+                ...options.headers,
+            },
+        };
+
+        let response = await fetch(`${this.baseUrl}${endpoint}`, mergedOptions);
+
+        if (response.status === 401) {
+            const refreshed = await this.refreshToken();
+            if (refreshed) {
+                const newToken = this.getToken();
+                mergedOptions.headers['Authorization'] = `Bearer ${newToken}`;
+                response = await fetch(`${this.baseUrl}${endpoint}`, mergedOptions);
+            } else {
+                this.logout();
+                throw new Error('Session expired. Please login again.');
+            }
+        }
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || data.message || 'Request failed');
+        }
+
+        return data.data;
+    },
+
+    /**
+     * Get current user data from API (validates session)
+     * @returns {Promise<Object|null>} User data or null if not authenticated
+     */
+    async getCurrentUser() {
+        try {
+            return await this.request('/auth/me');
+        } catch (error) {
+            return null;
+        }
     }
 };
 

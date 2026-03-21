@@ -15,7 +15,7 @@ doctors.get('/', async (c) => {
            d.specialty, d.qualification, d.is_available, d.rating, d.review_count,
            d.consultation_fee, d.max_daily_patients,
            dep.name as department_name, dep.code as department_code,
-           (SELECT COUNT(*) FROM queue_tickets v WHERE v.doctor_id = d.id AND v.status IN ('waiting','called','in_progress')) as active_visits
+           (SELECT COUNT(*) FROM queue_tickets v WHERE v.doctor_id = d.id AND v.status IN ('waiting','called','serving')) as active_visits
     FROM doctors d
     JOIN users u ON d.user_id = u.id
     JOIN departments dep ON u.department_id = dep.id
@@ -51,7 +51,7 @@ doctors.get('/:id', async (c) => {
   const doctor = await db.prepare(`
     SELECT d.*, u.first_name, u.last_name, u.email, u.phone,
            dep.name as department_name, dep.code as department_code,
-           (SELECT COUNT(*) FROM queue_tickets v WHERE v.doctor_id = d.id AND v.status = 'in_progress') as active_visits
+           (SELECT COUNT(*) FROM queue_tickets v WHERE v.doctor_id = d.id AND v.status = 'serving') as active_visits
     FROM doctors d
     JOIN users u ON d.user_id = u.id
     JOIN departments dep ON u.department_id = dep.id
@@ -126,7 +126,7 @@ doctors.get('/doctor/queue', async (c) => {
            p.gender as patient_gender
     FROM queue_tickets v
     JOIN patients p ON v.patient_id = p.id
-    WHERE v.doctor_id = ? AND v.status IN ('waiting', 'called', 'in_progress')
+    WHERE v.doctor_id = ? AND v.status IN ('waiting', 'called', 'serving')
     ORDER BY v.priority DESC, v.created_at ASC
   `).bind(doctorId).all();
 

@@ -100,7 +100,7 @@ export async function addToQueue(
   // Get current ticket count for department
   const countResult = await db.prepare(`
     SELECT COUNT(*) as count FROM queue_tickets 
-    WHERE department_id = ? AND status IN ('waiting', 'called', 'in_progress')
+    WHERE department_id = ? AND status IN ('waiting', 'called', 'serving')
     AND date(created_at) = date('now')
   `).bind(departmentId).first() as { count: number } | undefined;
   
@@ -196,6 +196,43 @@ export async function startConsultation(
   `).bind(visitId).first();
 }
 
+// Transfer patient
+export async function transferPatient(
+  db: D1Database,
+  visitId: string,
+  newDepartmentCode: string,
+  actorId?: string
+): Promise<any> {
+  // Look up new department ID from code
+  const dept = await db.prepare('SELECT id FROM departments WHERE code = ?').bind(newDepartmentCode).first() as { id: string } | undefined;
+  if (!dept) {
+    throw new Error(`Department '${newDepartmentCode}' not found`);
+  }
+  const newDepartmentId = dept.id;
+  
+  const countResult = await db.prepare(`
+    SELECT COUNT(*) as count FROM queue_tickets 
+    WHERE department_id = ? AND status IN ('waiting', 'called', 'serving')
+    AND date(created_at) = date('now')
+  `).bind(newDepartmentId).first() as { count: number } | undefined;
+  
+  const newTicketNumber = generateTicketNumber(newDepartmentCode, countResult?.count || 0);
+  
+  await db.prepare(`
+    UPDATE queue_tickets 
+    SET department_id = ?, ticket_number = ?, status = 'waiting',
+        transferred_to_department = ?, transferred_at = ?
+    WHERE id = ?
+  `).bind(newDepartmentId, newTicketNumber, newDepartmentId, now(), visitId).run();
+  
+  return await db.prepare(`
+    SELECT v.*, p.first_name || ' ' || p.last_name as patient_name
+    FROM queue_tickets v
+    JOIN patients p ON v.patient_id = p.id
+    WHERE v.id = ?
+  `).bind(visitId).first();
+}
+
 // Complete visit
 export async function completeVisit(
   db: D1Database,
@@ -205,7 +242,6 @@ export async function completeVisit(
 ): Promise<any> {
   const completedAt = now();
   
-  // Get visit to calculate wait time
   const visit: any = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first();
   
   let waitTime = 0;
@@ -217,7 +253,7 @@ export async function completeVisit(
   
   await db.prepare(`
     UPDATE queue_tickets 
-    SET status = 'completed', completed_at = ?, completed_by = ?, wait_time_minutes = ?, notes = ?
+    SET status = 'completed', completed_at = ?, completed_by = ?, actual_wait_minutes = ?, notes = ?
     WHERE id = ?
   `).bind(completedAt, completedBy || null, waitTime, notes || null, visitId).run();
   
@@ -239,43 +275,6 @@ export async function markNoShow(
   `).bind(visitId).run();
   
   return await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first();
-}
-
-// Transfer patient
-export async function transferPatient(
-  db: D1Database,
-  visitId: string,
-  newDepartmentCode: string,
-  actorId?: string
-): Promise<any> {
-  // Look up new department ID from code
-  const dept = await db.prepare('SELECT id FROM departments WHERE code = ?').bind(newDepartmentCode).first() as { id: string } | undefined;
-  if (!dept) {
-    throw new Error(`Department '${newDepartmentCode}' not found`);
-  }
-  const newDepartmentId = dept.id;
-  
-  const countResult = await db.prepare(`
-    SELECT COUNT(*) as count FROM queue_tickets 
-    WHERE department_id = ? AND status IN ('waiting', 'called', 'in_progress')
-    AND date(created_at) = date('now')
-  `).bind(newDepartmentId).first() as { count: number } | undefined;
-  
-  const newTicketNumber = generateTicketNumber(newDepartmentCode, countResult?.count || 0);
-  
-  await db.prepare(`
-    UPDATE queue_tickets 
-    SET department_id = ?, ticket_number = ?, status = 'waiting',
-        transferred_to_department = ?, transferred_at = ?
-    WHERE id = ?
-  `).bind(newDepartmentId, newTicketNumber, newDepartmentId, now(), visitId).run();
-  
-  return await db.prepare(`
-    SELECT v.*, p.first_name || ' ' || p.last_name as patient_name
-    FROM queue_tickets v
-    JOIN patients p ON v.patient_id = p.id
-    WHERE v.id = ?
-  `).bind(visitId).first();
 }
 
 // Get visit by ID
@@ -302,10 +301,10 @@ export async function getPatientVisits(
 ): Promise<{ queue_tickets: any[]; total: number }> {
   const results = await db.prepare(`
     SELECT v.*, 
-           d.qualification as doctor_name,
+           u.first_name || ' ' || u.last_name as doctor_name,
            dep.name as department_name
     FROM queue_tickets v
-    LEFT JOIN doctors d ON v.doctor_id = d.id
+    LEFT JOIN users u ON v.doctor_id = u.id
     LEFT JOIN departments dep ON v.department_id = dep.id
     WHERE v.patient_id = ?
     ORDER BY v.created_at DESC

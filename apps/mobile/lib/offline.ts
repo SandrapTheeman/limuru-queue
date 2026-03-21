@@ -125,7 +125,7 @@ export async function syncPending(): Promise<{ success: number; failed: number }
 }
 
 async function fetchOperation(operation: PendingOperation): Promise<Response> {
-  const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787';
+  const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api';
   const token = await AsyncStorage.getItem('auth-storage');
 
   const headers: Record<string, string> = {

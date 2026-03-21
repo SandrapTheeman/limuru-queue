@@ -214,10 +214,11 @@ class DoctorNotesPage {
  */
 async function loginAs(page, role) {
   const credentials = {
-    admin: { email: 'admin@limuruhospital.co.ke', password: 'password123' },
-    doctor: { email: 'doctor@hospital.co.ke', password: 'password123' },
-    nurse: { email: 'nurse@hospital.co.ke', password: 'password123' },
-    receptionist: { email: 'reception@hospital.co.ke', password: 'password123' }
+    admin: { email: 'admin@limuruhospital.co.ke', password: '#Limuru_Cottage_Hospital@2026' },
+    doctor: { email: 'dr.odhiambo@limuruhospital.co.ke', password: '#Limuru_Cottage_Hospital@2026' },
+    patient: { email: 'james.kamau@email.com', password: '#Limuru_Cottage_Hospital@2026' },
+    nurse: { email: 'nurse@hospital.co.ke', password: '#Limuru_Cottage_Hospital@2026' },
+    receptionist: { email: 'reception@hospital.co.ke', password: '#Limuru_Cottage_Hospital@2026' }
   };
   
   const loginPage = new LoginPage(page);

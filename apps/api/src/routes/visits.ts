@@ -16,7 +16,7 @@ const createVisitSchema = z.object({
 });
 
 const updateVisitSchema = z.object({
-  status: z.enum(['waiting', 'called', 'in_progress', 'completed', 'no_show', 'transferred']).optional(),
+  status: z.enum(['waiting', 'called', 'serving', 'completed', 'no_show', 'transferred']).optional(),
   roomAssigned: z.string().optional(),
   doctorNotes: z.string().optional(),
   diagnosis: z.string().optional(),
@@ -58,7 +58,7 @@ const addAllergySchema = z.object({
 });
 
 const listVisitsSchema = z.object({
-  status: z.enum(['waiting', 'called', 'in_progress', 'completed', 'no_show', 'transferred']).optional(),
+  status: z.enum(['waiting', 'called', 'serving', 'completed', 'no_show', 'transferred']).optional(),
   department: z.string().optional(),
   doctorId: z.string().optional(),
   patientId: z.string().optional(),
@@ -154,7 +154,7 @@ visits.get('/:id', async (c) => {
 
   const visit = await db.prepare(`
     SELECT v.*, p.first_name || ' ' || p.last_name as patient_name, p.phone as patient_phone, p.email as patient_email,
-           p.dob as patient_dob, p.allergies as patient_allergies,
+           p.date_of_birth as patient_dob, p.allergies as patient_allergies,
            d.qualification as doctor_name, d.department_id as doctor_department
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
@@ -182,39 +182,32 @@ visits.post('/', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
+  const dept = await db.prepare('SELECT id, code FROM departments WHERE id = ? OR code = ?').bind(body.department, body.department).first() as { id: string; code: string } | undefined;
+  
+  if (!dept) {
+    return c.json(errorResponse('Department not found'), 404);
+  }
+
   const countResult = await db.prepare(`
     SELECT COUNT(*) as count FROM queue_tickets 
-    WHERE department_id = ? AND status IN ('waiting', 'called', 'in_progress')
+    WHERE department_id = ? AND status IN ('waiting', 'called', 'serving')
     AND date(created_at) = date('now')
-  `).bind(body.department).first() as { count: number };
+  `).bind(dept.id).first() as { count: number };
 
-  const ticketNumber = generateId(body.department.substring(0, 3).toUpperCase() + String((countResult?.count || 0) + 1).padStart(3, '0'));
+  const ticketNumber = dept.code.substring(0, 3).toUpperCase() + String((countResult?.count || 0) + 1).padStart(3, '0');
   const id = generateId('visit');
   const createdAt = now();
 
   await db.prepare(`
-    INSERT INTO queue_tickets (id, patient_id, ticket_number, department_id, priority, triage_level, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 'waiting', ?)
+    INSERT INTO queue_tickets (id, patient_id, department_id, ticket_number, priority, status, created_at)
+    VALUES (?, ?, ?, ?, ?, 'waiting', ?)
   `).bind(
     id,
     body.patientId,
+    dept.id,
     ticketNumber,
-    body.department,
-    body.priority ? 1 : 0,
-    body.triageLevel || null,
+    body.priority ? 1 : 3,
     createdAt
-  ).run();
-
-  await db.prepare(`
-    INSERT INTO queue_history (id, visit_id, action, actor_id, actor_type, timestamp, metadata)
-    VALUES (?, ?, 'created', ?, ?, ?, ?)
-  `).bind(
-    generateId('hist'),
-    id,
-    user.userId,
-    user.role,
-    createdAt,
-    JSON.stringify({ complaint: body.complaint, notes: body.notes })
   ).run();
 
   const visit = await db.prepare(`
@@ -253,7 +246,7 @@ visits.put('/:id', async (c) => {
     if (body.status === 'called') {
       updates.push(`called_at = ?`);
       params.push(now());
-    } else if (body.status === 'in_progress') {
+    } else if (body.status === 'serving') {
       updates.push(`started_at = ?`);
       params.push(now());
     } else if (body.status === 'completed') {
@@ -264,7 +257,7 @@ visits.put('/:id', async (c) => {
       if (visit.called_at) {
         waitTime = calculateWaitTime(visit.called_at);
       }
-      updates.push(`wait_time_minutes = ?`);
+      updates.push(`actual_wait_minutes = ?`);
       params.push(waitTime);
     }
   }
@@ -346,7 +339,7 @@ visits.post('/:id/start', async (c) => {
   const startedAt = now();
 
   await db.prepare(`
-    UPDATE queue_tickets SET status = 'in_progress', started_at = ?, doctor_id = ?
+    UPDATE queue_tickets SET status = 'serving', started_at = ?, doctor_id = ?
     WHERE id = ?
   `).bind(startedAt, user.doctorId || null, visitId).run();
 
@@ -389,22 +382,15 @@ visits.post('/:id/complete', async (c) => {
 
   await db.prepare(`
     UPDATE queue_tickets 
-    SET status = 'completed', completed_at = ?, wait_time_minutes = ?,
-        diagnosis = ?, prescription = ?, doctor_notes = ?
+    SET status = 'completed', completed_at = ?, actual_wait_minutes = ?,
+        notes = ?
     WHERE id = ?
   `).bind(
     completedAt,
     waitTime,
-    body.diagnosis || null,
-    body.prescription || null,
-    body.doctorNotes || null,
+    body.notes || null,
     visitId
   ).run();
-
-  await db.prepare(`
-    INSERT INTO queue_history (id, visit_id, action, actor_id, actor_type, timestamp)
-    VALUES (?, ?, 'completed', ?, ?, ?)
-  `).bind(generateId('hist'), visitId, user.userId, user.role, completedAt).run();
 
   const updated = await db.prepare(`
     SELECT v.*, p.first_name || ' ' || p.last_name as patient_name 
@@ -426,7 +412,7 @@ visits.get('/:id/vital-signs', async (c) => {
   }
 
   const result = await db.prepare(`
-    SELECT vs.*, u.first_name || ' ' || u.last_name as recorded_by_name
+    SELECT vs.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'Unknown') as recorded_by_name
     FROM vital_signs vs
     LEFT JOIN users u ON vs.recorded_by = u.id
     WHERE vs.visit_id = ?
@@ -489,7 +475,7 @@ visits.get('/:id/soap-notes', async (c) => {
   }
 
   const result = await db.prepare(`
-    SELECT sn.*, u.first_name || ' ' || u.last_name as recorded_by_name
+    SELECT sn.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'Unknown') as recorded_by_name
     FROM soap_notes sn
     LEFT JOIN users u ON sn.recorded_by = u.id
     WHERE sn.visit_id = ?
@@ -531,7 +517,7 @@ visits.post('/:id/soap-notes', async (c) => {
     ).run();
 
     const updated = await db.prepare(`
-      SELECT sn.*, u.first_name || ' ' || u.last_name as recorded_by_name
+      SELECT sn.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'Unknown') as recorded_by_name
       FROM soap_notes sn
       LEFT JOIN users u ON sn.recorded_by = u.id
       WHERE sn.visit_id = ?
@@ -559,7 +545,7 @@ visits.post('/:id/soap-notes', async (c) => {
   ).run();
 
   const soapNote = await db.prepare(`
-    SELECT sn.*, u.first_name || ' ' || u.last_name as recorded_by_name
+    SELECT sn.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'Unknown') as recorded_by_name
     FROM soap_notes sn
     LEFT JOIN users u ON sn.recorded_by = u.id
     WHERE sn.id = ?
@@ -578,7 +564,7 @@ visits.get('/:id/prescriptions', async (c) => {
   }
 
   const result = await db.prepare(`
-    SELECT p.*, u.first_name || ' ' || u.last_name as prescribed_by_name
+    SELECT p.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'Unknown') as prescribed_by_name
     FROM prescriptions p
     LEFT JOIN users u ON p.prescribed_by = u.id
     WHERE p.visit_id = ?
@@ -622,7 +608,7 @@ visits.post('/:id/prescriptions', async (c) => {
   ).run();
 
   const prescription = await db.prepare(`
-    SELECT p.*, u.first_name || ' ' || u.last_name as prescribed_by_name
+    SELECT p.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'Unknown') as prescribed_by_name
     FROM prescriptions p
     LEFT JOIN users u ON p.prescribed_by = u.id
     WHERE p.id = ?
@@ -641,7 +627,7 @@ visits.get('/patient/:patientId/allergies', async (c) => {
   }
 
   const result = await db.prepare(`
-    SELECT a.*, u.first_name || ' ' || u.last_name as recorded_by_name
+    SELECT a.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'Unknown') as recorded_by_name
     FROM allergies a
     LEFT JOIN users u ON a.recorded_by = u.id
     WHERE a.patient_id = ? AND a.is_active = 1
@@ -705,7 +691,7 @@ visits.get('/:id/history', async (c) => {
   }
 
   const history = await db.prepare(`
-    SELECT qh.*, u.first_name || ' ' || u.last_name as actor_name
+    SELECT qh.*, COALESCE(u.name, u.first_name || ' ' || u.last_name, 'System') as actor_name
     FROM queue_history qh
     LEFT JOIN users u ON qh.actor_id = u.id
     WHERE qh.visit_id = ?

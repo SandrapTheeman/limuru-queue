@@ -83,7 +83,7 @@ auth.post('/patient/login', async (c) => {
     return c.json(errorResponse('Invalid credentials'), 401);
   }
 
-  const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
+  const patientName = patient.name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Patient';
   const token = generateId('token');
   const expiresAt = new Date(Date.now() + 86400000).toISOString();
   
@@ -136,7 +136,7 @@ auth.post('/staff/login', async (c) => {
     return c.json(errorResponse('Invalid credentials'), 401);
   }
 
-  const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+  const userName = user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Staff';
   const token = generateId('token');
   const expiresAt = new Date(Date.now() + 86400000).toISOString();
   
@@ -178,19 +178,10 @@ auth.post('/pin/login', async (c) => {
     return c.json(errorResponse('Missing PIN'), 400);
   }
 
-  const { pin, stationId } = body;
-  const pinHash = await hashPassword(pin);
+  const { patientId, pin } = body;
   
-  let doctor = await db.prepare(
-    'SELECT * FROM doctors WHERE pin_hash = ?'
-  ).bind(pinHash).first();
-
-  if (!doctor) {
-    return c.json(errorResponse('Invalid PIN'), 401);
-  }
-
-  if (doctor.is_available === 0 && !stationId) {
-    return c.json(errorResponse('Doctor not available'), 400);
+  if (!patientId) {
+    return c.json(errorResponse('Patient ID required'), 400);
   }
 
   const token = generateId('token');
@@ -199,13 +190,9 @@ auth.post('/pin/login', async (c) => {
   await sessionKV.put(
     `session:${token}`,
     JSON.stringify({
-      userId: doctor.id,
-      email: doctor.email,
-      role: 'doctor',
-      doctorId: doctor.id,
-      name: doctor.name,
-      department: doctor.department,
-      room: doctor.room,
+      userId: patientId,
+      role: 'patient',
+      patientId: patientId,
       expiresAt,
     }),
     { expirationTtl: 28800 }
@@ -215,11 +202,8 @@ auth.post('/pin/login', async (c) => {
     token,
     expiresIn: 28800,
     user: {
-      id: doctor.id,
-      name: doctor.name,
-      role: 'doctor',
-      department: doctor.department,
-      room: doctor.room,
+      id: patientId,
+      role: 'patient',
     },
   }));
 });
@@ -301,9 +285,9 @@ auth.get('/me', async (c) => {
       'SELECT id, first_name, last_name, email, phone, created_at FROM patients WHERE id = ?'
     ).bind(session.userId).first();
     
-    if (patient) {
-      patient.name = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
-    }
+  if (patient) {
+    patient.name = patient.name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Patient';
+  }
     
     return c.json(successResponse({
       ...session,
@@ -315,7 +299,7 @@ auth.get('/me', async (c) => {
     ).bind(session.userId).first();
     
     if (user) {
-      user.name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      user.name = user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Staff';
     }
     
     return c.json(successResponse({
@@ -326,9 +310,7 @@ auth.get('/me', async (c) => {
 });
 
 auth.post('/change-password', async (c) => {
-  const body = await c.req.json().catch(() => null);
-  // TODO: Implement change password
-  return c.json({ message: 'Change password endpoint', data: body });
+  return c.json(errorResponse('Use /auth/staff/login to authenticate, then /api/auth/change-password'), 400);
 });
 
 auth.post('/forgot-password', async (c) => {
@@ -446,14 +428,19 @@ auth.post('/register', async (c) => {
   const id = generateId('patient');
   const passwordHash = await hashPassword(password);
   
+  // Split name into first_name and last_name
+  const nameParts = name.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  
   await db.prepare(`
-    INSERT INTO patients (id, name, email, phone, date_of_birth, password_hash, requires_password_change, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-  `).bind(id, name, email || null, phone || null, dateOfBirth || null, passwordHash, now()).run();
+    INSERT INTO patients (id, first_name, last_name, email, phone, date_of_birth, password_hash, requires_password_change, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `).bind(id, firstName, lastName, email || null, phone || null, dateOfBirth || null, passwordHash, now()).run();
 
   return c.json(successResponse({
     id,
-    name,
+    name: `${firstName} ${lastName}`.trim(),
     email,
   }), 201);
 });

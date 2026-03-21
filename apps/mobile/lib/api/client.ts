@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api';
 
 const TOKEN_KEY = 'auth_token';
 const MAX_RETRIES = 3;

@@ -1578,5 +1578,33 @@ CREATE INDEX IF NOT EXISTS idx_waitlist_priority ON waitlist(priority);
 CREATE INDEX IF NOT EXISTS idx_waitlist_date ON waitlist(preferred_date);
 
 -- ============================================================
+-- SECTION 15: IPTV CHANNELS
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS iptv_channels (
+  id TEXT PRIMARY KEY DEFAULT (
+    lower(hex(randomblob(4))) || '-' || 
+    lower(hex(randomblob(2))) || '-4' || 
+    substr(lower(hex(randomblob(2))),2) || '-' || 
+    substr('89ab',abs(random()) % 4 + 1, 1) || 
+    substr(lower(hex(randomblob(2))),2) || '-' || 
+    lower(hex(randomblob(6)))
+  ),
+  facility_id TEXT NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  category TEXT,
+  logo TEXT,
+  is_active INTEGER DEFAULT 1,
+  display_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (STRFTIME('%Y-%m-%dT%H:%M:%SZ', 'NOW')),
+  updated_at TEXT DEFAULT (STRFTIME('%Y-%m-%dT%H:%M:%SZ', 'NOW'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_iptv_facility ON iptv_channels(facility_id);
+CREATE INDEX IF NOT EXISTS idx_iptv_active ON iptv_channels(is_active);
+CREATE INDEX IF NOT EXISTS idx_iptv_order ON iptv_channels(display_order);
+
+-- ============================================================
 -- END OF MIGRATION
 -- ============================================================

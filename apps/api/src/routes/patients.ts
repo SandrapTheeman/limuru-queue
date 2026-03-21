@@ -1,8 +1,48 @@
 import { Hono } from 'hono';
+import { z } from 'zod';
 import type { Bindings } from '../types';
 import { generateId, hashPassword, successResponse, errorResponse, now } from '../utils';
 
 const patients = new Hono<{ Bindings: Bindings }>();
+
+const patientUpdateSchema = z.object({
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  date_of_birth: z.string().optional(),
+  address: z.string().max(500).optional(),
+  emergency_contact_name: z.string().optional(),
+  emergency_phone: z.string().optional(),
+  emergency_email: z.string().email().optional(),
+  national_id: z.string().optional(),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+});
+
+const quickRegisterSchema = z.object({
+  name: z.string().min(1).max(200),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  hmsPatientId: z.string().optional(),
+});
+
+const registerSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  address: z.string().max(500).optional(),
+  emergencyContact: z.object({
+    name: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.string().email().optional(),
+  }).optional(),
+});
+
+const searchSchema = z.object({
+  query: z.string().min(1).max(100),
+  limit: z.number().int().min(1).max(100).optional().default(10),
+});
 
 patients.get('/', async (c) => {
   const db = c.env.DB;
@@ -49,7 +89,8 @@ patients.get('/:id', async (c) => {
   const id = c.req.param('id');
 
   const patient = await db.prepare(`
-    SELECT id, first_name, last_name, email, phone, date_of_birth, address, emergency_contact, 
+    SELECT id, first_name, last_name, email, phone, date_of_birth, address, 
+           emergency_contact_name, emergency_phone, emergency_email,
            national_id, hms_patient_id, created_at
     FROM patients WHERE id = ?
   `).bind(id).first();
@@ -74,12 +115,17 @@ patients.patch('/:id', async (c) => {
     return c.json(errorResponse('Missing update data'), 400);
   }
 
-  const allowedFields = ['email', 'phone', 'date_of_birth', 'address', 'emergency_contact', 'national_id', 'first_name', 'last_name'];
+  const validation = patientUpdateSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json(errorResponse(validation.error.errors.map(e => e.message).join(', ')), 400);
+  }
+
+  const allowedFields = ['email', 'phone', 'date_of_birth', 'address', 'emergency_contact_name', 'emergency_phone', 'emergency_email', 'national_id', 'first_name', 'last_name'];
   const updates: string[] = [];
   const values: unknown[] = [];
 
-  for (const [key, value] of Object.entries(body)) {
-    if (allowedFields.includes(key)) {
+  for (const [key, value] of Object.entries(validation.data)) {
+    if (allowedFields.includes(key) && value !== undefined) {
       updates.push(`${key} = ?`);
       values.push(value);
     }
@@ -103,12 +149,12 @@ patients.post('/quick-register', async (c) => {
   const db = c.env.DB;
   const body = await c.req.json().catch(() => null);
 
-  if (!body || !body.name) {
-    return c.json(errorResponse('Missing required fields'), 400);
+  const validation = quickRegisterSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json(errorResponse(validation.error.errors.map(e => e.message).join(', ')), 400);
   }
 
-  const { name, phone, email, hmsPatientId } = body;
-  // Split name into first_name and last_name
+  const { name, phone, email, hmsPatientId } = validation.data;
   const nameParts = name.split(' ');
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
@@ -137,7 +183,7 @@ patients.get('/:id/queue-position', async (c) => {
             AND v2.priority = 0
             AND v2.created_at < v.created_at) as position
     FROM queue_tickets v
-    WHERE v.patient_id = ? AND v.status IN ('waiting', 'called', 'in_progress')
+    WHERE v.patient_id = ? AND v.status IN ('waiting', 'called', 'serving')
     ORDER BY v.created_at DESC
     LIMIT 1
   `).bind(patientId).first();
@@ -162,11 +208,12 @@ patients.post('/search', async (c) => {
   const db = c.env.DB;
   const body = await c.req.json().catch(() => null);
   
-  if (!body || !body.query) {
-    return c.json(errorResponse('Missing search query'), 400);
+  const validation = searchSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json(errorResponse(validation.error.errors.map(e => e.message).join(', ')), 400);
   }
 
-  const { query, limit = 10 } = body;
+  const { query, limit } = validation.data;
   const searchPattern = `%${query}%`;
 
   const result = await db.prepare(`
@@ -176,7 +223,6 @@ patients.post('/search', async (c) => {
     LIMIT ?
   `).bind(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, limit).all();
 
-  // Map results to include combined name
   const patientsWithName = (result.results || []).map((p: any) => ({
     ...p,
     name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
@@ -220,11 +266,12 @@ patients.post('/register', async (c) => {
   const db = c.env.DB;
   const body = await c.req.json().catch(() => null);
 
-  if (!body || !body.firstName || !body.lastName || !body.email) {
-    return c.json(errorResponse('Missing required fields'), 400);
+  const validation = registerSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json(errorResponse(validation.error.errors.map(e => e.message).join(', ')), 400);
   }
 
-  const { firstName, lastName, email, phone, dateOfBirth, address, emergencyContact } = body;
+  const { firstName, lastName, email, phone, dateOfBirth, address, emergencyContact } = validation.data;
 
   const existing = await db.prepare(
     'SELECT id FROM patients WHERE email = ?'
@@ -235,19 +282,21 @@ patients.post('/register', async (c) => {
   }
 
   const id = generateId('patient');
-  const defaultPassword = 'patient123';
+  const defaultPassword = generateId('pass');
   const passwordHash = await hashPassword(defaultPassword);
 
   await db.prepare(`
-    INSERT INTO patients (id, first_name, last_name, email, phone, date_of_birth, address, emergency_contact, 
+    INSERT INTO patients (id, first_name, last_name, email, phone, date_of_birth, address, 
+                          emergency_contact_name, emergency_phone, emergency_email,
                           password_hash, requires_password_change, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
   `).bind(id, firstName, lastName, email, phone || null, dateOfBirth || null, address || null, 
-          emergencyContact || null, passwordHash, now()).run();
+          emergencyContact?.name || null, emergencyContact?.phone || null, emergencyContact?.email || null,
+          passwordHash, now()).run();
 
-  const patient = await db.prepare('SELECT * FROM patients WHERE id = ?').bind(id).first();
+  const patient = await db.prepare('SELECT id, first_name, last_name, email, phone, created_at FROM patients WHERE id = ?').bind(id).first();
 
-  return c.json(successResponse(patient, 'Patient registered successfully'), 201);
+  return c.json(successResponse({ ...patient, defaultPassword }), 201);
 });
 
 export { patients };

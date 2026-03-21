@@ -84,99 +84,15 @@ app.get('/health', (c) => {
   return c.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: c.env.ENVIRONMENT,
     version: '1.0.0',
   });
 });
 
 // =====================================================
-// AUTH ROUTES
+// AUTH ROUTES (mounted via routes/index.ts)
+// Auth routes are defined in apps/api/src/routes/auth.ts
+// and mounted at /api/auth/* via app.route('/api', routes)
 // =====================================================
-
-// Patient login
-app.post('/api/auth/patient/login', async (c) => {
-  const { identifier, password } = await c.req.json();
-  
-  if (!identifier || !password) {
-    return c.json(errorResponse('Missing identifier or password'), 400);
-  }
-  
-  const result = await import('./services/auth').then(m => 
-    m.patientLogin(c.env.DB, c.env, identifier, password)
-  );
-  
-  if (!result) {
-    return c.json(errorResponse('Invalid credentials'), 401);
-  }
-  
-  return c.json(successResponse({
-    token: result.token,
-    expiresIn: result.expiresIn,
-    user: {
-      id: result.user.id,
-      name: result.user.name,
-      email: result.user.email,
-      requiresPasswordChange: result.user.requires_password_change,
-    },
-  }));
-});
-
-// Staff login
-app.post('/api/auth/staff/login', async (c) => {
-  const { email, password } = await c.req.json();
-  
-  if (!email || !password) {
-    return c.json(errorResponse('Missing email or password'), 400);
-  }
-  
-  const result = await import('./services/auth').then(m => 
-    m.staffLogin(c.env.DB, c.env, email, password)
-  );
-  
-  if (!result) {
-    return c.json(errorResponse('Invalid credentials'), 401);
-  }
-  
-  return c.json(successResponse({
-    token: result.token,
-    expiresIn: result.expiresIn,
-    user: {
-      id: result.user.id,
-      name: result.user.name,
-      email: result.user.email,
-      role: result.user.role,
-    },
-  }));
-});
-
-// Doctor PIN login
-app.post('/api/auth/pin/login', async (c) => {
-  const { pin, stationId } = await c.req.json();
-  
-  if (!pin) {
-    return c.json(errorResponse('Missing PIN'), 400);
-  }
-  
-  const result = await import('./services/auth').then(m => 
-    m.doctorPinLogin(c.env.DB, c.env, pin, stationId)
-  );
-  
-  if (!result) {
-    return c.json(errorResponse('Invalid PIN'), 401);
-  }
-  
-  return c.json(successResponse({
-    token: result.token,
-    expiresIn: result.expiresIn,
-    user: {
-      id: result.doctor.id,
-      name: result.doctor.name,
-      role: 'doctor',
-      department: result.doctor.department,
-      room: result.doctor.room,
-    },
-  }));
-});
 
 // Register patient
 app.post('/api/auth/register', async (c) => {
@@ -203,7 +119,7 @@ app.post('/api/auth/register', async (c) => {
     const p: any = patient;
     return c.json(successResponse({
       id: p.id,
-      name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+      name: p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim(),
       email: p.email,
     }), 201);
   } catch (e: any) {
@@ -677,8 +593,11 @@ app.post('/api/admin/users', requireRBAC('users', 'create'), async (c) => {
 
 // Error handler
 app.onError((err, c) => {
-  console.error('Error:', err);
-  return c.json(errorResponse(err.message || 'Internal Server Error'), 500);
+  console.error('Error:', err?.message || 'Unknown error');
+  const message = process.env.NODE_ENV === 'development' 
+    ? err.message 
+    : 'An unexpected error occurred';
+  return c.json(errorResponse(message), 500);
 });
 
 // =====================================================

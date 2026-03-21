@@ -100,11 +100,11 @@ export async function getAppointment(
   const result = await db.prepare(`
     SELECT 
       a.*,
-      p.name as patient_name,
-      d.name as doctor_name
+      p.first_name || ' ' || p.last_name as patient_name,
+      u.first_name || ' ' || u.last_name as doctor_name
     FROM appointments a
     LEFT JOIN patients p ON a.patient_id = p.id
-    LEFT JOIN doctors d ON a.doctor_id = d.id
+    LEFT JOIN users u ON a.doctor_id = u.id
     WHERE a.id = ?
   `).bind(appointmentId).first();
 
@@ -119,7 +119,7 @@ export async function listAppointments(
   const bindings: any[] = [];
 
   if (input.department) {
-    conditions.push('a.department = ?');
+    conditions.push('a.department_id = ?');
     bindings.push(input.department);
   }
 
@@ -165,11 +165,11 @@ export async function listAppointments(
   const appointments = await db.prepare(`
     SELECT 
       a.*,
-      p.name as patient_name,
-      d.name as doctor_name
+      p.first_name || ' ' || p.last_name as patient_name,
+      u.first_name || ' ' || u.last_name as doctor_name
     FROM appointments a
     LEFT JOIN patients p ON a.patient_id = p.id
-    LEFT JOIN doctors d ON a.doctor_id = d.id
+    LEFT JOIN users u ON a.doctor_id = u.id
     ${whereClause}
     ORDER BY a.scheduled_date ASC, a.scheduled_time ASC
     LIMIT ? OFFSET ?
@@ -202,7 +202,7 @@ export async function updateAppointment(
   }
 
   if (input.department !== undefined) {
-    updates.push('department = ?');
+    updates.push('department_id = ?');
     bindings.push(input.department);
   }
 
@@ -348,7 +348,7 @@ export async function getTodayAppointments(
   const bindings: any[] = [today];
 
   if (department) {
-    conditions.push('a.department = ?');
+    conditions.push('a.department_id = ?');
     bindings.push(department);
   }
 
@@ -362,11 +362,11 @@ export async function getTodayAppointments(
   const result = await db.prepare(`
     SELECT 
       a.*,
-      p.name as patient_name,
-      d.name as doctor_name
+      p.first_name || ' ' || p.last_name as patient_name,
+      u.first_name || ' ' || u.last_name as doctor_name
     FROM appointments a
     LEFT JOIN patients p ON a.patient_id = p.id
-    LEFT JOIN doctors d ON a.doctor_id = d.id
+    LEFT JOIN users u ON a.doctor_id = u.id
     ${whereClause}
     ORDER BY a.scheduled_time ASC
   `).bind(...bindings).all();

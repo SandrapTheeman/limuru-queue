@@ -118,10 +118,10 @@ export async function patientLogin(
     patientId: patient.id as string,
   }, env);
   
-  // Construct name from first_name + last_name
+  // Construct name from first_name + last_name or use existing name
   const patientWithName = {
     ...patient,
-    name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim(),
+    name: patient.name || `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Patient',
   };
   
   return {
@@ -163,10 +163,10 @@ export async function staffLogin(
     doctorId: result.doctor_id as string | undefined,
   }, env);
   
-  // Construct name from first_name + last_name
+  // Construct name from first_name + last_name or use existing name
   const userWithName = {
     ...result,
-    name: `${result.first_name || ''} ${result.last_name || ''}`.trim(),
+    name: result.name || `${result.first_name || ''} ${result.last_name || ''}`.trim() || 'Staff',
   };
   
   return {
@@ -240,7 +240,7 @@ export async function registerPatient(
   const lastName = nameParts.slice(1).join(' ') || '';
   
   await db.prepare(`
-    INSERT INTO patients (id, first_name, last_name, email, phone, dob, password_hash, requires_password_change)
+    INSERT INTO patients (id, first_name, last_name, email, phone, date_of_birth, password_hash, requires_password_change)
     VALUES (?, ?, ?, ?, ?, ?, ?, 1)
   `).bind(id, firstName, lastName, data.email || null, data.phone || null, data.dob || null, passwordHash).run();
   

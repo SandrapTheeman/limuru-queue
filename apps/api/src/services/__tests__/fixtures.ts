@@ -1,10 +1,25 @@
 // Test fixtures for Hospital Queue System
 
+export const TEST_CREDENTIALS = {
+  admin: {
+    email: 'admin@limuruhospital.co.ke',
+    password: '#Limuru_Cottage_Hospital@2026',
+  },
+  doctor: {
+    email: 'dr.odhiambo@limuruhospital.co.ke',
+    password: '#Limuru_Cottage_Hospital@2026',
+  },
+  patient: {
+    email: 'james.kamau@email.com',
+    password: '#Limuru_Cottage_Hospital@2026',
+  },
+};
+
 export const testPatients = [
   {
     id: 'patient-001',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
+    name: 'James Kamau',
+    email: 'james.kamau@email.com',
     phone: '+254712345678',
     dob: '1990-05-15',
     password_hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
@@ -28,8 +43,8 @@ export const testPatients = [
 export const testDoctors = [
   {
     id: 'doctor-001',
-    name: 'Dr. Emily White',
-    email: 'emily.white@hospital.co.ke',
+    name: 'Dr. Odhiambo',
+    email: 'dr.odhiambo@limuruhospital.co.ke',
     department: 'MED',
     room: '101',
     pin_hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
@@ -53,7 +68,7 @@ export const testDoctors = [
 export const testUsers = [
   {
     id: 'user-001',
-    email: 'admin@hospital.co.ke',
+    email: 'admin@limuruhospital.co.ke',
     password_hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
     role: 'admin',
     doctor_id: null,
@@ -64,11 +79,22 @@ export const testUsers = [
   },
   {
     id: 'user-002',
-    email: 'reception@hospital.co.ke',
+    email: 'dr.odhiambo@limuruhospital.co.ke',
     password_hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
-    role: 'receptionist',
+    role: 'doctor',
+    doctor_id: 'doctor-001',
+    name: 'Dr. Odhiambo',
+    is_active: true,
+    last_login: '2024-01-10T09:00:00.000Z',
+    created_at: '2024-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'user-003',
+    email: 'james.kamau@email.com',
+    password_hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    role: 'patient',
     doctor_id: null,
-    name: 'Reception Staff',
+    name: 'James Kamau',
     is_active: true,
     last_login: '2024-01-10T09:00:00.000Z',
     created_at: '2024-01-01T00:00:00.000Z',

@@ -98,8 +98,8 @@ queue.get('/', optionalAuth, async (c) => {
       departmentId: departmentId || null,
     }));
   } catch (e: any) {
-    console.error('Error getting queue:', e);
-    return c.json(errorResponse(e.message || 'Failed to get queue'), 500);
+    console.error('Error getting queue:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to retrieve queue data'), 500);
   }
 });
 
@@ -126,8 +126,8 @@ queue.post('/', requireAuth, async (c) => {
     if (e instanceof z.ZodError) {
       return c.json(errorResponse(e.errors.map((err: any) => err.message).join(', ')), 400);
     }
-    console.error('Error creating ticket:', e);
-    return c.json(errorResponse(e.message || 'Failed to create ticket'), 500);
+    console.error('Error creating ticket:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to create ticket'), 500);
   }
 });
 
@@ -155,8 +155,8 @@ queue.post('/call', requireRole(['admin', 'doctor', 'nurse', 'receptionist']), a
     if (e instanceof z.ZodError) {
       return c.json(errorResponse(e.errors.map((err: any) => err.message).join(', ')), 400);
     }
-    console.error('Error calling patient:', e);
-    return c.json(errorResponse(e.message || 'Failed to call patient'), 500);
+    console.error('Error calling patient:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to call patient'), 500);
   }
 });
 
@@ -175,8 +175,8 @@ queue.post('/call-next', requireRole(['admin', 'doctor', 'nurse', 'receptionist'
 
     return c.json(successResponse({ ticket }));
   } catch (e: any) {
-    console.error('Error calling next patient:', e);
-    return c.json(errorResponse(e.message || 'Failed to call next patient'), 500);
+    console.error('Error calling next patient:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to call next patient'), 500);
   }
 });
 
@@ -206,8 +206,8 @@ queue.post('/override', requireRole(['admin', 'doctor']), async (c) => {
     if (e instanceof z.ZodError) {
       return c.json(errorResponse(e.errors.map((err: any) => err.message).join(', ')), 400);
     }
-    console.error('Error overriding call:', e);
-    return c.json(errorResponse(e.message || 'Failed to override call'), 500);
+    console.error('Error overriding call:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to override call'), 500);
   }
 });
 
@@ -226,8 +226,8 @@ queue.post('/:id/start', requireRole(['admin', 'doctor', 'nurse']), async (c) =>
 
     return c.json(successResponse({ ticket }));
   } catch (e: any) {
-    console.error('Error starting serving:', e);
-    return c.json(errorResponse(e.message || 'Failed to start serving'), 500);
+    console.error('Error starting serving:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to start consultation'), 500);
   }
 });
 
@@ -244,8 +244,8 @@ queue.post('/:id/complete', requireRole(['admin', 'doctor', 'nurse']), async (c)
 
     return c.json(successResponse({ ticket }));
   } catch (e: any) {
-    console.error('Error completing ticket:', e);
-    return c.json(errorResponse(e.message || 'Failed to complete ticket'), 500);
+    console.error('Error completing ticket:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to complete ticket'), 500);
   }
 });
 
@@ -262,8 +262,8 @@ queue.post('/:id/no-show', requireRole(['admin', 'doctor', 'nurse', 'receptionis
 
     return c.json(successResponse({ ticket }));
   } catch (e: any) {
-    console.error('Error marking no-show:', e);
-    return c.json(errorResponse(e.message || 'Failed to mark no-show'), 500);
+    console.error('Error marking no-show:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to mark no-show'), 500);
   }
 });
 
@@ -280,8 +280,8 @@ queue.post('/:id/cancel', requireRole(['admin']), async (c) => {
 
     return c.json(successResponse({ ticket }));
   } catch (e: any) {
-    console.error('Error cancelling ticket:', e);
-    return c.json(errorResponse(e.message || 'Failed to cancel ticket'), 500);
+    console.error('Error cancelling ticket:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to cancel ticket'), 500);
   }
 });
 
@@ -305,8 +305,8 @@ queue.post('/:id/transfer', requireRole(['admin', 'doctor', 'nurse', 'receptioni
     if (e instanceof z.ZodError) {
       return c.json(errorResponse(e.errors.map((err: any) => err.message).join(', ')), 400);
     }
-    console.error('Error transferring ticket:', e);
-    return c.json(errorResponse(e.message || 'Failed to transfer ticket'), 500);
+    console.error('Error transferring ticket:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to transfer ticket'), 500);
   }
 });
 
@@ -330,8 +330,8 @@ queue.post('/:id/priority', requireRole(['admin', 'doctor', 'nurse']), async (c)
     if (e instanceof z.ZodError) {
       return c.json(errorResponse(e.errors.map((err: any) => err.message).join(', ')), 400);
     }
-    console.error('Error updating priority:', e);
-    return c.json(errorResponse(e.message || 'Failed to update priority'), 500);
+    console.error('Error updating priority:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to update priority'), 500);
   }
 });
 
@@ -348,8 +348,8 @@ queue.post('/:id/recall', requireRole(['admin', 'doctor', 'nurse', 'receptionist
 
     return c.json(successResponse({ ticket }));
   } catch (e: any) {
-    console.error('Error recalling patient:', e);
-    return c.json(errorResponse(e.message || 'Failed to recall patient'), 500);
+    console.error('Error recalling patient:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to recall patient'), 500);
   }
 });
 
@@ -366,8 +366,8 @@ queue.get('/:id/position', optionalAuth, async (c) => {
 
     return c.json(successResponse(position));
   } catch (e: any) {
-    console.error('Error getting position:', e);
-    return c.json(errorResponse(e.message || 'Failed to get position'), 500);
+    console.error('Error getting position:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to get position'), 500);
   }
 });
 
@@ -380,8 +380,8 @@ queue.get('/stats', optionalAuth, async (c) => {
 
     return c.json(successResponse(stats));
   } catch (e: any) {
-    console.error('Error getting stats:', e);
-    return c.json(errorResponse(e.message || 'Failed to get stats'), 500);
+    console.error('Error getting stats:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to get statistics'), 500);
   }
 });
 
@@ -394,8 +394,8 @@ queue.get('/stats/department/:departmentId', optionalAuth, async (c) => {
 
     return c.json(successResponse(stats));
   } catch (e: any) {
-    console.error('Error getting department stats:', e);
-    return c.json(errorResponse(e.message || 'Failed to get department stats'), 500);
+    console.error('Error getting department stats:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to get department statistics'), 500);
   }
 });
 
@@ -413,8 +413,8 @@ queue.get('/tv/:displayId', optionalAuth, async (c) => {
 
     return c.json(successResponse(state));
   } catch (e: any) {
-    console.error('Error getting TV display state:', e);
-    return c.json(errorResponse(e.message || 'Failed to get TV display state'), 500);
+    console.error('Error getting TV display state:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to get display state'), 500);
   }
 });
 
@@ -448,8 +448,8 @@ queue.get('/patient/:patientId/history', optionalAuth, async (c) => {
 
     return c.json(successResponse(history));
   } catch (e: any) {
-    console.error('Error getting patient history:', e);
-    return c.json(errorResponse(e.message || 'Failed to get patient history'), 500);
+    console.error('Error getting patient history:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to retrieve patient history'), 500);
   }
 });
 
@@ -468,8 +468,8 @@ queue.get('/:id', optionalAuth, async (c) => {
 
     return c.json(successResponse({ ticket }));
   } catch (e: any) {
-    console.error('Error getting ticket:', e);
-    return c.json(errorResponse(e.message || 'Failed to get ticket'), 500);
+    console.error('Error getting ticket:', e?.message || 'Unknown error');
+    return c.json(errorResponse('Failed to retrieve ticket'), 500);
   }
 });
 

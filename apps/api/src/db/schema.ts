@@ -2,7 +2,7 @@ import { D1Database } from '@cloudflare/workers-types';
 
 export type { D1Database };
 export type UserRole = 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'patient';
-export type VisitStatus = 'waiting' | 'called' | 'in_progress' | 'completed' | 'no_show' | 'transferred';
+export type VisitStatus = 'waiting' | 'called' | 'serving' | 'completed' | 'no_show' | 'transferred';
 export type TriageLevel = 1 | 2 | 3 | 4 | 5;
 export type RoomType = 'consultation' | 'examination' | 'procedure' | 'emergency' | 'laboratory' | 'pharmacy' | 'imaging' | 'reception' | 'waiting' | 'staff';
 export type RoomStatus = 'available' | 'occupied' | 'maintenance' | 'reserved' | 'out_of_service';

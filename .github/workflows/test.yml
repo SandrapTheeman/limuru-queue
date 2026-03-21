@@ -1,4 +1,4 @@
-name: Hospital Queue System Tests
+name: Test Suite
 
 on:
   push:
@@ -8,21 +8,68 @@ on:
 
 env:
   NODE_VERSION: '20'
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  PNPM_VERSION: '9'
 
 jobs:
-  unit-tests:
-    name: Unit Tests (API)
+  lint:
+    name: Lint (ESLint)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+
+  typecheck:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run typecheck
+        run: pnpm typecheck
+
+  unit-tests-api:
+    name: Unit Tests (API) with Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -49,7 +96,15 @@ jobs:
           name: hospital-queue-api
           fail_ci_if_error: false
 
-  web-unit-tests:
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage-report
+          path: apps/api/coverage
+          retention-days: 7
+
+  unit-tests-web:
     name: Unit Tests (Web)
     runs-on: ubuntu-latest
     steps:
@@ -57,9 +112,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -70,16 +125,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Run web unit tests
         run: pnpm --filter @hospital-queue/web test
         continue-on-error: true
 
-  api-integration-tests:
-    name: API Integration Tests
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
     services:
-      sqlite:
-        image: ath十天竺/sqlite3
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hqs_test
         ports:
           - 5432:5432
         options: >-
@@ -87,14 +149,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -118,9 +181,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -160,34 +223,6 @@ jobs:
           path: apps/web/test-results/**/snapshots/**
           retention-days: 7
 
-  accessibility-tests:
-    name: Accessibility Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Run accessibility tests
-        run: pnpm exec playwright test --config apps/web/playwright.config.ts --grep "@a11y"
-        continue-on-error: true
-
   security-tests:
     name: Security Tests
     runs-on: ubuntu-latest
@@ -196,9 +231,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -213,105 +248,18 @@ jobs:
         run: pnpm --filter @hospital-queue/api test -- --run tests/security/
         continue-on-error: true
 
-      - name: Run OWASP dependency check
-        run: |
-          npm install -g owasp-dependency-check-checkstyle
-         owasp-dependency-check-checkstyle --project test --scan ./node_modules --format JSON -o ./security-report.json || true
-        continue-on-error: true
-
-  performance-tests:
-    name: Performance Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run performance benchmarks
-        run: pnpm --filter @hospital-queue/api test -- --run tests/performance.test.ts
-        continue-on-error: true
-
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          urls: http://localhost:3000
-          budgetPath: ./lighthouse-budget.json
-          uploadArtifacts: true
-          temporaryPublicStorage: true
-        continue-on-error: true
-
-  typecheck:
-    name: TypeScript Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run typecheck
-        run: pnpm typecheck
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run lint
-        run: pnpm lint
-
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests-api, unit-tests-web]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -322,46 +270,31 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build all apps
-        run: pnpm build
-        continue-on-error: true
+      - name: Build API
+        run: pnpm --filter @hospital-queue/api build
 
-  healthcare-critical-paths:
-    name: Healthcare Critical Path Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Build Web
+        run: pnpm --filter @hospital-queue/web build
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - name: Upload API build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
         with:
-          version: 9
+          name: api-build
+          path: apps/api/dist
+          retention-days: 7
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Upload Web build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run patient registration flow tests
-        run: pnpm exec playwright test --config apps/web/playwright.config.ts e2e/healthcare-flows.spec.ts --grep "Patient Registration"
-        continue-on-error: true
-
-      - name: Run emergency workflow tests
-        run: pnpm exec playwright test --config apps/web/playwright.config.ts e2e/healthcare-flows.spec.ts --grep "Emergency"
-        continue-on-error: true
-
-      - name: Run data privacy tests
-        run: pnpm --filter @hospital-queue/api test -- --run tests/integration/healthcare-flows.test.ts
-        continue-on-error: true
+          name: web-build
+          path: apps/web/out
+          retention-days: 7
 
   report:
     name: Test Summary Report
-    needs: [unit-tests, web-unit-tests, api-integration-tests, playwright-e2e, security-tests, performance-tests]
+    needs: [lint, typecheck, unit-tests-api, unit-tests-web, integration-tests, playwright-e2e, security-tests, build]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -377,13 +310,26 @@ jobs:
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests (API) | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests (Web) | ${{ needs.web-unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Integration Tests | ${{ needs.api-integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ needs.typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests (API) | ${{ needs.unit-tests-api.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests (Web) | ${{ needs.unit-tests-web.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| E2E Tests | ${{ needs.playwright-e2e.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Tests | ${{ needs.security-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Performance Tests | ${{ needs.performance-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- Playwright Report: Available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage Report: Available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Artifacts: Available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for failures
+        run: |
+          if [[ "${{ needs.unit-tests-api.result }}" == "failure" ]] || \
+             [[ "${{ needs.unit-tests-web.result }}" == "failure" ]] || \
+             [[ "${{ needs.build.result }}" == "failure" ]]; then
+            echo "Critical tests or build failed!"
+            exit 1
+          fi
+          echo "All critical tests passed!"

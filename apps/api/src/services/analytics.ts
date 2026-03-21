@@ -147,9 +147,9 @@ export async function getOverviewStats(
       COUNT(*) as total,
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
       SUM(CASE WHEN status = 'waiting' THEN 1 ELSE 0 END) as waiting,
-      SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+      SUM(CASE WHEN status = 'serving' THEN 1 ELSE 0 END) as in_progress,
       SUM(CASE WHEN status = 'no_show' THEN 1 ELSE 0 END) as no_show,
-      AVG(wait_time_minutes) as avg_wait
+      AVG(actual_wait_minutes) as avg_wait
     FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department_id = ?' : ''}
@@ -165,7 +165,7 @@ export async function getOverviewStats(
   const previousPeriod = await db.prepare(`
     SELECT 
       COUNT(*) as total,
-      AVG(wait_time_minutes) as avg_wait
+      AVG(actual_wait_minutes) as avg_wait
     FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
   `).bind(prevStart, prevEnd).first() as { total: number; avg_wait: number | null } | undefined;
@@ -219,29 +219,29 @@ export async function getWaitTimeAnalytics(
 
   const overall = await db.prepare(`
     SELECT 
-      AVG(wait_time_minutes) as avg,
-      MAX(wait_time_minutes) as max,
-      SUM(CASE WHEN wait_time_minutes > 30 THEN 1 ELSE 0 END) as over30
+      AVG(actual_wait_minutes) as avg,
+      MAX(actual_wait_minutes) as max,
+      SUM(CASE WHEN actual_wait_minutes > 30 THEN 1 ELSE 0 END) as over30
     FROM queue_tickets
-    WHERE wait_time_minutes IS NOT NULL
+    WHERE actual_wait_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department_id = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { avg: number | null; max: number | null; over30: number } | undefined;
 
   const totalWithWait = await db.prepare(`
-    SELECT COUNT(*) as cnt FROM queue_tickets WHERE wait_time_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
+    SELECT COUNT(*) as cnt FROM queue_tickets WHERE actual_wait_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department_id = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { cnt: number } | undefined;
 
   const byDepartmentRaw = await db.prepare(`
     SELECT 
       department_id as department,
-      AVG(wait_time_minutes) as avg,
-      MAX(wait_time_minutes) as max,
-      SUM(CASE WHEN wait_time_minutes > 30 THEN 1 ELSE 0 END) as over30,
+      AVG(actual_wait_minutes) as avg,
+      MAX(actual_wait_minutes) as max,
+      SUM(CASE WHEN actual_wait_minutes > 30 THEN 1 ELSE 0 END) as over30,
       COUNT(*) as total
     FROM queue_tickets
-    WHERE wait_time_minutes IS NOT NULL
+    WHERE actual_wait_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     GROUP BY department_id
     ORDER BY avg DESC
@@ -250,9 +250,9 @@ export async function getWaitTimeAnalytics(
   const byDayOfWeekRaw = await db.prepare(`
     SELECT 
       strftime('%w', created_at) as day,
-      AVG(wait_time_minutes) as avg
+      AVG(actual_wait_minutes) as avg
     FROM queue_tickets
-    WHERE wait_time_minutes IS NOT NULL
+    WHERE actual_wait_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     GROUP BY day
   `).bind(start, end).all() as unknown as { day: string; avg: number }[];
@@ -260,9 +260,9 @@ export async function getWaitTimeAnalytics(
   const byHourRaw = await db.prepare(`
     SELECT 
       CAST(strftime('%H', created_at) AS INTEGER) as hour,
-      AVG(wait_time_minutes) as avg
+      AVG(actual_wait_minutes) as avg
     FROM queue_tickets
-    WHERE wait_time_minutes IS NOT NULL
+    WHERE actual_wait_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     GROUP BY hour
     ORDER BY hour
@@ -370,8 +370,8 @@ export async function getDepartmentPerformance(
       v.department_id as department,
       COUNT(*) as patients,
       SUM(CASE WHEN v.status = 'completed' THEN 1 ELSE 0 END) as completed,
-      AVG(v.wait_time_minutes) as avg_wait,
-      MAX(v.wait_time_minutes) as max_wait,
+      AVG(v.actual_wait_minutes) as avg_wait,
+      MAX(v.actual_wait_minutes) as max_wait,
       SUM(CASE WHEN v.status = 'no_show' THEN 1 ELSE 0 END) as no_shows,
       (SELECT COUNT(*) FROM doctors d WHERE d.department_id = v.department_id AND d.is_available = 1) as doctors
     FROM queue_tickets v
@@ -477,8 +477,8 @@ export async function getPatientFlow(
   `).bind(start, end).all() as unknown as { hour: number; arrived: number; completed: number }[];
 
   const avgWaitResult = await db.prepare(`
-    SELECT AVG(wait_time_minutes) as avg FROM queue_tickets
-    WHERE wait_time_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
+    SELECT AVG(actual_wait_minutes) as avg FROM queue_tickets
+    WHERE actual_wait_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
   `).bind(start, end).first() as { avg: number | null } | undefined;
 
   return {

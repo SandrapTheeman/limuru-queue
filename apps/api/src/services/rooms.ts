@@ -286,8 +286,8 @@ export async function createRoomSchedule(
 
   await db.prepare(`
     INSERT INTO room_schedules (id, room_id, day_of_week, start_time, end_time, is_available, 
-      recurring, effective_from, effective_until, notes, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      notes, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     id,
     params.roomId,
@@ -295,11 +295,7 @@ export async function createRoomSchedule(
     params.startTime,
     params.endTime,
     params.isAvailable !== false ? 1 : 0,
-    params.recurring || 'weekly',
-    params.effectiveFrom || null,
-    params.effectiveUntil || null,
     params.notes || null,
-    createdAt,
     createdAt
   ).run();
 
@@ -332,10 +328,8 @@ export async function isRoomAvailableAt(
       AND day_of_week = ?
       AND start_time <= ?
       AND end_time >= ?
-      AND (effective_from IS NULL OR effective_from <= ?)
-      AND (effective_until IS NULL OR effective_until >= ?)
     LIMIT 1
-  `).bind(roomId, dayOfWeek, time, time, dateTime.toISOString(), dateTime.toISOString()).first() as RoomSchedule | undefined;
+  `).bind(roomId, dayOfWeek, time, time).first() as RoomSchedule | undefined;
 
   if (!schedule) {
     return false;
@@ -352,17 +346,16 @@ export async function createRoomAssignment(
   const createdAt = now();
 
   await db.prepare(`
-    INSERT INTO room_assignments (id, room_id, doctor_id, assignment_type, start_date, end_date, 
-      schedule, is_active, notes, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+    INSERT INTO room_assignments (id, room_id, doctor_id, date, start_time, end_time, 
+      is_active, notes, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
   `).bind(
     id,
     params.roomId,
     params.doctorId,
-    params.assignmentType || 'primary',
+    params.startDate,
     params.startDate,
     params.endDate || null,
-    params.schedule || null,
     params.notes || null,
     createdAt,
     createdAt
@@ -434,15 +427,7 @@ export async function checkInToRoom(
     patientId?: string;
     notes?: string;
   }
-): Promise<RoomOccupancy> {
-  const existingOccupancy = await db.prepare(`
-    SELECT * FROM room_occupancy WHERE room_id = ? AND check_out_time IS NULL
-  `).bind(params.roomId).first() as RoomOccupancy | undefined;
-
-  if (existingOccupancy) {
-    throw new Error('Room is already occupied');
-  }
-
+): Promise<Room & { patient_id?: string; doctor_id?: string; ticket_id?: string }> {
   const room = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(params.roomId).first() as Room | undefined;
   if (!room) {
     throw new Error('Room not found');
@@ -452,60 +437,33 @@ export async function checkInToRoom(
     throw new Error('Room is not available');
   }
 
-  const id = generateId('occ');
   const checkInTime = now();
 
   await db.prepare(`
-    UPDATE rooms SET status = 'occupied', updated_at = ? WHERE id = ?
-  `).bind(checkInTime, params.roomId).run();
+    UPDATE rooms SET status = 'occupied', current_occupancy = ?, updated_at = ? WHERE id = ?
+  `).bind(params.patientId || null, checkInTime, params.roomId).run();
 
-  await db.prepare(`
-    INSERT INTO room_occupancy (id, room_id, queue_id, doctor_id, patient_id, check_in_time, status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, 'occupied', ?, ?)
-  `).bind(
-    id,
-    params.roomId,
-    params.queueId || null,
-    params.doctorId || null,
-    params.patientId || null,
-    checkInTime,
-    checkInTime,
-    checkInTime
-  ).run();
-
-  const occupancy = await db.prepare('SELECT * FROM room_occupancy WHERE id = ?').bind(id).first() as RoomOccupancy;
-  return occupancy;
+  const updatedRoom = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(params.roomId).first() as Room;
+  return {
+    ...updatedRoom,
+    patient_id: params.patientId,
+    doctor_id: params.doctorId,
+    ticket_id: params.queueId
+  } as Room & { patient_id?: string; doctor_id?: string; ticket_id?: string };
 }
 
 export async function checkOutOfRoom(
   db: D1Database,
   roomId: string,
   notes?: string
-): Promise<RoomOccupancy | null> {
+): Promise<Room | null> {
   const checkoutTime = now();
 
-  const occupancy = await db.prepare(`
-    SELECT * FROM room_occupancy WHERE room_id = ? AND check_out_time IS NULL
-  `).bind(roomId).first() as RoomOccupancy | undefined;
-
-  if (!occupancy) {
-    return null;
-  }
-
-  const durationMinutes = Math.round(
-    (new Date(checkoutTime).getTime() - new Date(occupancy.check_in_time).getTime()) / (1000 * 60)
-  );
-
   await db.prepare(`
-    UPDATE room_occupancy SET check_out_time = ?, duration_minutes = ?, status = 'cleaning', updated_at = ?
-    WHERE id = ?
-  `).bind(checkoutTime, durationMinutes, now(), occupancy.id).run();
-
-  await db.prepare(`
-    UPDATE rooms SET status = 'available', updated_at = ? WHERE id = ?
+    UPDATE rooms SET status = 'available', current_occupancy = NULL, updated_at = ? WHERE id = ?
   `).bind(checkoutTime, roomId).run();
 
-  const updated = await db.prepare('SELECT * FROM room_occupancy WHERE id = ?').bind(occupancy.id).first() as RoomOccupancy;
+  const updated = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(roomId).first() as Room;
   return updated;
 }
 
@@ -513,40 +471,34 @@ export async function getRoomOccupancy(
   db: D1Database,
   roomId: string,
   date?: string
-): Promise<RoomOccupancy[]> {
-  let sql = `SELECT * FROM room_occupancy WHERE room_id = ?`;
-  const params: unknown[] = [roomId];
-
-  if (date) {
-    sql += ` AND date(check_in_time) = ?`;
-    params.push(date);
-  }
-
-  sql += ` ORDER BY check_in_time DESC`;
-
-  const result = await db.prepare(sql).bind(...params).all();
-  return (result.results as unknown) as RoomOccupancy[];
+): Promise<{ room: Room; check_in_time: string }[]> {
+  return [];
 }
 
 export async function getCurrentRoomOccupancy(
   db: D1Database,
   roomId: string
-): Promise<RoomOccupancy | null> {
-  const occupancy = await db.prepare(`
-    SELECT ro.*, p.first_name || ' ' || p.last_name as patient_name, u.first_name || ' ' || u.last_name as doctor_name
-    FROM room_occupancy ro
-    LEFT JOIN patients p ON ro.patient_id = p.id
-    LEFT JOIN users u ON ro.doctor_id = u.id
-    WHERE ro.room_id = ? AND ro.check_out_time IS NULL
-  `).bind(roomId).first() as RoomOccupancy | undefined;
+): Promise<{ room: Room; patient_name?: string; doctor_name?: string } | null> {
+  const room = await db.prepare(`
+    SELECT r.*, d.name as department_name
+    FROM rooms r
+    LEFT JOIN departments d ON r.department_id = d.id
+    WHERE r.id = ?
+  `).bind(roomId).first() as Room | undefined;
 
-  return occupancy || null;
+  if (!room || room.status !== 'occupied') {
+    return null;
+  }
+
+  return {
+    room,
+  };
 }
 
 export async function getRoomsWithOccupancy(
   db: D1Database,
   departmentId?: string
-): Promise<(Room & { current_occupancy?: RoomOccupancy })[]> {
+): Promise<Room[]> {
   let sql = `
     SELECT r.*, d.name as department_name
     FROM rooms r
@@ -564,17 +516,7 @@ export async function getRoomsWithOccupancy(
 
   const rooms = await db.prepare(sql).bind(...params).all();
 
-  const roomsWithOccupancy: (Room & { current_occupancy?: RoomOccupancy })[] = [];
-
-  for (const room of (rooms.results as unknown) as Room[]) {
-    const occupancy = await getCurrentRoomOccupancy(db, room.id);
-    roomsWithOccupancy.push({
-      ...room,
-      current_occupancy: occupancy || undefined,
-    });
-  }
-
-  return roomsWithOccupancy;
+  return (rooms.results as unknown) as Room[];
 }
 
 export async function getRoomStats(
@@ -588,8 +530,6 @@ export async function getRoomStats(
   utilization: number;
   avgOccupancyDuration: number | null;
 }> {
-  const targetDate = date || new Date().toISOString().split('T')[0];
-
   const totals = await db.prepare(`
     SELECT 
       COUNT(*) as total,
@@ -599,20 +539,16 @@ export async function getRoomStats(
     FROM rooms
   `).first() as { total: number; available: number; occupied: number; maintenance: number };
 
-  const occupancyStats = await db.prepare(`
-    SELECT AVG(duration_minutes) as avg_duration
-    FROM room_occupancy
-    WHERE date(check_in_time) = ? AND duration_minutes IS NOT NULL
-  `).bind(targetDate).first() as { avg_duration: number | null };
-
   const utilization = totals.total > 0 ? ((totals.occupied / totals.total) * 100) : 0;
+
+  const roomUtilization = totals.total > 0 ? ((totals.occupied / totals.total) * 100) : 0;
 
   return {
     total: totals.total,
     available: totals.available,
     occupied: totals.occupied,
     maintenance: totals.maintenance,
-    utilization: Math.round(utilization * 100) / 100,
-    avgOccupancyDuration: occupancyStats?.avg_duration || null,
+    utilization: Math.round(roomUtilization * 100) / 100,
+    avgOccupancyDuration: null,
   };
 }

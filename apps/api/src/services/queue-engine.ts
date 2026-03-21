@@ -7,7 +7,7 @@ export interface QueueTicket {
   department_id: string;
   doctor_id?: string;
   ticket_number: string;
-  priority: 1 | 2 | 3 | 4;
+  priority: 1 | 2 | 3 | 4 | 5;
   priority_score: number;
   status: 'waiting' | 'called' | 'serving' | 'completed' | 'no_show' | 'cancelled' | 'transferred';
   room_assigned?: string;
@@ -18,6 +18,7 @@ export interface QueueTicket {
   sequence_number: number;
   estimated_wait_minutes?: number;
   actual_wait_minutes?: number;
+  no_show_count?: number;
   is_override: boolean;
   override_reason?: string;
   hms_appointment_id?: string;
@@ -64,18 +65,20 @@ export interface Department {
   average_service_time: number;
 }
 
-const PRIORITY_WEIGHTS = {
+const PRIORITY_WEIGHTS: Record<number, number> = {
   1: 100,
-  2: 70,
-  3: 40,
-  4: 10
+  2: 75,
+  3: 50,
+  4: 25,
+  5: 10
 };
 
-const PRIORITY_LABELS = {
+const PRIORITY_LABELS: Record<number, string> = {
   1: 'Critical',
   2: 'Emergency',
   3: 'Urgent',
-  4: 'Normal'
+  4: 'Standard',
+  5: 'Low'
 };
 
 export class QueueEngine {
@@ -102,17 +105,17 @@ export class QueueEngine {
     };
   }
 
-  calculatePriorityScore(priority: 1 | 2 | 3 | 4, createdAt: string, isAppointment: boolean = false): number {
+  calculatePriorityScore(priority: 1 | 2 | 3 | 4 | 5, createdAt: string, isAppointment: boolean = false): number {
     const waitMinutes = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
     const waitBoost = Math.floor(waitMinutes / 10);
     const appointmentBonus = isAppointment ? 5 : 0;
-    return -PRIORITY_WEIGHTS[priority] + waitBoost + appointmentBonus;
+    return -(PRIORITY_WEIGHTS[priority] || 10) + waitBoost + appointmentBonus;
   }
 
   async createTicket(data: {
     patientId: string;
     departmentId: string;
-    priority: 1 | 2 | 3 | 4;
+    priority: 1 | 2 | 3 | 4 | 5;
     complaint?: string;
     doctorId?: string;
     hmsAppointmentId?: string;
@@ -139,9 +142,10 @@ export class QueueEngine {
         INSERT INTO queue_tickets (
           id, facility_id, patient_id, department_id, doctor_id, ticket_number,
           priority, priority_score, status, complaint, sequence_number,
-          estimated_wait_minutes, hms_appointment_id, is_override, created_at, updated_at
+          estimated_wait_minutes, hms_appointment_id, is_override, created_at, updated_at,
+          no_show_count, actual_wait_minutes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'waiting', ?, ?, ?, ?, 0, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'waiting', ?, ?, ?, ?, 0, ?, ?, 0, 0)
       `)
       .bind(
         id,
@@ -162,6 +166,13 @@ export class QueueEngine {
       .run();
 
     await this.invalidateCache();
+    await this.logAuditEvent('TICKET_CREATED', id, data.userId, {
+      patientId: data.patientId,
+      departmentId: data.departmentId,
+      priority: data.priority,
+      ticketNumber
+    });
+    
     const ticket = await this.getTicket(id);
     if (!ticket) throw new Error('Failed to retrieve created ticket');
     return ticket;
@@ -178,7 +189,7 @@ export class QueueEngine {
       throw new Error('Ticket not found');
     }
     if (ticket.status !== 'waiting') {
-      throw new Error('Ticket not waiting');
+      throw new Error('Ticket not waiting. Current status: ' + ticket.status);
     }
 
     const now = new Date().toISOString();
@@ -219,6 +230,11 @@ export class QueueEngine {
       .run();
 
     await this.invalidateCache();
+    await this.logAuditEvent('TICKET_CALLED', data.ticketId, data.userId, {
+      roomAssigned: data.roomAssigned,
+      doctorId: data.doctorId,
+      actualWaitMinutes
+    });
     return this.getTicket(data.ticketId);
   }
 
@@ -941,8 +957,68 @@ export class QueueEngine {
       .run();
   }
 
-  getPriorityLabel(priority: 1 | 2 | 3 | 4): string {
-    return PRIORITY_LABELS[priority];
+  private async logAuditEvent(
+    action: string,
+    ticketId: string,
+    userId: string,
+    details?: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      await this.db
+        .prepare(`
+          INSERT INTO queue_audit_log (
+            id, facility_id, ticket_id, action, performed_by, details, created_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `)
+        .bind(
+          crypto.randomUUID(),
+          this.facilityId,
+          ticketId,
+          action,
+          userId,
+          details ? JSON.stringify(details) : null,
+          new Date().toISOString()
+        )
+        .run();
+    } catch (error) {
+      console.error('Failed to log audit event:', error);
+    }
+  }
+
+  getPriorityLabel(priority: 1 | 2 | 3 | 4 | 5): string {
+    return PRIORITY_LABELS[priority] || 'Unknown';
+  }
+
+  validateStatusTransition(currentStatus: string, newStatus: string): boolean {
+    const validTransitions: Record<string, string[]> = {
+      'waiting': ['called', 'cancelled', 'no_show'],
+      'called': ['serving', 'waiting', 'no_show', 'cancelled'],
+      'serving': ['completed', 'called'],
+      'completed': [],
+      'no_show': ['waiting', 'cancelled'],
+      'cancelled': [],
+      'transferred': ['waiting']
+    };
+    return validTransitions[currentStatus]?.includes(newStatus) ?? false;
+  }
+
+  async calculateEstimatedWait(departmentId: string): Promise<number> {
+    const avgResult = await this.db
+      .prepare(`
+        SELECT AVG(avg_wait_seconds) as avg_wait, AVG(patient_count) as avg_count
+        FROM wait_time_history
+        WHERE facility_id = ? AND department_id = ?
+          AND date >= date('now', '-7 days')
+      `)
+      .bind(this.facilityId, departmentId)
+      .first<{ avg_wait: number | null; avg_count: number | null }>();
+
+    const position = await this.getQueuePosition(departmentId);
+    const avgWaitSeconds = avgResult?.avg_wait || 900;
+    const avgCount = avgResult?.avg_count || 1;
+    const avgWaitMinutes = Math.round((avgWaitSeconds / 60) * avgCount);
+    return position * Math.max(avgWaitMinutes, 5);
   }
 }
 

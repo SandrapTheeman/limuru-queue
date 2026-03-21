@@ -79,7 +79,7 @@ export async function getMetrics(db: D1Database): Promise<SystemMetrics> {
   const totalVisits = await db.prepare('SELECT COUNT(*) as count FROM queue_tickets').first() as { count: number } | undefined;
   const completedVisits = await db.prepare("SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'completed'").first() as { count: number } | undefined;
   const waitingVisits = await db.prepare("SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'waiting'").first() as { count: number } | undefined;
-  const inProgressVisits = await db.prepare("SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'in_progress'").first() as { count: number } | undefined;
+  const inProgressVisits = await db.prepare("SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'serving'").first() as { count: number } | undefined;
 
   return {
     timestamp: new Date().toISOString(),

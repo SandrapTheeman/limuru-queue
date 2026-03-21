@@ -6,11 +6,12 @@
 const { test, expect } = require('@playwright/test');
 
 // Test credentials
-const TEST_USERS = {
-  admin: { email: 'admin@limuruhospital.co.ke', password: 'password123', role: 'Admin' },
-  doctor: { email: 'doctor@hospital.co.ke', password: 'password123', role: 'Doctor' },
-  nurse: { email: 'nurse@hospital.co.ke', password: 'password123', role: 'Nurse' },
-  receptionist: { email: 'reception@hospital.co.ke', password: 'password123', role: 'Receptionist' }
+const TEST_CREDENTIALS = {
+  admin: { email: 'admin@limuruhospital.co.ke', password: '#Limuru_Cottage_Hospital@2026', role: 'Admin' },
+  doctor: { email: 'dr.odhiambo@limuruhospital.co.ke', password: '#Limuru_Cottage_Hospital@2026', role: 'Doctor' },
+  patient: { email: 'james.kamau@email.com', password: '#Limuru_Cottage_Hospital@2026', role: 'Patient' },
+  nurse: { email: 'nurse@hospital.co.ke', password: '#Limuru_Cottage_Hospital@2026', role: 'Nurse' },
+  receptionist: { email: 'reception@hospital.co.ke', password: '#Limuru_Cottage_Hospital@2026', role: 'Receptionist' }
 };
 
 test.describe('Authentication', () => {
@@ -99,8 +100,8 @@ test.describe('Authentication', () => {
     // ==========================================
 
     test('should login successfully with admin credentials', async ({ page }) => {
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       // Should redirect to dashboard
@@ -112,8 +113,8 @@ test.describe('Authentication', () => {
     });
 
     test('should persist session after login', async ({ page }) => {
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -133,8 +134,8 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL(/\/login/, { timeout: 5000 });
       
       // Login
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       // Should redirect to intended page
@@ -146,7 +147,7 @@ test.describe('Authentication', () => {
     // ==========================================
 
     test('should reject login with wrong password', async ({ page }) => {
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
       await page.fill('input[name="password"], [data-testid="password"]', 'wrongpassword');
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
@@ -163,8 +164,8 @@ test.describe('Authentication', () => {
 
   test.describe('Doctor Login', () => {
     test('should login successfully with doctor credentials', async ({ page }) => {
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.doctor.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.doctor.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.doctor.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.doctor.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -175,8 +176,8 @@ test.describe('Authentication', () => {
     });
 
     test('should see queue management option', async ({ page }) => {
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.doctor.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.doctor.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.doctor.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.doctor.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -189,8 +190,8 @@ test.describe('Authentication', () => {
 
   test.describe('Receptionist Login', () => {
     test('should login successfully with receptionist credentials', async ({ page }) => {
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.receptionist.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.receptionist.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.receptionist.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.receptionist.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -201,8 +202,8 @@ test.describe('Authentication', () => {
     });
 
     test('should see patient registration option', async ({ page }) => {
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.receptionist.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.receptionist.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.receptionist.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.receptionist.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -216,8 +217,8 @@ test.describe('Authentication', () => {
   test.describe('Logout', () => {
     test('should logout successfully', async ({ page }) => {
       // Login first
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -236,8 +237,8 @@ test.describe('Authentication', () => {
 
     test('should clear session on logout', async ({ page }) => {
       // Login
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -263,8 +264,8 @@ test.describe('Authentication', () => {
       await rememberCheckbox.check();
       
       // Login
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });
@@ -289,8 +290,8 @@ test.describe('Authentication', () => {
       // Block API requests
       await page.route('**/api/auth/**', route => route.abort());
 
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await page.waitForTimeout(1000);
@@ -302,8 +303,8 @@ test.describe('Authentication', () => {
 
     test('should handle session timeout', async ({ page }) => {
       // Login first
-      await page.fill('input[name="email"], [data-testid="email"]', TEST_USERS.admin.email);
-      await page.fill('input[name="password"], [data-testid="password"]', TEST_USERS.admin.password);
+      await page.fill('input[name="email"], [data-testid="email"]', TEST_CREDENTIALS.admin.email);
+      await page.fill('input[name="password"], [data-testid="password"]', TEST_CREDENTIALS.admin.password);
       await page.click('button[type="submit"], [data-testid="login-button"]');
       
       await expect(page).toHaveURL(/\/dashboard|\//, { timeout: 10000 });

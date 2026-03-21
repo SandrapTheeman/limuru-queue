@@ -23,6 +23,29 @@ HMS_ADAPTER_TYPE = "mock"
 CLOUDFLARE_ACCOUNT_ID = "34b813955eef738aa87154f6a89f2cff"
 
 # ===========================================
+# Build Settings
+# ===========================================
+[build]
+command = "npm run build"
+watch_dir = "src"
+
+# ===========================================
+# Dev Settings
+# ===========================================
+[dev]
+port = 8787
+local_protocol = "http"
+assets = { directory = "./public" }
+
+# ===========================================
+# Compatibility Settings
+# ===========================================
+compatibility_flags = [
+  "nodejs_compat",
+  "streams_enable_constructors"
+]
+
+# ===========================================
 # D1 Database
 # ===========================================
 [[d1_databases]]
@@ -81,7 +104,45 @@ new_sqlite_classes = [ "QueueRoomDO", "PatientSyncDO" ]
 [env.staging]
 name = "limuru-queue-api-staging"
 vars = { ENVIRONMENT = "staging" }
+d1_databases = [
+  { binding = "DB", database_name = "limuru-queue-db", database_id = "13630410-b0da-4bd2-b0bf-218d9eb42f64" }
+]
+kv_namespaces = [
+  { binding = "SESSION_KV", id = "32e9afd9852640b7973ec669560a642a" },
+  { binding = "CACHE_KV", id = "398fc397a7d0452a8db2dcc00f4b8644" },
+  { binding = "RATE_LIMIT_KV", id = "84bcd17cbc514a08801ede084f035ad6" }
+]
+r2_buckets = [
+  { binding = "ASSETS_BUCKET", bucket_name = "limuru-queue-storage" },
+  { binding = "BACKUP_BUCKET", bucket_name = "limuru-queue-storage" }
+]
+durable_objects.bindings = [
+  { name = "QUEUE_ROOM", class_name = "QueueRoomDO" },
+  { name = "PATIENT_SYNC", class_name = "PatientSyncDO" }
+]
+[[env.staging.migrations]]
+tag = "v1"
+new_sqlite_classes = [ "QueueRoomDO", "PatientSyncDO" ]
 
 [env.production]
 name = "limuru-queue-api"
 vars = { ENVIRONMENT = "production" }
+d1_databases = [
+  { binding = "DB", database_name = "limuru-queue-db", database_id = "13630410-b0da-4bd2-b0bf-218d9eb42f64" }
+]
+kv_namespaces = [
+  { binding = "SESSION_KV", id = "32e9afd9852640b7973ec669560a642a" },
+  { binding = "CACHE_KV", id = "398fc397a7d0452a8db2dcc00f4b8644" },
+  { binding = "RATE_LIMIT_KV", id = "84bcd17cbc514a08801ede084f035ad6" }
+]
+r2_buckets = [
+  { binding = "ASSETS_BUCKET", bucket_name = "limuru-queue-storage" },
+  { binding = "BACKUP_BUCKET", bucket_name = "limuru-queue-storage" }
+]
+durable_objects.bindings = [
+  { name = "QUEUE_ROOM", class_name = "QueueRoomDO" },
+  { name = "PATIENT_SYNC", class_name = "PatientSyncDO" }
+]
+[[env.production.migrations]]
+tag = "v1"
+new_sqlite_classes = [ "QueueRoomDO", "PatientSyncDO" ]

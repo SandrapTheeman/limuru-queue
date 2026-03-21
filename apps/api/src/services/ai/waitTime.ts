@@ -102,24 +102,24 @@ export class WaitTimeService {
     try {
       const waiting = await db.prepare(`
         SELECT COUNT(*) as count FROM queue_tickets 
-        WHERE department = ? AND status = 'waiting'
+        WHERE department_id = ? AND status = 'waiting'
       `).bind(department).first() as { count: number } | undefined;
       
       const called = await db.prepare(`
         SELECT COUNT(*) as count FROM queue_tickets 
-        WHERE department = ? AND status = 'called'
+        WHERE department_id = ? AND status = 'called'
       `).bind(department).first() as { count: number } | undefined;
       
       const inProgress = await db.prepare(`
         SELECT COUNT(*) as count FROM queue_tickets 
-        WHERE department = ? AND status = 'in_progress'
+        WHERE department_id = ? AND status = 'serving'
       `).bind(department).first() as { count: number } | undefined;
       
       // Get average wait time for completed queue_tickets today
       const avgWait = await db.prepare(`
-        SELECT AVG(wait_time_minutes) as avg 
+        SELECT AVG(actual_wait_minutes) as avg 
         FROM queue_tickets 
-        WHERE department = ? 
+        WHERE department_id = ? 
           AND status = 'completed'
           AND date(completed_at) = date('now')
       `).bind(department).first() as { avg: number } | undefined;

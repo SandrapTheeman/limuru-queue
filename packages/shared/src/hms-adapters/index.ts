@@ -5,7 +5,7 @@ export type { HMSPatient, HMSAppointment, HMSDoctor, HMSAdapter, LabOrder, HMSSy
 export const HMS_ADAPTER_TYPES = {
   MOCK: 'mock',
   OPENMRS: 'openmrs',
-  BAHMNI: 'bahmnni',
+  BAHMNI: 'bahmni',
   OPENELIS: 'openelis',
   DHIS2: 'dhis2',
 } as const;
@@ -21,6 +21,34 @@ export interface HMSConfig {
   facilityId?: string;
   timeout?: number;
   retryAttempts?: number;
+}
+
+export interface RetryOptions {
+  maxRetries?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+}
+
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {}
+): Promise<T> {
+  const { maxRetries = 3, baseDelayMs = 1000, maxDelayMs = 10000 } = options;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < maxRetries) {
+        const delay = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
+        console.log(`[HMS Retry] Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
 }
 
 export function createHMSAdapter(config: HMSConfig): HMSAdapter {
@@ -268,6 +296,7 @@ export class OpenMRSHMSAdapter implements HMSAdapter {
   private baseUrl: string;
   private auth: string;
   private facilityId?: string;
+  private retryAttempts: number = 3;
 
   constructor(baseUrl: string, username: string, password: string, facilityId?: string) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
@@ -277,20 +306,27 @@ export class OpenMRSHMSAdapter implements HMSAdapter {
 
   private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}/ws/rest/v1${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${this.auth}`,
-        ...options.headers,
-      },
-    });
+    
+    return withRetry(async () => {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${this.auth}`,
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`OpenMRS API error: ${response.status} ${response.statusText}`);
-    }
+      if (!response.ok) {
+        throw new Error(`OpenMRS API error: ${response.status} ${response.statusText}`);
+      }
 
-    return response.json() as T;
+      return response.json() as T;
+    }, { maxRetries: this.retryAttempts });
+  }
+
+  setRetryAttempts(count: number): void {
+    this.retryAttempts = count;
   }
 
   async getPatient(hmsPatientId: string): Promise<HMSPatient | null> {
@@ -575,6 +611,7 @@ export class BahmniHMSAdapter implements HMSAdapter {
   private baseUrl: string;
   private auth: string;
   private facilityId?: string;
+  private retryAttempts: number = 3;
 
   constructor(baseUrl: string, username?: string, password?: string, facilityId?: string) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
@@ -584,20 +621,27 @@ export class BahmniHMSAdapter implements HMSAdapter {
 
   private async fetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}/openmrs/ws/rest/v1${endpoint}`;
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${this.auth}`,
-        ...options.headers,
-      },
-    });
+    
+    return withRetry(async () => {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${this.auth}`,
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`Bahmni API error: ${response.status} ${response.statusText}`);
-    }
+      if (!response.ok) {
+        throw new Error(`Bahmni API error: ${response.status} ${response.statusText}`);
+      }
 
-    return response.json() as T;
+      return response.json() as T;
+    }, { maxRetries: this.retryAttempts });
+  }
+
+  setRetryAttempts(count: number): void {
+    this.retryAttempts = count;
   }
 
   async getPatient(hmsPatientId: string): Promise<HMSPatient | null> {

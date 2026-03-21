@@ -79,9 +79,22 @@ voice.post('/call', async (c) => {
   const body = await validateBody(initiateCallSchema, c);
   if (!body) return;
   
-  const callerId = 'current-user-id';
-  const callerName = 'Current User';
-  const callerRole = 'nurse';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let callerId = 'system';
+  let callerName = 'System';
+  let callerRole = 'unknown';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      callerId = session.userId || session.doctorId || 'system';
+      callerName = session.name || 'Staff';
+      callerRole = session.role || 'unknown';
+    }
+  }
   
   try {
     const call = await voiceService.initiateCall(
@@ -116,7 +129,18 @@ voice.post('/call/:callId/accept', async (c) => {
   const body = await validateBody(acceptCallSchema, c);
   if (!body) return;
   
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const call = await voiceService.acceptCall(callId, userId);
@@ -144,7 +168,18 @@ voice.post('/call/:callId/reject', async (c) => {
   const body = await validateBody(rejectCallSchema, c);
   if (!body) return;
   
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const call = await voiceService.rejectCall(callId, userId, body.reason);
@@ -171,7 +206,18 @@ voice.post('/call/:callId/reject', async (c) => {
 voice.post('/call/:callId/end', async (c) => {
   const { callId } = c.req.param();
   
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const call = await voiceService.endCall(callId, userId);
@@ -198,7 +244,18 @@ voice.post('/call/:callId/end', async (c) => {
 voice.post('/call/:callId/hold', async (c) => {
   const { callId } = c.req.param();
   
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const call = await voiceService.holdCall(callId, userId);
@@ -223,7 +280,18 @@ voice.post('/call/:callId/hold', async (c) => {
 voice.post('/call/:callId/resume', async (c) => {
   const { callId } = c.req.param();
   
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const call = await voiceService.resumeCall(callId, userId);
@@ -250,7 +318,18 @@ voice.post('/call/:callId/transfer', async (c) => {
   const body = await validateBody(transferCallSchema, c);
   if (!body) return;
   
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const call = await voiceService.transferCall(callId, userId, body.targetUserId, body.mode);
@@ -278,7 +357,18 @@ voice.get('/calls', async (c) => {
   const query = await validateQuery(getCallsSchema, c);
   if (!query) return;
   
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const result = await voiceService.getCallHistory(userId, {
@@ -305,7 +395,18 @@ voice.get('/calls', async (c) => {
 });
 
 voice.get('/calls/active', async (c) => {
-  const userId = 'current-user-id';
+  const sessionKV = c.env.SESSION_KV;
+  const authHeader = c.req.header('Authorization');
+  let userId = 'system';
+  
+  if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    const sessionData = await sessionKV.get(`session:${token}`);
+    if (sessionData) {
+      const session = JSON.parse(sessionData);
+      userId = session.userId || session.doctorId || 'system';
+    }
+  }
   
   try {
     const calls = await voiceService.getActiveCalls(userId);

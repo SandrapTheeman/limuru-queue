@@ -196,7 +196,7 @@ clinical.post('/', async (c) => {
   }
 
   const doctor = await db.prepare('SELECT * FROM doctors WHERE id = ?').bind(user.doctorId || body.patientId).first();
-  const doctorName = doctor ? (doctor as any).name || (doctor as any).first_name + ' ' + (doctor as any).last_name : user.name || 'Unknown';
+  const doctorName = doctor ? (doctor as any).qualification || (doctor as any).name || 'Doctor' : user.name || 'Unknown';
 
   const note = await clinicalService.createNote(db, {
     visitId: body.visitId,

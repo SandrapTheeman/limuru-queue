@@ -75,7 +75,7 @@ export async function recordVitals(
     const activeVisit = await db.prepare(`
       SELECT id FROM queue_tickets 
       WHERE patient_id = ? 
-      AND status IN ('waiting', 'called', 'in_progress')
+      AND status IN ('waiting', 'called', 'serving')
       ORDER BY created_at DESC 
       LIMIT 1
     `).bind(params.patientId).first() as { id: string } | undefined;

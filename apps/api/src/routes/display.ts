@@ -147,17 +147,17 @@ display.get('/:id/data', async (c) => {
     
     let sql = `
       SELECT v.id, v.ticket_number, v.status, v.priority, v.created_at,
-             p.name as patient_name,
-             d.name as doctor_name, d.room as doctor_room
+             p.first_name || ' ' || p.last_name as patient_name,
+             u.first_name || ' ' || u.last_name as doctor_name
       FROM queue_tickets v
       LEFT JOIN patients p ON v.patient_id = p.id
-      LEFT JOIN doctors d ON v.doctor_id = d.id
-      WHERE v.status IN ('waiting', 'called', 'in_progress')
+      LEFT JOIN users u ON v.doctor_id = u.id
+      WHERE v.status IN ('waiting', 'called', 'serving')
     `;
     const params: unknown[] = [];
 
     if (deptFilter) {
-      sql += ` AND v.department = ?`;
+      sql += ` AND v.department_id = ?`;
       params.push(deptFilter);
     }
 
@@ -167,15 +167,15 @@ display.get('/:id/data', async (c) => {
     
     const waitingCount = await db.prepare(`
       SELECT COUNT(*) as count FROM queue_tickets 
-      WHERE status = 'waiting' ${deptFilter ? ' AND department = ?' : ''}
+      WHERE status = 'waiting' ${deptFilter ? ' AND department_id = ?' : ''}
     `).bind(...(deptFilter ? [deptFilter] : [])).first() as { count: number };
 
     const calledPatient = await db.prepare(`
-      SELECT v.*, p.name as patient_name, d.name as doctor_name, d.room as doctor_room
+      SELECT v.*, p.first_name || ' ' || p.last_name as patient_name, u.first_name || ' ' || u.last_name as doctor_name
       FROM queue_tickets v
       LEFT JOIN patients p ON v.patient_id = p.id
-      LEFT JOIN doctors d ON v.doctor_id = d.id
-      WHERE v.status = 'called' ${deptFilter ? ' AND v.department = ?' : ''}
+      LEFT JOIN users u ON v.doctor_id = u.id
+      WHERE v.status = 'called' ${deptFilter ? ' AND v.department_id = ?' : ''}
       ORDER BY v.called_at ASC
       LIMIT 1
     `).bind(...(deptFilter ? [deptFilter] : [])).first();
@@ -230,34 +230,34 @@ display.get('/:id/queue', async (c) => {
 
   const waitingPatients = await db.prepare(`
     SELECT v.id, v.ticket_number, v.status, v.priority, v.created_at,
-           p.name as patient_name
+           p.first_name || ' ' || p.last_name as patient_name
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     WHERE v.status = 'waiting'
-    ${deptFilter ? ' AND v.department = ?' : ''}
+    ${deptFilter ? ' AND v.department_id = ?' : ''}
     ORDER BY v.priority DESC, v.created_at ASC
     LIMIT 50
   `).bind(...(deptFilter ? [deptFilter] : [])).all();
 
   const calledPatient = await db.prepare(`
-    SELECT v.ticket_number, p.name as patient_name, d.name as called_by_name, d.room as room
+    SELECT v.ticket_number, p.first_name || ' ' || p.last_name as patient_name, u.first_name || ' ' || u.last_name as called_by_name, v.room_assigned as room
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
-    LEFT JOIN doctors d ON v.doctor_id = d.id
+    LEFT JOIN users u ON v.doctor_id = u.id
     WHERE v.status = 'called'
-    ${deptFilter ? ' AND v.department = ?' : ''}
+    ${deptFilter ? ' AND v.department_id = ?' : ''}
     ORDER BY v.called_at DESC
     LIMIT 1
   `).bind(...(deptFilter ? [deptFilter] : [])).first();
 
   const inProgressPatients = await db.prepare(`
     SELECT v.id, v.ticket_number, v.started_at,
-           p.name as patient_name, d.name as doctor_name, d.room
+           p.first_name || ' ' || p.last_name as patient_name, u.first_name || ' ' || u.last_name as doctor_name
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
-    LEFT JOIN doctors d ON v.doctor_id = d.id
-    WHERE v.status = 'in_progress'
-    ${deptFilter ? ' AND v.department = ?' : ''}
+    LEFT JOIN users u ON v.doctor_id = u.id
+    WHERE v.status = 'serving'
+    ${deptFilter ? ' AND v.department_id = ?' : ''}
     ORDER BY v.started_at ASC
     LIMIT 10
   `).bind(...(deptFilter ? [deptFilter] : [])).all();
@@ -266,11 +266,11 @@ display.get('/:id/queue', async (c) => {
     SELECT 
       COUNT(CASE WHEN status = 'waiting' THEN 1 END) as waiting,
       COUNT(CASE WHEN status = 'called' THEN 1 END) as called,
-      COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress,
+      COUNT(CASE WHEN status = 'serving' THEN 1 END) as in_progress,
       COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed
     FROM queue_tickets
     WHERE date(created_at) = date('now')
-    ${deptFilter ? ' AND department = ?' : ''}
+    ${deptFilter ? ' AND department_id = ?' : ''}
   `).bind(...(deptFilter ? [deptFilter] : [])).first();
 
   return c.json(successResponse({

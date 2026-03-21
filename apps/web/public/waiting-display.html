@@ -28,6 +28,18 @@
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
+            --bg-dim: #020617;
+        }
+
+        .night-mode {
+            --bg: #020617;
+            --bg-secondary: #020617;
+            --surface: rgba(255, 255, 255, 0.02);
+            --surface-hover: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.04);
+            --text: rgba(255, 255, 255, 0.85);
+            --text-secondary: rgba(255, 255, 255, 0.5);
+            --muted: rgba(255, 255, 255, 0.35);
         }
 
         html, body {
@@ -616,16 +628,107 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Health Tips Ticker */
+        .health-ticker {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            border-top: 1px solid var(--border);
+            background: linear-gradient(0deg, rgba(13, 148, 136, 0.05) 0%, transparent 100%);
+        }
+
+        .health-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(20, 184, 166, 0.08));
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            flex-shrink: 0;
+        }
+
+        .health-label span:first-child { font-size: 1.25rem; }
+        .health-label span:last-child { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--teal); }
+
+        .ticker-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ticker-text {
+            white-space: nowrap;
+            animation: tickerMove 30s linear infinite;
+            font-size: 1.125rem;
+            color: var(--text);
+        }
+
+        @keyframes tickerMove {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .ticker-dots {
+            display: flex;
+            gap: 0.375rem;
+            flex-shrink: 0;
+        }
+
+        .ticker-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .ticker-dot.active {
+            background: var(--teal);
+            transform: scale(1.25);
+        }
+
+        /* Night Mode Button */
+        .night-toggle {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .night-toggle:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        /* Video Background */
+        .video-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: -1;
+        }
+
         /* FOOTER */
         .footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 2rem;
+            padding: 0.75rem 2rem;
             border-top: 1px solid var(--border);
-            font-size: 1rem;
+            font-size: 0.875rem;
             color: var(--muted);
-            background: linear-gradient(0deg, rgba(13, 148, 136, 0.05) 0%, transparent 100%);
+            background: linear-gradient(0deg, rgba(13, 148, 136, 0.03) 0%, transparent 100%);
         }
 
         .footer strong { color: var(--teal); }
@@ -805,8 +908,31 @@
         <div class="refresh-info">
             <span class="refresh-dot" id="refreshDot"></span>
             <span>Updated: <span id="lastUpdate">--:--:--</span></span>
+            <button class="night-toggle" id="nightToggleBtn">🌙 Night Mode</button>
         </div>
     </footer>
+
+    <div class="health-ticker">
+        <div class="health-label">
+            <span>💡</span>
+            <span>Health Tip</span>
+        </div>
+        <div class="ticker-content">
+            <div class="ticker-text" id="healthTipText">Stay hydrated - drink at least 8 glasses of water daily</div>
+        </div>
+        <div class="ticker-dots">
+            <div class="ticker-dot active"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+            <div class="ticker-dot"></div>
+        </div>
+    </div>
 
     <!-- Audio elements for alerts -->
     <audio id="alertSound" preload="auto">
@@ -842,7 +968,9 @@
             soundOffIcon: document.getElementById('soundOffIcon'),
             volumeSlider: document.getElementById('volumeSlider'),
             captionsText: document.getElementById('captionsText'),
-            alertSound: document.getElementById('alertSound')
+            alertSound: document.getElementById('alertSound'),
+            healthTipText: document.getElementById('healthTipText'),
+            nightToggleBtn: document.getElementById('nightToggleBtn')
         };
 
         let state = {
@@ -851,8 +979,24 @@
             selectedDept: null,
             soundEnabled: true,
             volume: 70,
-            lastCalledTicket: null
+            lastCalledTicket: null,
+            isNightMode: false,
+            currentPatient: null
         };
+
+        const HEALTH_TIPS = [
+            "Stay hydrated - drink at least 8 glasses of water daily",
+            "Wash your hands frequently to prevent infections",
+            "Get regular check-ups for early detection of health issues",
+            "Maintain a balanced diet rich in fruits and vegetables",
+            "Exercise for at least 30 minutes every day",
+            "Get adequate sleep - 7-9 hours for adults",
+            "Manage stress through meditation or deep breathing",
+            "Avoid smoking and limit alcohol consumption",
+            "Keep your vaccinations up to date",
+            "Report any unusual symptoms to your doctor promptly"
+        ];
+        let healthTipIndex = 0;
 
         function formatTime(d = new Date) {
             return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -869,39 +1013,77 @@
         function updateClock() {
             DOM.clock.textContent = formatTime();
             DOM.date.textContent = formatDate();
+            checkNightMode();
+        }
+
+        function checkNightMode() {
+            const hour = new Date().getHours();
+            const shouldBeNight = hour >= 21 || hour < 6;
+            if (shouldBeNight !== state.isNightMode) {
+                toggleNightMode(shouldBeNight);
+            }
+        }
+
+        function toggleNightMode(forceNight = null) {
+            state.isNightMode = forceNight !== null ? forceNight : !state.isNightMode;
+            document.body.classList.toggle('night-mode', state.isNightMode);
+            if (DOM.nightToggleBtn) {
+                DOM.nightToggleBtn.textContent = state.isNightMode ? '☀️ Day Mode' : '🌙 Night Mode';
+            }
+        }
+
+        function updateHealthTip() {
+            const tip = HEALTH_TIPS[healthTipIndex];
+            if (DOM.healthTipText) DOM.healthTipText.textContent = tip;
+            document.querySelectorAll('.ticker-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === healthTipIndex);
+            });
+            healthTipIndex = (healthTipIndex + 1) % HEALTH_TIPS.length;
         }
 
         async function fetchData() {
             try {
-                const [queueRes, deptRes, statsRes] = await Promise.all([
-                    fetch('/api/queue').then(r => r.json()),
-                    fetch('/api/departments').then(r => r.json()),
-                    fetch('/api/queue/stats').then(r => r.json())
-                ]);
-
-                if (queueRes.success) {
-                    const oldQueue = state.queueData;
-                    state.queueData = queueRes.data || [];
-                    
-                    const current = state.queueData.find(q => q.status === 'called' || q.status === 'in_progress');
-                    if (current && current.ticket_number !== state.lastCalledTicket) {
-                        state.lastCalledTicket = current.ticket_number;
-                        playAlertSound();
-                    }
-                    
-                    renderQueueWithAnimation(oldQueue, state.queueData);
-                }
+                let queueData = [];
+                let deptData = [];
                 
+                const deptRes = await fetch('/api/departments').then(r => r.json()).catch(() => ({ success: false, data: [] }));
                 if (deptRes.success) {
-                    state.departments = deptRes.data || [];
+                    deptData = deptRes.data || [];
+                    state.departments = deptData;
                     renderDeptFilter();
                     renderDeptStats();
                 }
                 
-                if (statsRes.success) updateStats(statsRes.data);
-
+                const selectedDeptId = state.selectedDept || (deptData.length > 0 ? deptData[0].id : null);
+                
+                if (selectedDeptId) {
+                    const queueRes = await fetch(`/api/display/queue/${selectedDeptId}`).catch(() => ({ success: false, data: { waitingPatients: [], currentPatient: null } }));
+                    if (queueRes.success && queueRes.data) {
+                        queueData = queueRes.data.waitingPatients || [];
+                        state.currentPatient = queueRes.data.currentPatient;
+                    }
+                }
+                
+                if (queueData.length === 0) {
+                    const allQueueRes = await fetch('/api/queue').then(r => r.json()).catch(() => ({ success: false, data: [] }));
+                    if (allQueueRes.success) {
+                        queueData = allQueueRes.data || [];
+                    }
+                }
+                
+                const oldQueue = state.queueData;
+                state.queueData = queueData;
+                
+                const current = state.currentPatient || queueData.find(q => q.status === 'called' || q.status === 'in_progress');
+                if (current && current.ticket_number !== state.lastCalledTicket) {
+                    state.lastCalledTicket = current.ticket_number;
+                    playAlertSound();
+                }
+                
+                renderQueueWithAnimation(oldQueue, queueData);
                 updateCurrentCall();
                 updateQueueCount();
+                updateStats();
 
                 DOM.lastUpdate.textContent = formatTimeSeconds();
                 DOM.refreshDot.classList.remove('error');
@@ -910,6 +1092,18 @@
                 DOM.refreshDot.classList.add('error');
                 DOM.lastUpdate.textContent = 'Error';
             }
+        }
+
+        function updateStats() {
+            const waiting = state.queueData.filter(q => q.status === 'waiting').length;
+            const called = state.queueData.filter(q => q.status === 'called' || q.status === 'in_progress').length;
+            const served = state.queueData.filter(q => q.status === 'served' || q.status === 'completed').length;
+            const urgent = state.queueData.filter(q => q.priority && q.status === 'waiting').length;
+            
+            if (DOM.statWaiting) DOM.statWaiting.textContent = waiting;
+            if (DOM.statCalled) DOM.statCalled.textContent = called;
+            if (DOM.statServed) DOM.statServed.textContent = served;
+            if (DOM.statUrgent) DOM.statUrgent.textContent = urgent;
         }
 
         function playAlertSound() {
@@ -922,25 +1116,18 @@
             } catch (e) {}
         }
 
-        function updateStats(stats) {
-            DOM.statWaiting.textContent = stats.waiting || 0;
-            DOM.statCalled.textContent = stats.called || 0;
-            DOM.statServed.textContent = stats.served || 0;
-            DOM.statUrgent.textContent = stats.urgent || 0;
-        }
-
         function updateCurrentCall() {
-            const current = state.queueData.find(q => q.status === 'called' || q.status === 'in_progress');
+            const current = state.currentPatient || state.queueData.find(q => q.status === 'called' || q.status === 'in_progress');
             
             if (current) {
                 DOM.currentTicket.textContent = current.ticket_number;
                 DOM.currentTicket.classList.remove('empty');
                 DOM.currentRoom.textContent = `Room ${current.room_assigned || '--'}`;
                 const dept = state.departments.find(d => d.id === current.department_id);
-                DOM.currentDept.textContent = dept ? dept.name : '';
+                DOM.currentDept.textContent = dept ? dept.name : (current.department || '');
                 
                 const waitingCount = state.queueData.filter(q => q.status === 'waiting').length;
-                const avgWait = 10;
+                const avgWait = 12;
                 DOM.waitMinutes.textContent = waitingCount * avgWait;
             } else {
                 DOM.currentTicket.textContent = 'No Patient';
@@ -1064,13 +1251,21 @@
                 toggleFullscreen();
             } else if (e.key === 'm' || e.key === 'M') {
                 toggleSound();
+            } else if (e.key === 'n' || e.key === 'N') {
+                toggleNightMode();
             }
         });
 
+        if (DOM.nightToggleBtn) {
+            DOM.nightToggleBtn.addEventListener('click', () => toggleNightMode());
+        }
+
         updateClock();
         setInterval(updateClock, 1000);
+        updateHealthTip();
+        setInterval(updateHealthTip, 8000);
         fetchData();
-        setInterval(fetchData, 10000);
+        setInterval(fetchData, 5000);
     })();
     </script>
 </body>

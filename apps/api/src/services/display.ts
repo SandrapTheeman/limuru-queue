@@ -69,7 +69,7 @@ export async function getQueueDisplay(
   const waitingPatients = await db.prepare(`
     SELECT v.id, v.ticket_number, 
            p.first_name || ' ' || p.last_name as patient_name,
-           v.priority, v.status, v.created_at, v.wait_time_minutes,
+           v.priority, v.status, v.created_at, v.actual_wait_minutes,
            dep.name as department_name
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
@@ -82,11 +82,11 @@ export async function getQueueDisplay(
   const calledPatients = await db.prepare(`
     SELECT v.id, v.ticket_number,
            p.first_name || ' ' || p.last_name as patient_name,
-           v.priority, v.status, v.created_at, v.called_at, v.wait_time_minutes,
-           d.qualification as doctor_name, v.room_assigned
+           v.priority, v.status, v.created_at, v.called_at, v.actual_wait_minutes,
+           u.first_name || ' ' || u.last_name as doctor_name, v.room_assigned
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
-    LEFT JOIN doctors d ON v.doctor_id = d.id
+    LEFT JOIN users u ON v.doctor_id = u.id
     WHERE v.status = 'called'${deptFilter}
     ORDER BY v.called_at DESC
     LIMIT 10
@@ -95,12 +95,12 @@ export async function getQueueDisplay(
   const inProgressPatients = await db.prepare(`
     SELECT v.id, v.ticket_number,
            p.first_name || ' ' || p.last_name as patient_name,
-           v.priority, v.status, v.created_at, v.started_at, v.wait_time_minutes,
-           d.qualification as doctor_name, v.room_assigned
+           v.priority, v.status, v.created_at, v.started_at, v.actual_wait_minutes,
+           u.first_name || ' ' || u.last_name as doctor_name, v.room_assigned
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
-    LEFT JOIN doctors d ON v.doctor_id = d.id
-    WHERE v.status = 'in_progress'${deptFilter}
+    LEFT JOIN users u ON v.doctor_id = u.id
+    WHERE v.status = 'serving'${deptFilter}
     ORDER BY v.started_at ASC
     LIMIT 10
   `).bind(...deptParams).all();
@@ -109,7 +109,7 @@ export async function getQueueDisplay(
     SELECT 
       COUNT(CASE WHEN status = 'waiting' THEN 1 END) as waiting_count,
       COUNT(CASE WHEN status = 'called' THEN 1 END) as called_count,
-      COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_count,
+      COUNT(CASE WHEN status = 'serving' THEN 1 END) as in_progress_count,
       COUNT(CASE WHEN status = 'completed' AND date(completed_at) = date('now') THEN 1 END) as completed_today
     FROM queue_tickets
     WHERE 1=1${deptFilter}
@@ -121,9 +121,9 @@ export async function getQueueDisplay(
   } | undefined;
   
   const avgWaitTime = await db.prepare(`
-    SELECT AVG(wait_time_minutes) as avg_wait
+    SELECT AVG(actual_wait_minutes) as avg_wait
     FROM queue_tickets
-    WHERE wait_time_minutes IS NOT NULL
+    WHERE actual_wait_minutes IS NOT NULL
     AND date(created_at) = date('now')
     ${deptFilter}
   `).bind(...deptParams).first() as { avg_wait: number } | undefined;
@@ -135,7 +135,7 @@ export async function getQueueDisplay(
     priority: v.priority || 3,
     status: v.status,
     created_at: v.created_at,
-    wait_time_minutes: v.wait_time_minutes || (v.created_at ? Math.floor((Date.now() - new Date(v.created_at).getTime()) / 60000) : 0),
+    wait_time_minutes: v.actual_wait_minutes || (v.created_at ? Math.floor((Date.now() - new Date(v.created_at).getTime()) / 60000) : 0),
     doctor_name: v.doctor_name || undefined,
     room: v.room_assigned || undefined,
   });

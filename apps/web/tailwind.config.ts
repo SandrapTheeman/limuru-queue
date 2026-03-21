@@ -21,6 +21,7 @@ const config: Config = {
           700: '#0f766e',
           800: '#115e59',
           900: '#134e4a',
+          contrast: '#ffffff',
         },
         secondary: {
           50: '#E3F2FD',
@@ -33,12 +34,14 @@ const config: Config = {
           700: '#1976D2',
           800: '#1565C0',
           900: '#0D47A1',
+          contrast: '#ffffff',
         },
         accent: {
           400: '#FFA726',
           500: '#FF9800',
           600: '#F57C00',
           700: '#EF6C00',
+          contrast: '#1e293b',
         },
         success: {
           50: '#E8F5E9',
@@ -46,12 +49,14 @@ const config: Config = {
           500: '#4CAF50',
           600: '#43A047',
           700: '#16a34a',
+          contrast: '#ffffff',
         },
         warning: {
           50: '#FFF8E1',
           100: '#FFECB3',
           500: '#F59E0B',
           600: '#D97706',
+          contrast: '#1e293b',
         },
         error: {
           50: '#FFEBEE',
@@ -59,22 +64,38 @@ const config: Config = {
           500: '#EF4444',
           600: '#DC2626',
           700: '#B91C1C',
+          contrast: '#ffffff',
         },
         info: {
           50: '#E3F2FD',
           100: '#BBDEFB',
           500: '#3B82F6',
           600: '#2563EB',
+          contrast: '#ffffff',
         },
         priority: {
           emergency: '#B91C1C',
           emergencyBg: '#FEE2E2',
+          emergencyText: '#fca5a5',
           urgent: '#EA580C',
           urgentBg: '#FFEDD5',
+          urgentText: '#fdba74',
           normal: '#1D4ED8',
           normalBg: '#DBEAFE',
+          normalText: '#93c5fd',
           low: '#4B5563',
           lowBg: '#F3F4F6',
+          lowText: '#d1d5db',
+        },
+        status: {
+          normal: '#059669',
+          normalBg: '#d1fae5',
+          elevated: '#d97706',
+          elevatedBg: '#fef3c7',
+          critical: '#dc2626',
+          criticalBg: '#fee2e2',
+          info: '#0284c7',
+          infoBg: '#e0f2fe',
         },
         hospital: {
           primary: '#0F766E',
@@ -113,6 +134,15 @@ const config: Config = {
         '18': '72px',
         '22': '88px',
         'touch': '44px',
+        'touch-lg': '56px',
+      },
+      minWidth: {
+        'touch': '44px',
+        'touch-lg': '56px',
+      },
+      minHeight: {
+        'touch': '44px',
+        'touch-lg': '56px',
       },
       borderRadius: {
         'radius-sm': '4px',
@@ -128,6 +158,14 @@ const config: Config = {
         'ticket-lg': ['32px', { lineHeight: '1', fontWeight: '700' }],
         'ticket-md': ['24px', { lineHeight: '1', fontWeight: '600' }],
         'ticket-sm': ['18px', { lineHeight: '1', fontWeight: '600' }],
+        'tv-display': ['2rem', { lineHeight: '1' }],
+        'tv-stat': ['4rem', { lineHeight: '1', fontWeight: '700' }],
+        'tv-queue': ['6rem', { lineHeight: '1', fontWeight: '800' }],
+      },
+      lineHeight: {
+        'tight': '1.25',
+        'normal': '1.5',
+        'relaxed': '1.75',
       },
       boxShadow: {
         'elevation-1': '0 1px 3px rgba(0, 0, 0, 0.08)',
@@ -135,6 +173,8 @@ const config: Config = {
         'elevation-3': '0 10px 20px rgba(0, 0, 0, 0.1)',
         'glow-teal': '0 0 20px rgba(13, 148, 136, 0.3)',
         'glow-teal-lg': '0 0 40px rgba(13, 148, 136, 0.4)',
+        'focus-ring': '0 0 0 2px #030712, 0 0 0 4px #0d9488',
+        'focus-ring-light': '0 0 0 2px #ffffff, 0 0 0 4px #0d9488',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -145,6 +185,12 @@ const config: Config = {
         'shake': 'shake 0.5s ease-in-out',
         'bounce-in': 'bounceIn 0.3s ease-out',
         'bounce-in-fast': 'bounceIn 0.2s ease-out',
+        'pulse-emergency': 'pulseEmergency 2s infinite',
+        'slide-up': 'slideUp 0.3s ease-out',
+        'shimmer': 'shimmer 1.5s infinite',
+        'ripple': 'ripple 0.6s ease-out',
+        'checkbox-bounce': 'checkbox-bounce 0.3s ease-out',
+        'radio-ripple': 'radio-ripple 0.4s ease-out',
       },
       keyframes: {
         slideIn: {
@@ -173,9 +219,39 @@ const config: Config = {
           '50%': { transform: 'scale(1.05)' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
+        pulseEmergency: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(220, 38, 38, 0.4)' },
+          '50%': { boxShadow: '0 0 20px 5px rgba(220, 38, 38, 0.2)' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        ripple: {
+          '0%': { transform: 'translate(-50%, -50%) scale(0)', opacity: '1' },
+          '100%': { transform: 'translate(-50%, -50%) scale(4)', opacity: '0' },
+        },
+        'checkbox-bounce': {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.1)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        'radio-ripple': {
+          '0%': { transform: 'translate(-50%, -50%) scale(0)', opacity: '0.5' },
+          '100%': { transform: 'translate(-50%, -50%) scale(2)', opacity: '0' },
+        },
       },
       backdropBlur: {
         xs: '2px',
+      },
+      transitionDuration: {
+        fast: '150ms',
+        base: '200ms',
+        slow: '300ms',
       },
     },
   },
