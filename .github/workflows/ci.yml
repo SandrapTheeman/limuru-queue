@@ -121,7 +121,7 @@ jobs:
         if: success()
         with:
           name: web-build
-          path: apps/web/.next
+          path: apps/web/out
           retention-days: 7
 
   e2e:
