@@ -141,7 +141,6 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
           TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       - name: Deploy to Cloudflare Pages

@@ -27,7 +27,8 @@ type Bindings = {
   JWT_SECRET: string;
   DEFAULT_PASSWORD: string;
   OLLAMA_ENDPOINT?: string;
-  OPENROUTER_API_KEY?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
   TWILIO_ACCOUNT_SID?: string;
   TWILIO_AUTH_TOKEN?: string;
   TWILIO_PHONE_NUMBER?: string;
@@ -813,8 +814,8 @@ app.post('/api/ai/triage', async (c) => {
     }
   }
   
-  const aiService = c.env.OPENROUTER_API_KEY 
-    ? createAIService({ OLLAMA_ENDPOINT: c.env.OLLAMA_ENDPOINT, OPENROUTER_API_KEY: c.env.OPENROUTER_API_KEY })
+  const aiService = c.env.CLOUDFLARE_ACCOUNT_ID && c.env.CLOUDFLARE_API_TOKEN
+    ? createAIService({ OLLAMA_ENDPOINT: c.env.OLLAMA_ENDPOINT, CLOUDFLARE_ACCOUNT_ID: c.env.CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN: c.env.CLOUDFLARE_API_TOKEN })
     : null;
   
   const result = await triageService.assess(input, aiService);
@@ -839,7 +840,8 @@ app.get('/api/ai/wait-time/:department', async (c) => {
 app.get('/api/ai/models', async (c) => {
   const aiService = createAIService({ 
     OLLAMA_ENDPOINT: c.env.OLLAMA_ENDPOINT, 
-    OPENROUTER_API_KEY: c.env.OPENROUTER_API_KEY 
+    CLOUDFLARE_ACCOUNT_ID: c.env.CLOUDFLARE_ACCOUNT_ID,
+    CLOUDFLARE_API_TOKEN: c.env.CLOUDFLARE_API_TOKEN
   });
   
   const models = await aiService.getAvailableModels();
@@ -848,7 +850,7 @@ app.get('/api/ai/models', async (c) => {
     models,
     configured: {
       ollama: c.env.OLLAMA_ENDPOINT ? true : false,
-      openrouter: c.env.OPENROUTER_API_KEY ? true : false,
+      cloudflare: c.env.CLOUDFLARE_ACCOUNT_ID && c.env.CLOUDFLARE_API_TOKEN ? true : false,
     },
   }));
 });

@@ -14,7 +14,8 @@ export type Bindings = {
   JWT_SECRET: string;
   DEFAULT_PASSWORD: string;
   OLLAMA_ENDPOINT?: string;
-  OPENROUTER_API_KEY?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
   TWILIO_ACCOUNT_SID?: string;
   TWILIO_AUTH_TOKEN?: string;
   TWILIO_PHONE_NUMBER?: string;
@@ -27,7 +28,7 @@ export type Bindings = {
   SENDGRID_API_KEY?: string;
   SENDGRID_FROM_EMAIL?: string;
   OPENAI_API_KEY?: string;
-  AI_PROVIDER?: 'ollama' | 'openrouter' | 'openai';
+  AI_PROVIDER?: 'ollama' | 'cloudflare' | 'openai';
   HMS_TYPE?: string;
   HMS_BASE_URL?: string;
   HMS_USERNAME?: string;

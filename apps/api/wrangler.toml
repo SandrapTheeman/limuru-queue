@@ -8,17 +8,19 @@ compatibility_date = "2024-10-22"
 # Required (MUST be set before deployment):
 #   wrangler secret put JWT_SECRET
 #   wrangler secret put DEFAULT_PASSWORD
+#   wrangler secret put CLOUDFLARE_API_TOKEN
 #
 # Optional:
 #   WHATSAPP_API_TOKEN, WHATSAPP_PHONE_NUMBER, WHATSAPP_APP_SECRET, WHATSAPP_VERIFY_TOKEN
 #   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
-#   OPENROUTER_API_KEY, OLLAMA_ENDPOINT
+#   OLLAMA_ENDPOINT (for local dev with Ollama)
 
 [vars]
 ENVIRONMENT = "development"
 API_VERSION = "v2"
-AI_PROVIDER = "ollama"
+AI_PROVIDER = "cloudflare"
 HMS_ADAPTER_TYPE = "mock"
+CLOUDFLARE_ACCOUNT_ID = "34b813955eef738aa87154f6a89f2cff"
 
 # ===========================================
 # D1 Database
