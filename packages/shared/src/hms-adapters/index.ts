@@ -1,6 +1,6 @@
-import type { HMSPatient, HMSAppointment, HMSDoctor, HMSAdapter, LabOrder } from './types';
+import type { HMSPatient, HMSAppointment, HMSDoctor, HMSAdapter, LabOrder, HMSSyncStatus } from './types';
 
-export type { HMSPatient, HMSAppointment, HMSDoctor, HMSAdapter, LabOrder };
+export type { HMSPatient, HMSAppointment, HMSDoctor, HMSAdapter, LabOrder, HMSSyncStatus };
 
 export const HMS_ADAPTER_TYPES = {
   MOCK: 'mock',
@@ -124,6 +124,43 @@ export class MockHMSAdapter implements HMSAdapter {
     );
   }
 
+  async getPatientAppointments(hmsPatientId: string): Promise<HMSAppointment[]> {
+    await this.simulateNetworkDelay();
+    return Array.from(this.appointments.values()).filter((a) => a.patient_id === hmsPatientId);
+  }
+
+  async createPatient(patient: Partial<HMSPatient>): Promise<HMSPatient> {
+    await this.simulateNetworkDelay();
+    const newPatient: HMSPatient = {
+      id: `HMS_${Date.now()}`,
+      first_name: patient.first_name || '',
+      last_name: patient.last_name || '',
+      phone: patient.phone || '',
+      email: patient.email,
+      date_of_birth: patient.date_of_birth,
+      gender: patient.gender,
+      address: patient.address,
+      national_id: patient.national_id,
+      emergency_contact_name: patient.emergency_contact_name,
+      emergency_phone: patient.emergency_phone,
+      blood_type: patient.blood_type,
+      allergies: patient.allergies,
+    };
+    this.patients.set(newPatient.id, newPatient);
+    return newPatient;
+  }
+
+  async updatePatient(hmsPatientId: string, updates: Partial<HMSPatient>): Promise<HMSPatient> {
+    await this.simulateNetworkDelay();
+    const existing = this.patients.get(hmsPatientId);
+    if (!existing) {
+      throw new Error(`Patient not found: ${hmsPatientId}`);
+    }
+    const updated = { ...existing, ...updates };
+    this.patients.set(hmsPatientId, updated);
+    return updated;
+  }
+
   async verifyPatient(hmsPatientId: string): Promise<boolean> {
     await this.simulateNetworkDelay();
     return this.patients.has(hmsPatientId);
@@ -199,6 +236,28 @@ export class MockHMSAdapter implements HMSAdapter {
     });
   }
 
+  async getLabOrders(patientId: string): Promise<LabOrder[]> {
+    await this.simulateNetworkDelay();
+    return [
+      {
+        id: 'LAB001',
+        patient_id: patientId,
+        doctor_id: 'HMS_DOC_001',
+        test_name: 'Complete Blood Count',
+        test_code: 'CBC',
+        priority: 1,
+        notes: 'Routine checkup',
+      },
+    ];
+  }
+
+  async getLabSamples(): Promise<any[]> {
+    await this.simulateNetworkDelay();
+    return [
+      { id: 'SAMPLE001', orderId: 'LAB001', status: 'collected', collectedAt: new Date().toISOString() },
+    ];
+  }
+
   private async simulateNetworkDelay(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 50 + Math.random() * 100));
   }
@@ -272,6 +331,83 @@ export class OpenMRSHMSAdapter implements HMSAdapter {
   async verifyPatient(hmsPatientId: string): Promise<boolean> {
     const patient = await this.getPatient(hmsPatientId);
     return patient !== null;
+  }
+
+  async getPatientAppointments(hmsPatientId: string): Promise<HMSAppointment[]> {
+    try {
+      const data = await this.fetch<any>(`/appointment?patient=${hmsPatientId}&v=full`);
+      return (data.results || []).map((a: any) => ({
+        id: a.uuid,
+        patient_id: a.patient.uuid,
+        doctor_id: a.provider?.uuid || '',
+        department_id: a.service?.uuid || '',
+        date: a.startDate?.split('T')[0] || '',
+        time: a.startDate?.split('T')[1]?.substring(0, 5) || '',
+        status: a.status || 'scheduled',
+        reason: a.service?.name || '',
+      }));
+    } catch (error) {
+      console.error('[OpenMRS] Error fetching patient appointments:', error);
+      return [];
+    }
+  }
+
+  async createPatient(patient: Partial<HMSPatient>): Promise<HMSPatient> {
+    try {
+      const response = await this.fetch<any>('/person', {
+        method: 'POST',
+        body: JSON.stringify({
+          names: [{ givenName: patient.first_name, familyName: patient.last_name }],
+          gender: patient.gender === 'male' ? 'M' : patient.gender === 'female' ? 'F' : 'O',
+          birthdate: patient.date_of_birth,
+          attributes: [
+            { attributeType: 'Telephone Number', value: patient.phone },
+            patient.email && { attributeType: 'Email', value: patient.email },
+            patient.national_id && { attributeType: 'National ID', value: patient.national_id },
+          ].filter(Boolean),
+          addresses: patient.address ? [{ address1: patient.address }] : [],
+        }),
+      });
+
+      return {
+        id: response.uuid,
+        first_name: patient.first_name || '',
+        last_name: patient.last_name || '',
+        phone: patient.phone || '',
+        email: patient.email,
+        date_of_birth: patient.date_of_birth,
+        gender: patient.gender,
+        address: patient.address,
+        national_id: patient.national_id,
+      };
+    } catch (error) {
+      console.error('[OpenMRS] Error creating patient:', error);
+      throw error;
+    }
+  }
+
+  async updatePatient(hmsPatientId: string, updates: Partial<HMSPatient>): Promise<HMSPatient> {
+    try {
+      const current = await this.getPatient(hmsPatientId);
+      if (!current) {
+        throw new Error(`Patient not found: ${hmsPatientId}`);
+      }
+
+      const updated = { ...current, ...updates };
+      await this.fetch(`/person/${hmsPatientId}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          names: [{ givenName: updated.first_name, familyName: updated.last_name }],
+          gender: updated.gender === 'male' ? 'M' : updated.gender === 'female' ? 'F' : 'O',
+          birthdate: updated.date_of_birth,
+        }),
+      });
+
+      return updated;
+    } catch (error) {
+      console.error('[OpenMRS] Error updating patient:', error);
+      throw error;
+    }
   }
 
   async getAppointments(date: string, departmentId?: string): Promise<HMSAppointment[]> {
@@ -395,6 +531,34 @@ export class OpenMRSHMSAdapter implements HMSAdapter {
     }
   }
 
+  async getLabOrders(patientId: string): Promise<LabOrder[]> {
+    try {
+      const data = await this.fetch<any>(`/lab/order?patient=${patientId}`);
+      return (data.results || []).map((o: any) => ({
+        id: o.orderNumber,
+        patient_id: o.patient,
+        doctor_id: o.provider,
+        test_name: o.test?.name || '',
+        test_code: o.test?.code || '',
+        priority: o.priority === 'STAT' ? 1 : 2,
+        notes: o.comments,
+      }));
+    } catch (error) {
+      console.error('[OpenMRS] Error fetching lab orders:', error);
+      return [];
+    }
+  }
+
+  async getLabSamples(): Promise<any[]> {
+    try {
+      const data = await this.fetch<any>('/lab/sample');
+      return data.results || [];
+    } catch (error) {
+      console.error('[OpenMRS] Error fetching lab samples:', error);
+      return [];
+    }
+  }
+
   private getAttribute(person: any, attributeType: string): string | undefined {
     return person.attributes?.find((a: any) => a.attributeType?.display === attributeType)?.value;
   }
@@ -473,6 +637,82 @@ export class BahmniHMSAdapter implements HMSAdapter {
   async verifyPatient(hmsPatientId: string): Promise<boolean> {
     const patient = await this.getPatient(hmsPatientId);
     return patient !== null;
+  }
+
+  async getPatientAppointments(hmsPatientId: string): Promise<HMSAppointment[]> {
+    try {
+      const data = await this.fetch<any>(`/appointment?patientUuid=${hmsPatientId}`);
+      return (data.results || []).map((a: any) => ({
+        id: a.uuid,
+        patient_id: a.patient.uuid,
+        doctor_id: a.provider?.uuid || '',
+        department_id: a.service?.uuid || '',
+        date: a.startDateTime?.split('T')[0] || '',
+        time: a.startDateTime?.split('T')[1]?.substring(0, 5) || '',
+        status: a.status || 'scheduled',
+        reason: a.service?.name || '',
+      }));
+    } catch (error) {
+      console.error('[Bahmni] Error fetching patient appointments:', error);
+      return [];
+    }
+  }
+
+  async createPatient(patient: Partial<HMSPatient>): Promise<HMSPatient> {
+    try {
+      const response = await this.fetch<any>('/bahmnicore/patient', {
+        method: 'POST',
+        body: JSON.stringify({
+          person: {
+            names: [{ givenName: patient.first_name, familyName: patient.last_name }],
+            gender: patient.gender === 'male' ? 'M' : patient.gender === 'female' ? 'F' : 'O',
+            birthdate: patient.date_of_birth,
+          },
+          identifiers: patient.national_id ? [{ identifier: patient.national_id, identifierType: 'National ID' }] : [],
+        }),
+      });
+
+      return {
+        id: response.uuid,
+        first_name: patient.first_name || '',
+        last_name: patient.last_name || '',
+        phone: patient.phone || '',
+        email: patient.email,
+        date_of_birth: patient.date_of_birth,
+        gender: patient.gender,
+        address: patient.address,
+        national_id: patient.national_id,
+      };
+    } catch (error) {
+      console.error('[Bahmni] Error creating patient:', error);
+      throw error;
+    }
+  }
+
+  async updatePatient(hmsPatientId: string, updates: Partial<HMSPatient>): Promise<HMSPatient> {
+    try {
+      const current = await this.getPatient(hmsPatientId);
+      if (!current) {
+        throw new Error(`Patient not found: ${hmsPatientId}`);
+      }
+
+      const updated = { ...current, ...updates };
+      await this.fetch(`/bahmnicore/patient/${hmsPatientId}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          person: {
+            names: [{ givenName: updated.first_name, familyName: updated.last_name }],
+            gender: updated.gender === 'male' ? 'M' : updated.gender === 'female' ? 'F' : 'O',
+            birthdate: updated.date_of_birth,
+          },
+        }),
+      });
+
+      return updated;
+    } catch (error) {
+      console.error('[Bahmni] Error updating patient:', error);
+      throw error;
+    }
   }
 
   async getAppointments(date: string, departmentId?: string): Promise<HMSAppointment[]> {
@@ -577,6 +817,34 @@ export class BahmniHMSAdapter implements HMSAdapter {
     }
   }
 
+  async getLabOrders(patientId: string): Promise<LabOrder[]> {
+    try {
+      const data = await this.fetch<any>(`/lab/orders?patientUuid=${patientId}`);
+      return (data.results || []).map((o: any) => ({
+        id: o.uuid,
+        patient_id: o.patientUuid,
+        doctor_id: o.providerUuid,
+        test_name: o.testName || '',
+        test_code: o.testUuid || '',
+        priority: o.priority === 'STAT' ? 1 : 2,
+        notes: o.comments,
+      }));
+    } catch (error) {
+      console.error('[Bahmni] Error fetching lab orders:', error);
+      return [];
+    }
+  }
+
+  async getLabSamples(): Promise<any[]> {
+    try {
+      const data = await this.fetch<any>('/lab/samples');
+      return data.results || [];
+    } catch (error) {
+      console.error('[Bahmni] Error fetching lab samples:', error);
+      return [];
+    }
+  }
+
   private getAttribute(person: any, attributeType: string): string | undefined {
     return person.attributes?.find((a: any) => a.attributeType?.display === attributeType)?.value;
   }
@@ -628,6 +896,38 @@ export class OpenELISHMSAdapter implements HMSAdapter {
     return true;
   }
 
+  async getPatientAppointments(hmsPatientId: string): Promise<HMSAppointment[]> {
+    return [];
+  }
+
+  async createPatient(patient: Partial<HMSPatient>): Promise<HMSPatient> {
+    return {
+      id: crypto.randomUUID(),
+      first_name: patient.first_name || '',
+      last_name: patient.last_name || '',
+      phone: patient.phone || '',
+      email: patient.email,
+      date_of_birth: patient.date_of_birth,
+      gender: patient.gender,
+      address: patient.address,
+      national_id: patient.national_id,
+    };
+  }
+
+  async updatePatient(hmsPatientId: string, updates: Partial<HMSPatient>): Promise<HMSPatient> {
+    return {
+      id: hmsPatientId,
+      first_name: updates.first_name || '',
+      last_name: updates.last_name || '',
+      phone: updates.phone || '',
+      email: updates.email,
+      date_of_birth: updates.date_of_birth,
+      gender: updates.gender,
+      address: updates.address,
+      national_id: updates.national_id,
+    };
+  }
+
   async getAppointments(date: string, departmentId?: string): Promise<HMSAppointment[]> {
     return [];
   }
@@ -673,6 +973,34 @@ export class OpenELISHMSAdapter implements HMSAdapter {
     } catch (error) {
       console.error('[OpenELIS] Error fetching lab results:', error);
       return null;
+    }
+  }
+
+  async getLabOrders(patientId: string): Promise<LabOrder[]> {
+    try {
+      const data = await this.fetch<any>(`/rest/labOrder?patientId=${patientId}`);
+      return (data || []).map((o: any) => ({
+        id: o.id,
+        patient_id: o.patientId,
+        doctor_id: o.providerId,
+        test_name: o.testName || '',
+        test_code: o.testId || '',
+        priority: o.priority || 2,
+        notes: o.notes,
+      }));
+    } catch (error) {
+      console.error('[OpenELIS] Error fetching lab orders:', error);
+      return [];
+    }
+  }
+
+  async getLabSamples(): Promise<any[]> {
+    try {
+      const data = await this.fetch<any>('/rest/sample');
+      return data || [];
+    } catch (error) {
+      console.error('[OpenELIS] Error fetching lab samples:', error);
+      return [];
     }
   }
 }

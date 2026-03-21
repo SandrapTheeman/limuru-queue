@@ -15,19 +15,19 @@ describe('WaitTimeService', () => {
   describe('predict', () => {
     it('should predict wait time for department', async () => {
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'waiting'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'waiting'",
         { count: 5 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'called'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'called'",
         { count: 1 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'in_progress'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'in_progress'",
         { count: 1 }
       );
       mockDb.setFirstData(
-        "SELECT AVG(wait_time_minutes) as avg FROM visits WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
+        "SELECT AVG(wait_time_minutes) as avg FROM queue_tickets WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
         { avg: 25 }
       );
 
@@ -42,19 +42,19 @@ describe('WaitTimeService', () => {
 
     it('should use historical data when available', async () => {
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'waiting'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'waiting'",
         { count: 3 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'called'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'called'",
         { count: 0 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'in_progress'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'in_progress'",
         { count: 0 }
       );
       mockDb.setFirstData(
-        "SELECT AVG(wait_time_minutes) as avg FROM visits WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
+        "SELECT AVG(wait_time_minutes) as avg FROM queue_tickets WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
         { avg: 20 }
       );
 
@@ -71,19 +71,19 @@ describe('WaitTimeService', () => {
 
     it('should apply peak hour multiplier', async () => {
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'waiting'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'waiting'",
         { count: 2 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'called'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'called'",
         { count: 0 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'in_progress'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'in_progress'",
         { count: 0 }
       );
       mockDb.setFirstData(
-        "SELECT AVG(wait_time_minutes) as avg FROM visits WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
+        "SELECT AVG(wait_time_minutes) as avg FROM queue_tickets WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
         { avg: 20 }
       );
 
@@ -94,19 +94,19 @@ describe('WaitTimeService', () => {
 
     it('should return minimum wait time of 5 minutes', async () => {
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'waiting'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'waiting'",
         { count: 0 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'called'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'called'",
         { count: 0 }
       );
       mockDb.setFirstData(
-        "SELECT COUNT(*) as count FROM visits WHERE department = 'MED' AND status = 'in_progress'",
+        "SELECT COUNT(*) as count FROM queue_tickets WHERE department = 'MED' AND status = 'in_progress'",
         { count: 0 }
       );
       mockDb.setFirstData(
-        "SELECT AVG(wait_time_minutes) as avg FROM visits WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
+        "SELECT AVG(wait_time_minutes) as avg FROM queue_tickets WHERE department = 'MED' AND status = 'completed' AND date(completed_at) = date('now')",
         { avg: 20 }
       );
 

@@ -2,8 +2,10 @@
 import { Tabs } from 'expo-router';
 import { useAuthStore } from '../../lib/store';
 import { useVoiceCallStore } from '../../lib/stores/voice';
-import { Badge, IconButton } from 'react-native-paper';
-import { View, StyleSheet } from 'react-native';
+import { Badge, IconButton, View } from 'react-native-paper';
+import { StyleSheet } from 'react-native';
+import { OfflineIndicator } from '../../components/OfflineIndicator';
+import { useState } from 'react';
 
 interface TabIconProps {
   color: string;
@@ -13,6 +15,7 @@ interface TabIconProps {
 export default function StaffLayout() {
   const { user } = useAuthStore();
   const { incomingCall, isInCall } = useVoiceCallStore();
+  const [networkStatus, setNetworkStatus] = useState<'online' | 'offline'>('online');
 
   const getTitle = () => {
     switch (user?.role) {
@@ -65,6 +68,11 @@ export default function StaffLayout() {
         headerTitleStyle: {
           fontWeight: '600',
         },
+        headerRight: () => (
+          <View style={{ marginRight: 8 }}>
+            <OfflineIndicator minimal onNetworkChange={(status) => setNetworkStatus(status)} />
+          </View>
+        ),
       }}
     >
       <Tabs.Screen
@@ -99,7 +107,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: 8,
-    right:  8,
+    right: 8,
     backgroundColor: '#F44336',
   },
 });

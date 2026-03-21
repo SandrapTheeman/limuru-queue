@@ -22,10 +22,17 @@ export type Bindings = {
   WHATSAPP_BUSINESS_ACCOUNT_ID?: string;
   WHATSAPP_API_TOKEN?: string;
   WHATSAPP_PHONE_NUMBER?: string;
+  WHATSAPP_VERIFY_TOKEN?: string;       // Webhook verification token
+  WHATSAPP_APP_SECRET?: string;         // App secret for X-Hub-Signature-256 verification
   SENDGRID_API_KEY?: string;
   SENDGRID_FROM_EMAIL?: string;
   OPENAI_API_KEY?: string;
   AI_PROVIDER?: 'ollama' | 'openrouter' | 'openai';
+  HMS_TYPE?: string;
+  HMS_BASE_URL?: string;
+  HMS_USERNAME?: string;
+  HMS_PASSWORD?: string;
+  HMS_FACILITY_ID?: string;
 };
 
 export type UserRole = 'super_admin' | 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'patient' | 'pharmacist' | 'lab_tech' | 'facility_manager' | 'it_support';

@@ -150,7 +150,7 @@ export async function getOverviewStats(
       SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
       SUM(CASE WHEN status = 'no_show' THEN 1 ELSE 0 END) as no_show,
       AVG(wait_time_minutes) as avg_wait
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department = ?' : ''}
   `).bind(
@@ -166,13 +166,13 @@ export async function getOverviewStats(
     SELECT 
       COUNT(*) as total,
       AVG(wait_time_minutes) as avg_wait
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
   `).bind(prevStart, prevEnd).first() as { total: number; avg_wait: number | null } | undefined;
 
   const peakHourResult = await db.prepare(`
     SELECT strftime('%H', created_at) as hour, COUNT(*) as count
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     GROUP BY hour
     ORDER BY count DESC
@@ -181,7 +181,7 @@ export async function getOverviewStats(
 
   const peakDayResult = await db.prepare(`
     SELECT strftime('%w', created_at) as day, COUNT(*) as count
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     GROUP BY day
     ORDER BY count DESC
@@ -222,14 +222,14 @@ export async function getWaitTimeAnalytics(
       AVG(wait_time_minutes) as avg,
       MAX(wait_time_minutes) as max,
       SUM(CASE WHEN wait_time_minutes > 30 THEN 1 ELSE 0 END) as over30
-    FROM visits
+    FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { avg: number | null; max: number | null; over30: number } | undefined;
 
   const totalWithWait = await db.prepare(`
-    SELECT COUNT(*) as cnt FROM visits WHERE wait_time_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
+    SELECT COUNT(*) as cnt FROM queue_tickets WHERE wait_time_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { cnt: number } | undefined;
 
@@ -240,7 +240,7 @@ export async function getWaitTimeAnalytics(
       MAX(wait_time_minutes) as max,
       SUM(CASE WHEN wait_time_minutes > 30 THEN 1 ELSE 0 END) as over30,
       COUNT(*) as total
-    FROM visits
+    FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     GROUP BY department
@@ -251,7 +251,7 @@ export async function getWaitTimeAnalytics(
     SELECT 
       strftime('%w', created_at) as day,
       AVG(wait_time_minutes) as avg
-    FROM visits
+    FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     GROUP BY day
@@ -261,7 +261,7 @@ export async function getWaitTimeAnalytics(
     SELECT 
       CAST(strftime('%H', created_at) AS INTEGER) as hour,
       AVG(wait_time_minutes) as avg
-    FROM visits
+    FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
     GROUP BY hour
@@ -303,7 +303,7 @@ export async function getVolumeAnalytics(
   const { start, end } = getDateRange(filters);
 
   const total = await db.prepare(`
-    SELECT COUNT(*) as cnt FROM visits
+    SELECT COUNT(*) as cnt FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { cnt: number } | undefined;
@@ -313,7 +313,7 @@ export async function getVolumeAnalytics(
       date(created_at) as date,
       COUNT(*) as count,
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND department = ?' : ''}
     GROUP BY date(created_at)
@@ -324,7 +324,7 @@ export async function getVolumeAnalytics(
     SELECT 
       department,
       COUNT(*) as count
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     GROUP BY department
     ORDER BY count DESC
@@ -334,7 +334,7 @@ export async function getVolumeAnalytics(
   const prevEnd = new Date(new Date(end).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   
   const prevTotal = await db.prepare(`
-    SELECT COUNT(*) as cnt FROM visits
+    SELECT COUNT(*) as cnt FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
   `).bind(prevStart, prevEnd).first() as { cnt: number } | undefined;
 
@@ -374,7 +374,7 @@ export async function getDepartmentPerformance(
       MAX(v.wait_time_minutes) as max_wait,
       SUM(CASE WHEN v.status = 'no_show' THEN 1 ELSE 0 END) as no_shows,
       (SELECT COUNT(*) FROM doctors d WHERE d.department = v.department AND d.is_available = 1) as doctors
-    FROM visits v
+    FROM queue_tickets v
     WHERE date(v.created_at) BETWEEN ? AND ?
     ${filters.department ? 'AND v.department = ?' : ''}
     GROUP BY v.department
@@ -404,7 +404,7 @@ export async function getPeakHours(
       strftime('%w', created_at) as day,
       CAST(strftime('%H', created_at) AS INTEGER) as hour,
       COUNT(*) as count
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     GROUP BY day, hour
     ORDER BY count DESC
@@ -429,7 +429,7 @@ export async function getPeakHours(
     SELECT 
       CAST(strftime('%H', created_at) AS INTEGER) as hour,
       COUNT(*) as count
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     GROUP BY hour
     ORDER BY hour
@@ -458,7 +458,7 @@ export async function getPatientFlow(
     SELECT 
       status,
       COUNT(*) as count
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     GROUP BY status
   `).bind(start, end).all() as unknown as { status: string; count: number }[];
@@ -470,14 +470,14 @@ export async function getPatientFlow(
       CAST(strftime('%H', created_at) AS INTEGER) as hour,
       COUNT(*) as arrived,
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
     GROUP BY hour
     ORDER BY hour
   `).bind(start, end).all() as unknown as { hour: number; arrived: number; completed: number }[];
 
   const avgWaitResult = await db.prepare(`
-    SELECT AVG(wait_time_minutes) as avg FROM visits
+    SELECT AVG(wait_time_minutes) as avg FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
   `).bind(start, end).first() as { avg: number | null } | undefined;
 

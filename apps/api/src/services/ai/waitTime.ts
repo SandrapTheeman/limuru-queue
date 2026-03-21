@@ -101,24 +101,24 @@ export class WaitTimeService {
   private async getQueueStats(db: D1Database, department: string): Promise<QueueStats> {
     try {
       const waiting = await db.prepare(`
-        SELECT COUNT(*) as count FROM visits 
+        SELECT COUNT(*) as count FROM queue_tickets 
         WHERE department = ? AND status = 'waiting'
       `).bind(department).first() as { count: number } | undefined;
       
       const called = await db.prepare(`
-        SELECT COUNT(*) as count FROM visits 
+        SELECT COUNT(*) as count FROM queue_tickets 
         WHERE department = ? AND status = 'called'
       `).bind(department).first() as { count: number } | undefined;
       
       const inProgress = await db.prepare(`
-        SELECT COUNT(*) as count FROM visits 
+        SELECT COUNT(*) as count FROM queue_tickets 
         WHERE department = ? AND status = 'in_progress'
       `).bind(department).first() as { count: number } | undefined;
       
-      // Get average wait time for completed visits today
+      // Get average wait time for completed queue_tickets today
       const avgWait = await db.prepare(`
         SELECT AVG(wait_time_minutes) as avg 
-        FROM visits 
+        FROM queue_tickets 
         WHERE department = ? 
           AND status = 'completed'
           AND date(completed_at) = date('now')

@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../../lib/store';
 import { api } from '../../../lib/api';
 import Link from 'next/link';
-import { Phone } from 'lucide-react';
+import { Phone, Search, Plus, RotateCcw, AlertCircle } from 'lucide-react';
 import { VoiceCallFAB } from '@/lib/components/VoiceCallUI';
+import { OfflineBanner } from '@/lib/hooks/useOfflineStatus';
+import { useToast, useConfirmDialog } from '@/lib/components';
+import { validationRules, FormFieldError, FormFieldLabel } from '@/lib/hooks/useFormValidation';
+import { useFormValidation } from '@/lib/hooks/useFormValidation';
+import { SkeletonPatientCard, CodeBlueButton, EmergencyOverride } from '@/lib/components';
 
 const DEPARTMENTS = [
   { code: 'MED', name: 'General Medicine', color: 'from-green-500/80 to-green-600/80' },
@@ -19,7 +24,6 @@ const DEPARTMENTS = [
   { code: 'EMER', name: 'Emergency', color: 'from-orange-500/80 to-orange-600/80' },
 ];
 
-// Color mapping for departments
 const DEPT_COLORS: Record<string, string> = {
   MED: 'from-green-500/80 to-green-600/80',
   PED: 'from-blue-500/80 to-blue-600/80',
@@ -34,6 +38,8 @@ const DEPT_COLORS: Record<string, string> = {
 export default function ReceptionistDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const toast = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [queues, setQueues] = useState<Record<string, any>>({});
   const [departments, setDepartments] = useState<any[]>(DEPARTMENTS);
   const [loading, setLoading] = useState(true);
@@ -41,27 +47,31 @@ export default function ReceptionistDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const [showEmergency, setShowEmergency] = useState(false);
 
-  // New patient modal state
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
-  const [newPatientData, setNewPatientData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    department: 'MED',
-    priority: false,
+  const { fields, handleChange, handleBlur, reset, isValid: formIsValid } = useFormValidation({
+    name: [validationRules.required('Full name is required')],
+    phone: [validationRules.phone('Please enter a valid phone number')],
+    email: [validationRules.email('Please enter a valid email address')],
+    department: [validationRules.required('Please select a department')],
+  }, {
+    initialValues: {
+      name: '',
+      phone: '',
+      email: '',
+      department: 'MED',
+    },
   });
-  const [registering, setRegistering] = useState(false);
-  const [registrationError, setRegistrationError] = useState('');
-  const [registrationSuccess, setRegistrationSuccess] = useState('');
 
-  // Transfer modal state
+  const [registering, setRegistering] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferringVisit, setTransferringVisit] = useState<any>(null);
   const [transferToDept, setTransferToDept] = useState('');
   const [transferring, setTransferring] = useState(false);
 
-  // Fetch departments from API
+  const [cancelledVisits, setCancelledVisits] = useState<Record<string, { visit: any; timeout: NodeJS.Timeout }>>({});
+
   const fetchDepartments = async () => {
     try {
       const depts = await api.getDepartments?.() || await fetch('/api/departments').then(r => r.json());
@@ -93,14 +103,12 @@ export default function ReceptionistDashboard() {
 
   useEffect(() => {
     fetchAllQueues();
-    // Refresh every 5 seconds for real-time synchronization
     const interval = setInterval(fetchAllQueues, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchAllQueues = async () => {
     try {
-      // Use summary endpoint for better performance and synchronization
       const summary = await api.getQueueSummary();
       const queueMap: Record<string, any> = {};
       summary.forEach((dept: any) => {
@@ -121,14 +129,13 @@ export default function ReceptionistDashboard() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
     setSearching(true);
     try {
       const results = await api.searchPatients(searchQuery);
-      // Handle both wrapped and direct responses
       setSearchResults(results?.results || results || []);
     } catch (error) {
       console.error('Search failed:', error);
+      toast.error('Search failed. Please try again.');
       setSearchResults([]);
     } finally {
       setSearching(false);
@@ -145,8 +152,10 @@ export default function ReceptionistDashboard() {
       setTransferringVisit(null);
       setTransferToDept('');
       fetchAllQueues();
+      toast.success('Patient transferred successfully');
     } catch (error) {
       console.error('Failed to transfer patient:', error);
+      toast.error('Failed to transfer patient');
     } finally {
       setTransferring(false);
     }
@@ -158,58 +167,124 @@ export default function ReceptionistDashboard() {
     setShowTransferModal(true);
   };
 
-  // Handle new patient registration
+  const handleCancelVisit = async (visitId: string, visitData: any) => {
+    const confirmed = await confirm({
+      title: 'Cancel Patient Visit?',
+      message: 'Are you sure you want to cancel this patient visit? This action can be undone within 30 seconds.',
+      confirmText: 'Cancel Visit',
+      cancelText: 'Keep in Queue',
+      variant: 'danger',
+      showUndo: true,
+      onUndo: () => {
+        const pending = cancelledVisits[visitId];
+        if (pending) {
+          clearTimeout(pending.timeout);
+          setCancelledVisits((prev) => {
+            const { [visitId]: _, ...rest } = prev;
+            return rest;
+          });
+          toast.info('Visit cancellation undone');
+        }
+      },
+    });
+
+    if (confirmed) {
+      try {
+        await (api as any).cancelVisit?.(visitId);
+        toast.success('Visit cancelled. Undo available for 30 seconds.', {
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              const pending = cancelledVisits[visitId];
+              if (pending) {
+                clearTimeout(pending.timeout);
+                setCancelledVisits((prev) => {
+                  const { [visitId]: _, ...rest } = prev;
+                  return rest;
+                });
+                toast.info('Visit cancellation undone');
+              }
+            },
+          },
+        });
+
+        const timeout = setTimeout(async () => {
+          setCancelledVisits((prev) => {
+            const { [visitId]: _, ...rest } = prev;
+            return rest;
+          });
+          await (api as any).deleteVisit?.(visitId);
+        }, 30000);
+
+        setCancelledVisits((prev) => ({
+          ...prev,
+          [visitId]: { visit: visitData, timeout },
+        }));
+
+        fetchAllQueues();
+      } catch (error) {
+        console.error('Failed to cancel visit:', error);
+        toast.error('Failed to cancel visit');
+      }
+    }
+  };
+
   const handleRegisterPatient = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRegistrationError('');
-    setRegistrationSuccess('');
     setRegistering(true);
 
     try {
-      // Add patient to queue
       const result = await api.addToQueue({
-        name: newPatientData.name,
-        phone: newPatientData.phone || undefined,
-        email: newPatientData.email || undefined,
-        department: newPatientData.department,
-        priority: newPatientData.priority,
+        name: fields.name.value,
+        phone: fields.phone.value || undefined,
+        email: fields.email.value || undefined,
+        department: fields.department.value,
+        priority: false,
       });
 
-      setRegistrationSuccess(`Patient registered! Ticket: ${result.ticket_number}, Position: ${result.position}`);
-      setNewPatientData({ name: '', phone: '', email: '', department: 'MED', priority: false });
-      
-      // Refresh queues
+      toast.success(`Patient registered! Ticket: ${result.ticket_number}, Position: ${result.position}`);
+      reset({
+        name: '',
+        phone: '',
+        email: '',
+        department: 'MED',
+      });
+      setShowNewPatientModal(false);
       fetchAllQueues();
-      
-      // Close modal after short delay
-      setTimeout(() => {
-        setShowNewPatientModal(false);
-        setRegistrationSuccess('');
-      }, 3000);
     } catch (error: any) {
       console.error('Registration failed:', error);
-      setRegistrationError(error.message || 'Failed to register patient');
+      toast.error(error.message || 'Failed to register patient');
     } finally {
       setRegistering(false);
     }
   };
 
-  // Quick add existing patient to queue
   const handleQuickAddToQueue = async (patient: any) => {
     try {
-      const dept = newPatientData.department || 'MED';
       await api.addToQueue({
         name: patient.name,
         phone: patient.phone || undefined,
         email: patient.email || undefined,
-        department: dept,
+        department: fields.department.value || 'MED',
         priority: false,
       });
       fetchAllQueues();
-      alert('Patient added to queue!');
+      toast.success('Patient added to queue!');
     } catch (error: any) {
       console.error('Failed to add to queue:', error);
-      alert('Failed to add patient to queue: ' + error.message);
+      toast.error('Failed to add patient: ' + error.message);
+    }
+  };
+
+  const handleEmergencyActivate = async (patientId: string, reason: string, room?: string) => {
+    try {
+      await (api as any).emergencyOverride?.(patientId, reason, room);
+      toast.success('CODE BLUE activated! Emergency alerts sent.');
+      fetchAllQueues();
+    } catch (error: any) {
+      console.error('Failed to activate emergency:', error);
+      toast.error('Failed to activate emergency protocol');
+      throw error;
     }
   };
 
@@ -222,7 +297,9 @@ export default function ReceptionistDashboard() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
+      <OfflineBanner />
+      <ConfirmDialog />
+
       <header className="glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -230,13 +307,13 @@ export default function ReceptionistDashboard() {
             <h1 className="text-xl font-bold text-white">Reception Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">
+            <CodeBlueButton variant="icon" onClick={() => setShowEmergency(true)} />
             <span className="text-sm text-white/70">
               Welcome, {user?.name}
               <span className="ml-2 px-2 py-1 bg-blue-500/20 rounded text-xs capitalize text-blue-300">
                 {user?.role}
               </span>
             </span>
-            {/* Quick Call Button */}
             <button
               onClick={() => {
                 const event = new CustomEvent('openVoiceCall');
@@ -259,7 +336,6 @@ export default function ReceptionistDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="glass-card">
             <div className="text-3xl font-bold text-blue-400">{totalWaiting}</div>
@@ -283,18 +359,20 @@ export default function ReceptionistDashboard() {
           </div>
         </div>
 
-        {/* Patient Search */}
         <div className="glass-card mb-8">
           <h2 className="text-lg font-semibold text-white mb-4">Patient Search</h2>
           <div className="flex gap-4">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Search by name, email, or phone..."
-              className="glass-input flex-1"
-            />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Search by name, email, or phone..."
+                className="glass-input pl-10"
+              />
+            </div>
             <button
               onClick={handleSearch}
               disabled={searching}
@@ -303,46 +381,57 @@ export default function ReceptionistDashboard() {
               {searching ? 'Searching...' : 'Search'}
             </button>
           </div>
-          
+
           {searchResults.length > 0 && (
             <div className="mt-4">
-              <table className="w-full">
-                <thead className="bg-white/5">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Name</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Email</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Phone</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/10">
-                  {searchResults.map((patient: any) => (
-                    <tr key={patient.id}>
-                      <td className="px-4 py-3 text-sm text-white/80">{patient.name}</td>
-                      <td className="px-4 py-3 text-sm text-white/80">{patient.email || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-white/80">{patient.phone || '-'}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <button 
-                          onClick={() => handleQuickAddToQueue(patient)}
-                          className="text-green-400 hover:text-green-300 font-medium mr-3"
-                        >
-                          Add to Queue
-                        </button>
-                      </td>
-                    </tr>
+              {searching ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <SkeletonPatientCard key={i} />
                   ))}
-                </tbody>
-              </table>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-white/5">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Name</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Email</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Phone</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-white/60">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10">
+                    {searchResults.map((patient: any) => (
+                      <tr key={patient.id}>
+                        <td className="px-4 py-3 text-sm text-white/80">{patient.name}</td>
+                        <td className="px-4 py-3 text-sm text-white/80">{patient.email || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-white/80">{patient.phone || '-'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            onClick={() => handleQuickAddToQueue(patient)}
+                            className="text-green-400 hover:text-green-300 font-medium mr-3"
+                          >
+                            Add to Queue
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
         </div>
 
-        {/* All Department Queues */}
         <div className="glass-card mb-8">
           <h2 className="text-lg font-semibold text-white mb-4">All Department Queues</h2>
-          
+
           {loading ? (
-            <div className="text-center py-8 text-white/50">Loading queues...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-40 bg-white/5 rounded-xl animate-pulse" />
+              ))}
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {departments.map((dept) => {
@@ -356,7 +445,6 @@ export default function ReceptionistDashboard() {
                       <h3 className="text-xl font-bold">{dept.code}</h3>
                       <span className="text-white/80 text-sm">{dept.name}</span>
                     </div>
-                    
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       <div className="bg-white/20 rounded-lg p-2 text-center">
                         <div className="text-xl font-bold">{queue?.in_progress || 0}</div>
@@ -371,7 +459,6 @@ export default function ReceptionistDashboard() {
                         <div className="text-xs text-white/80">Called</div>
                       </div>
                     </div>
-                    
                     <div className="text-sm text-white/80">
                       Total: {queue?.total || 0} patients
                     </div>
@@ -382,17 +469,16 @@ export default function ReceptionistDashboard() {
           )}
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <button
             onClick={() => setShowNewPatientModal(true)}
             className="glass-card hover:scale-105 transition-transform text-center"
           >
-            <div className="text-4xl mb-3">📝</div>
+            <div className="text-4xl mb-3"><Plus className="w-12 h-12 mx-auto text-primary-400" /></div>
             <h3 className="text-lg font-semibold text-white">Register New Patient</h3>
             <p className="text-white/50 mt-1">Add patient to queue</p>
           </button>
-          
+
           <Link
             href="/display"
             className="glass-card hover:scale-105 transition-transform text-center"
@@ -401,7 +487,7 @@ export default function ReceptionistDashboard() {
             <h3 className="text-lg font-semibold text-white">View Display</h3>
             <p className="text-white/50 mt-1">TV display mode</p>
           </Link>
-          
+
           <Link
             href="/dashboard"
             className="glass-card hover:scale-105 transition-transform text-center"
@@ -413,24 +499,23 @@ export default function ReceptionistDashboard() {
         </div>
       </main>
 
-      {/* Transfer Modal */}
       {showTransferModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="glass-card rounded-xl p-6 w-full max-w-md">
             <h3 className="text-xl font-semibold text-white mb-4">Transfer Patient</h3>
-            
+
             <div className="mb-4">
               <div className="text-white/60 text-sm mb-1">Patient</div>
               <div className="text-white font-medium">
                 {transferringVisit?.ticket_number} - {transferringVisit?.patient_name}
               </div>
             </div>
-            
+
             <div className="mb-4">
               <div className="text-white/60 text-sm mb-1">Current Department</div>
               <div className="text-white font-medium">{transferringVisit?.currentDept}</div>
             </div>
-            
+
             <div className="mb-4">
               <label className="text-white/70 text-sm mb-2 block">Transfer to Department</label>
               <select
@@ -446,7 +531,7 @@ export default function ReceptionistDashboard() {
                 ))}
               </select>
             </div>
-            
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => {
@@ -470,49 +555,61 @@ export default function ReceptionistDashboard() {
         </div>
       )}
 
-      {/* New Patient Registration Modal */}
       {showNewPatientModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="glass-card rounded-xl p-6 w-full max-w-md">
             <h3 className="text-xl font-semibold text-white mb-4">Register New Patient</h3>
-            
+
             <form onSubmit={handleRegisterPatient} className="space-y-4">
               <div>
-                <label className="text-white/70 text-sm mb-2 block">Full Name *</label>
+                <FormFieldLabel htmlFor="name" required>Full Name *</FormFieldLabel>
                 <input
+                  id="name"
                   type="text"
-                  value={newPatientData.name}
-                  onChange={(e) => setNewPatientData({ ...newPatientData, name: e.target.value })}
-                  className="glass-input w-full"
-                  required
+                  value={fields.name.value}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  onBlur={() => handleBlur('name')}
+                  className={`glass-input w-full ${fields.name.error ? 'border-error-500' : ''}`}
+                  aria-invalid={!!fields.name.error}
+                  aria-describedby={fields.name.error ? 'name-error' : undefined}
                 />
+                <FormFieldError error={fields.name.error} />
               </div>
-              
+
               <div>
-                <label className="text-white/70 text-sm mb-2 block">Phone Number</label>
+                <FormFieldLabel htmlFor="phone">Phone Number</FormFieldLabel>
                 <input
+                  id="phone"
                   type="tel"
-                  value={newPatientData.phone}
-                  onChange={(e) => setNewPatientData({ ...newPatientData, phone: e.target.value })}
-                  className="glass-input w-full"
+                  value={fields.phone.value}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  onBlur={() => handleBlur('phone')}
+                  placeholder="+254..."
+                  className={`glass-input w-full ${fields.phone.error ? 'border-error-500' : ''}`}
                 />
+                <FormFieldError error={fields.phone.error} />
               </div>
-              
+
               <div>
-                <label className="text-white/70 text-sm mb-2 block">Email</label>
+                <FormFieldLabel htmlFor="email">Email</FormFieldLabel>
                 <input
+                  id="email"
                   type="email"
-                  value={newPatientData.email}
-                  onChange={(e) => setNewPatientData({ ...newPatientData, email: e.target.value })}
-                  className="glass-input w-full"
+                  value={fields.email.value}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  onBlur={() => handleBlur('email')}
+                  placeholder="your.email@example.com"
+                  className={`glass-input w-full ${fields.email.error ? 'border-error-500' : ''}`}
                 />
+                <FormFieldError error={fields.email.error} />
               </div>
-              
+
               <div>
-                <label className="text-white/70 text-sm mb-2 block">Department *</label>
+                <FormFieldLabel htmlFor="department" required>Department *</FormFieldLabel>
                 <select
-                  value={newPatientData.department}
-                  onChange={(e) => setNewPatientData({ ...newPatientData, department: e.target.value })}
+                  id="department"
+                  value={fields.department.value}
+                  onChange={(e) => handleChange('department', e.target.value)}
                   className="glass-input w-full"
                 >
                   {departments.map((dept) => (
@@ -522,39 +619,13 @@ export default function ReceptionistDashboard() {
                   ))}
                 </select>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="priority"
-                  checked={newPatientData.priority}
-                  onChange={(e) => setNewPatientData({ ...newPatientData, priority: e.target.checked })}
-                  className="w-5 h-5"
-                />
-                <label htmlFor="priority" className="text-sm text-white/70">
-                  Priority patient (elderly, pregnant, disabled)
-                </label>
-              </div>
-              
-              {registrationError && (
-                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
-                  {registrationError}
-                </div>
-              )}
-              
-              {registrationSuccess && (
-                <div className="p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-200 text-sm">
-                  {registrationSuccess}
-                </div>
-              )}
-              
+
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     setShowNewPatientModal(false);
-                    setRegistrationError('');
-                    setRegistrationSuccess('');
+                    reset();
                   }}
                   className="glass-button px-4 py-2"
                 >
@@ -562,7 +633,7 @@ export default function ReceptionistDashboard() {
                 </button>
                 <button
                   type="submit"
-                  disabled={registering || !newPatientData.name}
+                  disabled={registering || !formIsValid}
                   className="glass-button-primary px-4 py-2"
                 >
                   {registering ? 'Registering...' : 'Register & Add to Queue'}
@@ -573,7 +644,14 @@ export default function ReceptionistDashboard() {
         </div>
       )}
 
-      {/* Voice Call FAB */}
+      <EmergencyOverride
+        isOpen={showEmergency}
+        onClose={() => setShowEmergency(false)}
+        onActivate={handleEmergencyActivate}
+        waitingPatients={[]}
+        loading={loading}
+      />
+
       <VoiceCallFAB />
     </div>
   );

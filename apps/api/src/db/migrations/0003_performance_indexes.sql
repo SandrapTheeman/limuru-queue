@@ -15,7 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_users_department_role ON users(department_id, rol
 
 -- Queue indexes (already have patient, doctor, department, status, created)
 -- Add composite index for common queries
-CREATE INDEX IF NOT EXISTS idx_queue_status_priority ON queue(status, priority DESC, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_queue_status_priority ON queue_tickets(status, priority DESC, created_at ASC);
 
 -- Appointments indexes (already have patient, doctor, date, status)
 -- Add composite for doctor schedule lookup
@@ -34,12 +34,12 @@ CREATE INDEX IF NOT EXISTS idx_voice_calls_initiated ON voice_calls(initiated_at
 -- Clinical notes indexes
 CREATE INDEX IF NOT EXISTS idx_clinical_notes_patient_created ON clinical_notes(patient_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_clinical_notes_doctor_created ON clinical_notes(doctor_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_clinical_notes_status ON clinical_notes(status);
+CREATE INDEX IF NOT EXISTS idx_clinical_notes_finalized ON clinical_notes(is_finalized, created_at DESC);
 
 -- Prescriptions indexes
 CREATE INDEX IF NOT EXISTS idx_prescriptions_patient ON prescriptions(patient_id);
 CREATE INDEX IF NOT EXISTS idx_prescriptions_doctor ON prescriptions(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_prescriptions_note ON prescriptions(note_id);
+CREATE INDEX IF NOT EXISTS idx_prescriptions_ticket ON prescriptions(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_prescriptions_created ON prescriptions(created_at);
 
 -- Audit logs indexes (already have user, timestamp, action)
@@ -57,15 +57,15 @@ CREATE INDEX IF NOT EXISTS idx_settings_category ON settings(category);
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS analytics_events (
-    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     event_type TEXT NOT NULL,
     user_id TEXT,
     endpoint TEXT,
     method TEXT,
     status_code INTEGER,
     response_time_ms INTEGER,
-    metadata JSONB DEFAULT '{}',
-    created_at TEXT DEFAULT NOW()
+    metadata TEXT DEFAULT '{}',
+    created_at TEXT DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(event_type);
@@ -78,22 +78,8 @@ CREATE INDEX IF NOT EXISTS idx_analytics_events_endpoint ON analytics_events(end
 
 CREATE TABLE IF NOT EXISTS cache_metadata (
     key TEXT PRIMARY KEY,
-    value JSONB,
+    value TEXT,
     expires_at TEXT,
-    updated_at TEXT DEFAULT NOW()
+    updated_at TEXT DEFAULT (datetime('now'))
 );
 
--- =====================================================
--- ANALYZE TABLES (update statistics)
--- =====================================================
-
-ANALYZE patients;
-ANALYZE users;
-ANALYZE queue;
-ANALYZE appointments;
-ANALYZE messages;
-ANALYZE voice_calls;
-ANALYZE clinical_notes;
-ANALYZE prescriptions;
-ANALYZE audit_logs;
-ANALYZE wait_time_history;

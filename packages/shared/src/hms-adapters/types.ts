@@ -49,6 +49,9 @@ export interface HMSAdapter {
   
   getPatient(hmsPatientId: string): Promise<HMSPatient | null>;
   searchPatients(query: string): Promise<HMSPatient[]>;
+  getPatientAppointments(hmsPatientId: string): Promise<HMSAppointment[]>;
+  createPatient(patient: Partial<HMSPatient>): Promise<HMSPatient>;
+  updatePatient(hmsPatientId: string, updates: Partial<HMSPatient>): Promise<HMSPatient>;
   verifyPatient(hmsPatientId: string): Promise<boolean>;
   
   getAppointments(date: string, departmentId?: string): Promise<HMSAppointment[]>;
@@ -60,4 +63,14 @@ export interface HMSAdapter {
   
   submitLabOrder(order: LabOrder): Promise<boolean>;
   getLabResults(orderId: string): Promise<string | null>;
+  getLabOrders(patientId: string): Promise<LabOrder[]>;
+  getLabSamples(): Promise<any[]>;
+}
+
+export interface HMSSyncStatus {
+  lastSync: string | null;
+  status: 'idle' | 'syncing' | 'error';
+  error?: string;
+  patientsSynced: number;
+  appointmentsSynced: number;
 }

@@ -61,7 +61,7 @@ export async function getQueueDisplay(
   const waitingPatients = await db.prepare(`
     SELECT v.id, v.ticket_number, p.name as patient_name, v.priority, v.status, 
            v.created_at, v.wait_time_minutes
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     WHERE v.status = 'waiting'${deptFilter}
     ORDER BY v.priority DESC, v.created_at ASC
@@ -72,7 +72,7 @@ export async function getQueueDisplay(
     SELECT v.id, v.ticket_number, p.name as patient_name, v.priority, v.status,
            v.created_at, v.called_at, v.wait_time_minutes,
            d.name as doctor_name, d.room
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE v.status = 'called'${deptFilter}
@@ -84,7 +84,7 @@ export async function getQueueDisplay(
     SELECT v.id, v.ticket_number, p.name as patient_name, v.priority, v.status,
            v.created_at, v.started_at, v.wait_time_minutes,
            d.name as doctor_name, d.room
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE v.status = 'in_progress'${deptFilter}
@@ -98,7 +98,7 @@ export async function getQueueDisplay(
       COUNT(CASE WHEN status = 'called' THEN 1 END) as called_count,
       COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress_count,
       COUNT(CASE WHEN status = 'completed' AND date(completed_at) = date('now') THEN 1 END) as completed_today
-    FROM visits
+    FROM queue_tickets
     WHERE 1=1${deptFilter}
   `).bind(...deptParams).first() as {
     waiting_count: number;
@@ -109,7 +109,7 @@ export async function getQueueDisplay(
   
   const avgWaitTime = await db.prepare(`
     SELECT AVG(wait_time_minutes) as avg_wait
-    FROM visits
+    FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL
     AND date(created_at) = date('now')
     ${deptFilter}
@@ -173,7 +173,7 @@ export async function getAnnouncements(
   let sql = `
     SELECT v.id, v.ticket_number, p.name as patient_name,
            d.name as doctor_name, d.room, v.called_at
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE v.status = 'called'

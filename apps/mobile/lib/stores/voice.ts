@@ -25,6 +25,7 @@ interface VoiceCallState {
   currentCall: CurrentCall | null;
   incomingCall: IncomingCall | null;
   callHistory: CurrentCall[];
+  callDuration: number;
   
   // Actions
   setCurrentCall: (call: CurrentCall | null) => void;
@@ -32,6 +33,7 @@ interface VoiceCallState {
   clearIncomingCall: () => void;
   clearCurrentCall: () => void;
   addToHistory: (call: CurrentCall) => void;
+  setCallDuration: (duration: number) => void;
   reset: () => void;
 }
 
@@ -40,11 +42,13 @@ export const useVoiceCallStore = create<VoiceCallState>((set) => ({
   currentCall: null,
   incomingCall: null,
   callHistory: [],
+  callDuration: 0,
   
   setCurrentCall: (call) =>
     set({ 
       currentCall: call, 
-      isInCall: !!call 
+      isInCall: !!call,
+      callDuration: 0,
     }),
   
   setIncomingCall: (call) =>
@@ -54,17 +58,21 @@ export const useVoiceCallStore = create<VoiceCallState>((set) => ({
     set({ incomingCall: null }),
   
   clearCurrentCall: () =>
-    set({ currentCall: null, isInCall: false }),
+    set({ currentCall: null, isInCall: false, callDuration: 0 }),
   
   addToHistory: (call) =>
     set((state) => ({
-      callHistory: [call, ...state.callHistory].slice(0, 50) // Keep last 50 calls
+      callHistory: [call, ...state.callHistory].slice(0, 50)
     })),
+
+  setCallDuration: (duration) =>
+    set({ callDuration: duration }),
   
   reset: () =>
     set({
       isInCall: false,
       currentCall: null,
       incomingCall: null,
+      callDuration: 0,
     }),
 }));

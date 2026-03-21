@@ -8,10 +8,11 @@
     "orientation": "portrait",
     "icon": "./icons/icon-512.png",
     "splash": {
-      "backgroundColor": "#1E40AF"
+      "backgroundColor": "#1E40AF",
+      "image": "./icons/icon-512.png",
+      "resizeMode": "contain"
     },
     "privacyConfig": "@experience/privacy/privacy-config",
-    "permissions": ["CAMERA", "NOTIFICATIONS"],
     "extra": {
       "eas": {
         "projectId": "limuru-queue"
@@ -22,43 +23,65 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "co.ke.limuruhospital.queue",
+      "appStoreUrl": "https://apps.apple.com/app/limuru-queue/id0000000000",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app uses the camera to scan QR codes.",
-        "NSUserNotificationUsageDescription": "We send notifications when your turn is near."
+        "NSCameraUsageDescription": "This app uses the camera to scan QR codes for patient check-in and ticket lookup.",
+        "NSUserNotificationUsageDescription": "We send notifications when your turn is near, for appointment reminders, and when the doctor calls you.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone for voice calls with hospital staff.",
+        "UIBackgroundModes": ["remote-notification", "audio", "voip"],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./icons/icon-512.png",
         "backgroundColor": "#1E40AF"
       },
       "package": "co.ke.limuruhospital.queue",
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=co.ke.limuruhospital.queue",
       "permissions": [
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "NOTIFICATIONS"
-      ]
+        "NOTIFICATIONS",
+        "RECORD_AUDIO",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "versionCode": 1
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./icons/icon-512.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#1E40AF"
+          "icon": "./icons/icon-512.png",
+          "color": "#1E40AF",
+          "sounds": []
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
+          "cameraPermission": "Allow Limuru Queue to access your camera to scan QR codes for ticket lookup."
         }
+      ],
+      [
+        "expo-haptics",
+        {}
       ]
     ],
-    "scheme": "hospitalqueue"
+    "scheme": "hospitalqueue",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "notification": {
+      "iosDisplayInForeground": true
+    },
+    "description": "Limuru Cottage Hospital Queue Management System - Manage your queue position, receive notifications, and book appointments."
   }
 }

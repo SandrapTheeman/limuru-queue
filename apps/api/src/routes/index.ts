@@ -18,6 +18,7 @@ import { iptv } from './iptv';
 import { vitals } from './vitals';
 import { voice } from './voice';
 import { whatsapp } from './whatsapp';
+import { hms } from './hms';
 
 const routes = new Hono();
 
@@ -40,6 +41,7 @@ routes.route('/iptv', iptv);
 routes.route('/vitals', vitals);
 routes.route('/voice', voice);
 routes.route('/whatsapp', whatsapp);
+routes.route('/hms', hms);
 
 export { routes };
 export type AppType = typeof routes;

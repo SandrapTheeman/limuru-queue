@@ -73,7 +73,7 @@ export async function recordVitals(
   let visitId = params.visitId;
   if (!visitId) {
     const activeVisit = await db.prepare(`
-      SELECT id FROM visits 
+      SELECT id FROM queue_tickets 
       WHERE patient_id = ? 
       AND status IN ('waiting', 'called', 'in_progress')
       ORDER BY created_at DESC 

@@ -32,6 +32,199 @@
             --purple: #8b5cf6;
         }
 
+        :root {
+            --tv-bg-primary: #0a0a0f;
+            --tv-bg-secondary: #111118;
+            --tv-text-primary: #ffffff;
+            --tv-text-secondary: #e5e5e5;
+            --tv-accent: #22d3ee;
+            --priority-emergency: #ef4444;
+            --priority-urgent: #f97316;
+            --priority-normal: #3b82f6;
+            --priority-low: #6b7280;
+            --tv-font-hero: 160px;
+            --tv-font-h1: 96px;
+            --tv-font-h2: 64px;
+            --tv-font-h3: 48px;
+            --tv-font-body: 32px;
+            --tv-font-small: 24px;
+        }
+
+        .high-contrast-mode {
+            --tv-bg-primary: #000000;
+            --tv-bg-secondary: #000000;
+            --tv-text-primary: #ffffff;
+            --tv-text-secondary: #ffffff;
+            --tv-accent: #00ffff;
+            --priority-emergency: #ff0000;
+            --priority-urgent: #ff8000;
+            --priority-normal: #0080ff;
+            --priority-low: #808080;
+        }
+
+        .large-text-mode {
+            --tv-font-hero: 200px;
+            --tv-font-h1: 120px;
+            --tv-font-h2: 80px;
+            --tv-font-h3: 60px;
+            --tv-font-body: 40px;
+            --tv-font-small: 32px;
+        }
+
+        .emergency-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(239, 68, 68, 0);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .emergency-overlay.active {
+            display: flex;
+            animation: emergencyFlash 0.5s ease-in-out infinite;
+        }
+
+        @keyframes emergencyFlash {
+            0%, 100% { background: rgba(239, 68, 68, 0.3); }
+            50% { background: rgba(239, 68, 68, 0.7); }
+        }
+
+        .emergency-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, var(--priority-emergency), #dc2626, var(--priority-emergency));
+            background-size: 200% 100%;
+            animation: emergencyScroll 1s linear infinite;
+            z-index: 10000;
+            padding: 1rem 0;
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6);
+        }
+
+        @keyframes emergencyScroll {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .emergency-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            color: white;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: var(--tv-font-h3);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .emergency-icon {
+            font-size: var(--tv-font-h2);
+            animation: emergencyPulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes emergencyPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .emergency-close {
+            position: absolute;
+            right: 2rem;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid white;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            font-size: var(--tv-font-small);
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 8px;
+            text-transform: uppercase;
+        }
+
+        .emergency-close:hover {
+            background: white;
+            color: var(--priority-emergency);
+        }
+
+        .emergency-banner.hidden { display: none; }
+
+        .mode-indicator {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.875rem;
+            color: var(--muted);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-indicator .mode-icon {
+            font-size: 1.25rem;
+        }
+
+        .display-mode-selector {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .mode-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .pip-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .pip-btn {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .pip-btn:hover {
+            background: var(--surface-hover);
+            color: var(--primary);
+        }
+
         html, body {
             height: 100%;
             overflow: hidden;
@@ -125,7 +318,7 @@
         }
 
         .clock {
-            font-size: 4.5rem;
+            font-size: var(--tv-font-h1);
             font-weight: 900;
             color: var(--primary);
             font-variant-numeric: tabular-nums;
@@ -134,7 +327,7 @@
         }
 
         .date {
-            font-size: 1.25rem;
+            font-size: var(--tv-font-body);
             color: var(--muted);
         }
 
@@ -236,7 +429,7 @@
         }
 
         .ticket-number {
-            font-size: 14rem;
+            font-size: var(--tv-font-hero);
             font-weight: 900;
             line-height: 1;
             background: linear-gradient(135deg, var(--primary), #7dd3fc);
@@ -262,14 +455,14 @@
         }
 
         .room-info {
-            font-size: 4rem;
+            font-size: var(--tv-font-h1);
             font-weight: 800;
             color: var(--primary);
             margin-bottom: 0.5rem;
         }
 
         .dept-info {
-            font-size: 2rem;
+            font-size: var(--tv-font-h2);
             color: var(--text-secondary);
             margin-bottom: 1.5rem;
         }
@@ -366,7 +559,7 @@
         .queue-item.urgent { background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.25); }
 
         .queue-num {
-            font-size: 2.5rem;
+            font-size: var(--tv-font-h2);
             font-weight: 800;
             min-width: 8rem;
             text-align: center;
@@ -380,14 +573,14 @@
         .queue-details { flex: 1; }
 
         .queue-name {
-            font-size: 1.5rem;
+            font-size: var(--tv-font-body);
             font-weight: 600;
             color: var(--text);
             margin-bottom: 0.25rem;
         }
 
         .queue-dept {
-            font-size: 1.125rem;
+            font-size: var(--tv-font-small);
             color: var(--muted);
         }
 
@@ -698,6 +891,105 @@
             .fullscreen-btn { width: 48px; height: 48px; }
         }
 
+        .pip-btn:hover {
+            background: var(--surface-hover);
+            color: var(--primary);
+        }
+
+        .accessibility-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+
+        .a11y-btn {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .a11y-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .a11y-btn.active {
+            background: var(--tv-accent);
+            color: var(--tv-bg-primary);
+            border-color: var(--tv-accent);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .multi-dept-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .dept-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            padding: 1.5rem;
+        }
+
+        .dept-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dept-panel-title {
+            font-size: var(--tv-font-h3);
+            font-weight: 800;
+            color: var(--tv-accent);
+        }
+
+        .dept-panel-current {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .dept-panel-ticket {
+            font-size: var(--tv-font-hero);
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .dept-panel-next {
+            margin-top: 1rem;
+        }
+
+        .dept-panel-queue {
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
         @media (min-width: 2560px) {
             .ticket-number { font-size: 18rem; }
             .room-info { font-size: 5rem; }
@@ -710,6 +1002,27 @@
     </style>
 </head>
 <body>
+    <div class="emergency-overlay" id="emergencyOverlay" role="alert" aria-live="assertive"></div>
+    
+    <div id="emergencyAlert" class="emergency-banner hidden" role="alert">
+        <div class="emergency-content">
+            <span class="emergency-icon">🚨</span>
+            <span class="emergency-text">CODE BLUE - EMERGENCY</span>
+            <span class="patient-name" id="emergencyPatientName"></span>
+        </div>
+        <button class="emergency-close" id="emergencyCloseBtn">Dismiss</button>
+    </div>
+
+    <div class="mode-indicator" id="modeIndicator">
+        <span class="mode-icon" id="modeIcon">📺</span>
+        <span id="modeText">Single Dept</span>
+        <div class="display-mode-selector">
+            <button class="mode-btn active" data-mode="single" title="Single Department">Single</button>
+            <button class="mode-btn" data-mode="multi" title="Multi Department">Multi</button>
+            <button class="mode-btn" data-mode="auto" title="Auto Cycle">Auto</button>
+        </div>
+    </div>
+
     <button class="fullscreen-btn" id="fullscreenBtn" title="Toggle Fullscreen (F)" aria-label="Toggle fullscreen mode">
         <span id="expandIcon">⛶</span>
         <span id="compressIcon" style="display:none">✕</span>
@@ -825,6 +1138,20 @@
         </div>
     </footer>
 
+    <div class="accessibility-controls">
+        <button class="a11y-btn" id="contrastToggle" title="Toggle High Contrast (H)">
+            <span>🎨</span> Contrast
+        </button>
+        <button class="a11y-btn" id="textToggle" title="Toggle Large Text (L)">
+            <span>🔎</span> Large Text
+        </button>
+        <button class="a11y-btn" id="pipToggle" title="Toggle PiP Mode (P)">
+            <span>📺</span> PiP
+        </button>
+    </div>
+
+    <div aria-live="polite" aria-atomic="true" class="sr-only" id="announcer"></div>
+
     <script>
     (function() {
         'use strict';
@@ -832,6 +1159,193 @@
         const API_BASE = '/api';
         const REFRESH_INTERVAL = 5000;
         const WS_RECONNECT_DELAY = 3000;
+        const AUTO_CYCLE_INTERVAL = 15000;
+
+        class AnnouncementSystem {
+            constructor() {
+                this.synth = window.speechSynthesis || null;
+                this.queue = [];
+                this.isSpeaking = false;
+                this.enabled = true;
+                this.volume = 80;
+            }
+
+            setVolume(vol) {
+                this.volume = vol;
+            }
+
+            setEnabled(enabled) {
+                this.enabled = enabled;
+                if (!enabled && this.synth) {
+                    this.synth.cancel();
+                }
+            }
+
+            announce(text, lang = 'en') {
+                if (!this.enabled || !this.synth) return;
+                this.queue.push({ text, lang });
+                this._processQueue();
+            }
+
+            _processQueue() {
+                if (this.isSpeaking || this.queue.length === 0) return;
+                this.isSpeaking = true;
+                const { text, lang } = this.queue.shift();
+                this._speak(text, lang);
+            }
+
+            _speak(text, lang) {
+                if (!this.synth) {
+                    this.isSpeaking = false;
+                    return;
+                }
+
+                this.synth.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang === 'sw' ? 'sw-KE' : 'en-US';
+                utterance.volume = this.volume / 100;
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+
+                utterance.onend = () => {
+                    this.isSpeaking = false;
+                    setTimeout(() => this._processQueue(), 1000);
+                };
+
+                utterance.onerror = () => {
+                    this.isSpeaking = false;
+                    this._processQueue();
+                };
+
+                this.synth.speak(utterance);
+            }
+
+            cancel() {
+                if (this.synth) this.synth.cancel();
+                this.queue = [];
+                this.isSpeaking = false;
+            }
+        }
+
+        class EmergencyAlertSystem {
+            constructor() {
+                this.overlay = document.getElementById('emergencyOverlay');
+                this.banner = document.getElementById('emergencyAlert');
+                this.patientName = document.getElementById('emergencyPatientName');
+                this.closeBtn = document.getElementById('emergencyCloseBtn');
+                this.audioCtx = null;
+                this.alarmOscillator = null;
+                this.setupCloseButton();
+            }
+
+            setupCloseButton() {
+                this.closeBtn.addEventListener('click', () => this.dismiss());
+            }
+
+            trigger(patientName, code = 'CODE BLUE') {
+                this.patientName.textContent = patientName ? `- ${patientName}` : '';
+                this.banner.classList.remove('hidden');
+                this.overlay.classList.add('active');
+                this.playAlarm();
+                this.announceEmergency(code, patientName);
+            }
+
+            playAlarm() {
+                try {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const playBeep = (freq, duration, delay) => {
+                        const osc = this.audioCtx.createOscillator();
+                        const gain = this.audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(this.audioCtx.destination);
+                        osc.frequency.value = freq;
+                        osc.type = 'square';
+                        gain.gain.value = 0.3;
+                        osc.start(this.audioCtx.currentTime + delay);
+                        osc.stop(this.audioCtx.currentTime + delay + duration);
+                    };
+
+                    let beepCount = 0;
+                    const beepInterval = setInterval(() => {
+                        playBeep(800, 0.2, 0);
+                        playBeep(600, 0.2, 0.25);
+                        beepCount++;
+                        if (beepCount >= 6) clearInterval(beepInterval);
+                    }, 600);
+                } catch (e) {
+                    console.warn('Emergency alarm failed:', e);
+                }
+            }
+
+            announceEmergency(code, patientName) {
+                const utterance = new SpeechSynthesisUtterance(
+                    `${code} emergency. ${patientName ? `Patient ${patientName}` : ''}`
+                );
+                utterance.rate = 1.2;
+                window.speechSynthesis?.speak(utterance);
+            }
+
+            dismiss() {
+                this.banner.classList.add('hidden');
+                this.overlay.classList.remove('active');
+                if (this.audioCtx) {
+                    this.audioCtx.close();
+                    this.audioCtx = null;
+                }
+            }
+        }
+
+        class DisplayModeManager {
+            constructor() {
+                this.currentMode = 'single';
+                this.currentDeptIndex = 0;
+                this.autoCycleTimer = null;
+                this.departments = [];
+                this.onModeChange = null;
+            }
+
+            setDepartments(depts) {
+                this.departments = depts;
+            }
+
+            setMode(mode) {
+                this.stopAutoCycle();
+                this.currentMode = mode;
+
+                if (mode === 'auto') {
+                    this.startAutoCycle();
+                }
+
+                if (this.onModeChange) {
+                    this.onModeChange(mode);
+                }
+            }
+
+            startAutoCycle() {
+                this.autoCycleTimer = setInterval(() => {
+                    if (this.departments.length > 0) {
+                        this.currentDeptIndex = (this.currentDeptIndex + 1) % this.departments.length;
+                        if (this.onModeChange) {
+                            this.onModeChange('auto', this.departments[this.currentDeptIndex].id);
+                        }
+                    }
+                }, AUTO_CYCLE_INTERVAL);
+            }
+
+            stopAutoCycle() {
+                if (this.autoCycleTimer) {
+                    clearInterval(this.autoCycleTimer);
+                    this.autoCycleTimer = null;
+                }
+            }
+
+            getCurrentDeptId() {
+                if (this.currentMode === 'auto' && this.departments.length > 0) {
+                    return this.departments[this.currentDeptIndex].id;
+                }
+                return null;
+            }
+        }
 
         const DOM = {
             clock: document.getElementById('clock'),
@@ -859,6 +1373,13 @@
             captionsText: document.getElementById('captionsText'),
             iptvPanel: document.getElementById('iptvPanel'),
             iptvFrame: document.getElementById('iptvFrame'),
+            announcer: document.getElementById('announcer'),
+            modeIndicator: document.getElementById('modeIndicator'),
+            modeIcon: document.getElementById('modeIcon'),
+            modeText: document.getElementById('modeText'),
+            contrastToggle: document.getElementById('contrastToggle'),
+            textToggle: document.getElementById('textToggle'),
+            pipToggle: document.getElementById('pipToggle'),
         };
 
         let state = {
@@ -872,8 +1393,14 @@
             wsConnected: false,
             displayId: null,
             iptvUrl: null,
+            highContrast: false,
+            largeText: false,
+            displayMode: 'single',
         };
 
+        let announcementSystem = null;
+        let emergencySystem = null;
+        let displayModeManager = null;
         let ws = null;
         let speechSynth = window.speechSynthesis || null;
 
@@ -934,8 +1461,22 @@
 
         async function fetchData() {
             try {
-                const url = new URL(`${API_BASE}/queue/tv/public`, window.location.origin);
-                url.searchParams.set('departments', state.selectedDept || getAllDeptIds().join(','));
+                let url = new URL(`${API_BASE}/queue/tv/public`, window.location.origin);
+                let deptFilter = state.selectedDept;
+                
+                if (state.displayMode === 'auto' && displayModeManager) {
+                    const autoDeptId = displayModeManager.getCurrentDeptId();
+                    if (autoDeptId) {
+                        deptFilter = autoDeptId;
+                        url.searchParams.set('departments', autoDeptId);
+                    } else {
+                        url.searchParams.set('departments', getAllDeptIds().join(','));
+                    }
+                } else if (deptFilter) {
+                    url.searchParams.set('departments', deptFilter);
+                } else {
+                    url.searchParams.set('departments', getAllDeptIds().join(','));
+                }
 
                 const [queueRes, deptRes, statsRes] = await Promise.all([
                     fetch(url).then(r => r.json()).catch(() => ({ success: false, data: null })),
@@ -954,14 +1495,21 @@
                         announceCall(current.patient_name, current.room_assigned);
                     }
 
-                    renderQueueWithAnimation(oldQueue, state.queueData);
-                    renderCurrentCall(current);
+                    if (state.displayMode === 'multi') {
+                        renderMultiDeptView();
+                    } else {
+                        renderQueueWithAnimation(oldQueue, state.queueData);
+                        renderCurrentCall(current);
+                    }
                 }
 
                 if (deptRes.success) {
                     state.departments = deptRes.data || [];
                     renderDeptFilter();
                     renderDeptStats();
+                    if (displayModeManager) {
+                        displayModeManager.setDepartments(state.departments.filter(d => d.is_active !== false));
+                    }
                 }
 
                 if (statsRes.success) updateStats(statsRes.data);
@@ -1078,6 +1626,150 @@
             return state.departments.filter(d => d.is_active !== false).map(d => d.id);
         }
 
+        function renderMultiDeptView() {
+            const activeDepts = state.departments.filter(d => d.is_active !== false);
+            const mainContainer = document.querySelector('.main');
+            
+            if (!mainContainer) return;
+
+            mainContainer.innerHTML = `
+                <div class="multi-dept-view">
+                    ${activeDepts.map(dept => {
+                        const deptQueue = state.queueData.filter(
+                            q => q.department_id === dept.id && q.status === 'waiting'
+                        ).slice(0, 5);
+                        const current = state.queueData.find(
+                            q => q.department_id === dept.id && q.status === 'called'
+                        );
+
+                        return `
+                            <div class="dept-panel">
+                                <div class="dept-panel-header">
+                                    <span class="dept-panel-title">${dept.icon || '🏥'} ${dept.name}</span>
+                                    <span class="queue-count">${deptQueue.length} waiting</span>
+                                </div>
+                                <div class="dept-panel-current">
+                                    <div style="font-size: var(--tv-font-small); color: var(--muted); margin-bottom: 0.5rem;">NOW CALLING</div>
+                                    <div class="dept-panel-ticket">${current?.ticket_number || '--'}</div>
+                                    <div style="font-size: var(--tv-font-body); color: var(--primary);">Room ${current?.room_assigned || '--'}</div>
+                                </div>
+                                <div class="dept-panel-next">
+                                    <div style="font-size: var(--tv-font-small); color: var(--muted); margin-bottom: 0.5rem;">UP NEXT</div>
+                                    ${deptQueue.slice(0, 3).map((q, i) => `
+                                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 0.5rem;">
+                                            <span style="font-size: var(--tv-font-body); font-weight: 600;">${q.ticket_number}</span>
+                                            <span style="font-size: var(--tv-font-small); color: var(--muted);">#${i + 1}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function restoreSingleDeptView() {
+            const mainContainer = document.querySelector('.main');
+            if (!mainContainer) return;
+            
+            mainContainer.innerHTML = `
+                <div class="left">
+                    <section class="now-calling">
+                        <div class="now-label">
+                            <span class="pulse"></span>
+                            Now Calling
+                            <span class="pulse"></span>
+                        </div>
+                        <div class="ticket-number" id="currentTicket" aria-live="polite">--</div>
+                        <div class="room-info" id="currentRoom">Room --</div>
+                        <div class="dept-info" id="currentDept">--</div>
+                        <span class="priority-badge normal" id="priorityBadge" style="display: none;">Normal</span>
+                    </section>
+
+                    <section class="queue-panel">
+                        <div class="queue-header">
+                            <h2>📋 Up Next</h2>
+                            <span class="queue-count" id="queueCount">0</span>
+                        </div>
+                        <div class="queue-list" id="queueList">
+                            <div class="empty-state">
+                                <div class="empty-icon">⏳</div>
+                                <div>Loading queue data...</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="right">
+                    <section class="stats-panel">
+                        <h3>📊 Live Statistics</h3>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <div class="stat-val" id="statWaiting">--</div>
+                                <div class="stat-label">Waiting</div>
+                            </div>
+                            <div class="stat-box warning">
+                                <div class="stat-val" id="statCalled">--</div>
+                                <div class="stat-label">Called</div>
+                            </div>
+                            <div class="stat-box success">
+                                <div class="stat-val" id="statServing">--</div>
+                                <div class="stat-label">Serving</div>
+                            </div>
+                            <div class="stat-box danger">
+                                <div class="stat-val" id="statCompleted">--</div>
+                                <div class="stat-label">Completed</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="stats-panel">
+                        <h3>🏥 By Department</h3>
+                        <div class="dept-grid" id="deptStats"></div>
+                    </section>
+
+                    <div class="audio-controls">
+                        <button class="audio-toggle active" id="soundToggle" title="Toggle Sound (M)" aria-label="Toggle sound alerts">
+                            🔊
+                        </button>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80" aria-label="Volume">
+                    </div>
+
+                    <div class="captions-panel">
+                        <div class="captions-text" id="captionsText">Press M to toggle audio</div>
+                    </div>
+
+                    <div class="iptv-panel" id="iptvPanel" style="display: none;">
+                        <iframe id="iptvFrame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    </div>
+                </aside>
+            `;
+            
+            attachMainViewListeners();
+        }
+
+        function attachMainViewListeners() {
+            const soundToggle = document.getElementById('soundToggle');
+            const volumeSlider = document.getElementById('volumeSlider');
+            
+            if (soundToggle) {
+                DOM.soundToggle = soundToggle;
+                soundToggle.addEventListener('click', toggleSound);
+            }
+            if (volumeSlider) {
+                DOM.volumeSlider = volumeSlider;
+                volumeSlider.addEventListener('input', updateVolume);
+            }
+            
+            DOM.currentTicket = document.getElementById('currentTicket');
+            DOM.currentRoom = document.getElementById('currentRoom');
+            DOM.currentDept = document.getElementById('currentDept');
+            DOM.priorityBadge = document.getElementById('priorityBadge');
+            DOM.queueList = document.getElementById('queueList');
+            DOM.queueCount = document.getElementById('queueCount');
+        }
+
         function playAlertSound() {
             if (!state.soundEnabled) return;
 
@@ -1104,27 +1796,25 @@
         }
 
         function announceCall(name, room) {
-            if (!state.soundEnabled || !speechSynth) return;
+            if (!state.soundEnabled) return;
 
-            try {
-                speechSynth.cancel();
-                const utterance = new SpeechSynthesisUtterance(t('called', name, room));
-                utterance.lang = state.language === 'sw' ? 'sw-KE' : 'en-US';
-                utterance.volume = state.volume / 100;
-                utterance.rate = 0.9;
+            const message = t('called', name, room);
+            DOM.captionsText.textContent = message;
 
-                DOM.captionsText.textContent = t('called', name, room);
-
-                utterance.onend = () => {
-                    setTimeout(() => {
-                        DOM.captionsText.textContent = state.soundEnabled ? t('soundOn') : t('soundOff');
-                    }, 3000);
-                };
-
-                speechSynth.speak(utterance);
-            } catch (e) {
-                console.warn('TTS failed:', e);
+            if (announcementSystem) {
+                announcementSystem.setVolume(state.volume);
+                announcementSystem.setEnabled(state.soundEnabled);
+                announcementSystem.announce(message, state.language);
             }
+
+            announceToScreenReader(message);
+        }
+
+        function announceToScreenReader(message) {
+            DOM.announcer.textContent = message;
+            setTimeout(() => {
+                DOM.announcer.textContent = '';
+            }, 3000);
         }
 
         function toggleFullscreen() {
@@ -1175,6 +1865,10 @@
                         const data = JSON.parse(event.data);
                         if (data.type === 'queue_update') {
                             fetchData();
+                        } else if (data.type === 'emergency') {
+                            if (emergencySystem) {
+                                emergencySystem.trigger(data.patientName, data.code);
+                            }
                         }
                     } catch (e) {
                         console.warn('WS message parse error:', e);
@@ -1196,6 +1890,91 @@
             }
         }
 
+        async function togglePiP() {
+            const video = document.getElementById('iptv-video');
+            if (!video) {
+                const iframe = DOM.iptvFrame;
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else if (iframe && iframe.contentDocument) {
+                    const vid = iframe.contentDocument.querySelector('video');
+                    if (vid && vid.requestPictureInPicture) {
+                        await vid.requestPictureInPicture();
+                    }
+                }
+                return;
+            }
+
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await video.requestPictureInPicture();
+                }
+            } catch (e) {
+                console.warn('PiP toggle failed:', e);
+            }
+        }
+
+        function toggleHighContrast() {
+            state.highContrast = !state.highContrast;
+            document.body.classList.toggle('high-contrast-mode', state.highContrast);
+            DOM.contrastToggle.classList.toggle('active', state.highContrast);
+            announceToScreenReader(state.highContrast ? 'High contrast mode enabled' : 'High contrast mode disabled');
+        }
+
+        function toggleLargeText() {
+            state.largeText = !state.largeText;
+            document.body.classList.toggle('large-text-mode', state.largeText);
+            DOM.textToggle.classList.toggle('active', state.largeText);
+            announceToScreenReader(state.largeText ? 'Large text mode enabled' : 'Large text mode disabled');
+        }
+
+        function handleDisplayModeChange(mode, deptId = null) {
+            state.displayMode = mode;
+            DOM.modeText.textContent = {
+                single: 'Single Dept',
+                multi: 'Multi Dept',
+                auto: 'Auto Cycle'
+            }[mode] || 'Single Dept';
+            DOM.modeIcon.textContent = {
+                single: '📺',
+                multi: '📊',
+                auto: '🔄'
+            }[mode] || '📺';
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            if (mode === 'multi') {
+                renderMultiDeptView();
+            } else {
+                restoreSingleDeptView();
+            }
+
+            if (deptId) {
+                state.selectedDept = deptId;
+                DOM.deptSelect.value = deptId;
+            } else if (mode === 'single') {
+                state.selectedDept = null;
+                DOM.deptSelect.value = '';
+            }
+
+            fetchData();
+            announceToScreenReader(`Display mode changed to ${DOM.modeText.textContent}`);
+        }
+
+        function setupDisplayModeButtons() {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (displayModeManager) {
+                        displayModeManager.setMode(btn.dataset.mode);
+                    }
+                });
+            });
+        }
+
         function loadIPTV(url) {
             if (!url) {
                 DOM.iptvPanel.style.display = 'none';
@@ -1211,6 +1990,7 @@
             state.selectedDept = params.get('department') || '';
             state.iptvUrl = params.get('iptv') || null;
             state.language = params.get('lang') || 'en';
+            state.displayMode = params.get('mode') || 'single';
 
             DOM.langSelect.value = state.language;
             if (state.selectedDept) {
@@ -1218,6 +1998,11 @@
             }
             if (state.iptvUrl) {
                 loadIPTV(state.iptvUrl);
+            }
+            if (state.displayMode !== 'single') {
+                if (displayModeManager) {
+                    displayModeManager.setMode(state.displayMode);
+                }
             }
         }
 
@@ -1235,6 +2020,9 @@
         DOM.fullscreenBtn.addEventListener('click', toggleFullscreen);
         DOM.soundToggle.addEventListener('click', toggleSound);
         DOM.volumeSlider.addEventListener('input', updateVolume);
+        DOM.contrastToggle.addEventListener('click', toggleHighContrast);
+        DOM.textToggle.addEventListener('click', toggleLargeText);
+        DOM.pipToggle.addEventListener('click', togglePiP);
 
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement) {
@@ -1248,10 +2036,24 @@
                 toggleFullscreen();
             } else if (e.key === 'm' || e.key === 'M') {
                 toggleSound();
+            } else if (e.key === 'h' || e.key === 'H') {
+                toggleHighContrast();
+            } else if (e.key === 'l' || e.key === 'L') {
+                toggleLargeText();
+            } else if (e.key === 'p' || e.key === 'P') {
+                togglePiP();
             }
         });
 
         initFromURL();
+        
+        announcementSystem = new AnnouncementSystem();
+        emergencySystem = new EmergencyAlertSystem();
+        displayModeManager = new DisplayModeManager();
+        
+        displayModeManager.onModeChange = handleDisplayModeChange;
+        setupDisplayModeButtons();
+
         updateClock();
         setInterval(updateClock, 1000);
         fetchData();

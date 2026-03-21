@@ -361,11 +361,11 @@ auth.post('/forgot-password', async (c) => {
     { expirationTtl: 3600 }
   );
 
-  console.log(`Password reset token for ${identifier}: ${resetToken}`);
+  // SECURITY: Never expose reset tokens in responses or logs
+  // In production, send the token via email instead
 
   return c.json(successResponse({ 
-    message: 'If an account exists, a reset link will be sent',
-    debugToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+    message: 'If an account exists, a reset link will be sent'
   }));
 });
 

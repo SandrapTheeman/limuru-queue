@@ -20,7 +20,7 @@ departments.get('/:id', async (c) => {
 
   const department = await db.prepare(`
     SELECT d.*, 
-           (SELECT COUNT(*) FROM visits v WHERE v.department = d.code AND v.status = 'waiting') as waiting_count,
+           (SELECT COUNT(*) FROM queue_tickets v WHERE v.department = d.code AND v.status = 'waiting') as waiting_count,
            (SELECT COUNT(*) FROM doctors WHERE department = d.code AND is_available = 1) as available_doctors
     FROM departments d WHERE d.code = ?
   `).bind(id).first();

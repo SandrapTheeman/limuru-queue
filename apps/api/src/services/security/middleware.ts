@@ -41,18 +41,21 @@ export function createSecurityMiddleware(config: Partial<SecurityConfig> = {}) {
                'unknown';
 
     const allowed = await rateLimitByIP(c, ip, cfg.rateLimit.ip);
-    if (!allowed) return;
+    if (!allowed) return c.json({ success: false, error: 'Too many requests', code: 'RATE_LIMITED' }, 429);
 
     const authHeader = c.req.header('Authorization');
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
       const userAllowed = await rateLimitByUser(c, token, cfg.rateLimit.user);
-      if (!userAllowed) return;
+      if (!userAllowed) return c.json({ success: false, error: 'Too many requests', code: 'RATE_LIMITED' }, 429);
     }
 
     if (cfg.csrf.enabled && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(c.req.method)) {
       const csrfValid = await csrfProtection(c, cfg.csrf);
-      if (!csrfValid) return;
+      if (!csrfValid) {
+        c.status(403);
+        return c.json({ success: false, error: 'CSRF token required' });
+      }
     }
 
     await next();
@@ -125,14 +128,10 @@ async function csrfProtection(c: Context, config: { enabled: boolean; cookieName
       maxAge: 3600,
       path: '/',
     });
-    c.status(403);
-    c.json({ success: false, error: 'CSRF token required' });
     return false;
   }
 
   if (cookie && csrfHeader && cookie !== csrfHeader) {
-    c.status(403);
-    c.json({ success: false, error: 'Invalid CSRF token' });
     return false;
   }
   

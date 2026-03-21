@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { View, StyleSheet, FlatList } from "react-native";
-import { Card, Text, Chip, Button, FAB } from "react-native-paper";
+import { useState, useEffect, useCallback } from "react";
+import { View, StyleSheet, FlatList, RefreshControl, Animated } from "react-native";
+import { Card, Text, Chip, Button, FAB, ActivityIndicator, Divider } from "react-native-paper";
 import { format } from "date-fns";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import { TicketDisplay } from "../../components/TicketDisplay";
 
 interface QueueItem {
   id: string;
@@ -10,6 +13,15 @@ interface QueueItem {
   service: string;
   estimatedTime: string;
   status: "waiting" | "called" | "served";
+}
+
+interface MyQueueData {
+  ticketNumber: string;
+  position: number;
+  estimatedWait: number;
+  department: string;
+  status: "waiting" | "called" | "serving" | "completed";
+  createdAt: string;
 }
 
 const mockQueue: QueueItem[] = [
@@ -40,8 +52,48 @@ const mockQueue: QueueItem[] = [
 ];
 
 export default function PatientQueueView() {
-  const [myPosition] = useState(2);
-  const [estimatedTime] = useState("9:30 AM");
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  const myQueueData: MyQueueData = {
+    ticketNumber: "A012",
+    position: 2,
+    estimatedWait: 15,
+    department: "General Medicine",
+    status: "waiting",
+    createdAt: new Date().toISOString(),
+  };
+
+  const pulseAnim = new Animated.Value(1);
+
+  useEffect(() => {
+    if (myQueueData.status === 'called') {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return () => pulse.stop();
+    }
+  }, [myQueueData.status]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,14 +118,31 @@ export default function PatientQueueView() {
   };
 
   const renderQueueItem = ({ item }: { item: QueueItem }) => (
-    <Card style={styles.queueCard}>
+    <Card 
+      style={styles.queueCard}
+      accessibilityRole="none"
+    >
       <Card.Content style={styles.queueContent}>
         <View style={styles.queueLeft}>
-          <Text variant="titleLarge" style={styles.position}>
+          <Text 
+            variant="titleLarge" 
+            style={styles.position}
+            accessibilityRole="text"
+            accessibilityLabel={`Position ${item.position}`}
+          >
             #{item.position}
           </Text>
-          <Text variant="bodyMedium">{item.name}</Text>
-          <Text variant="bodySmall" style={styles.service}>
+          <Text 
+            variant="bodyMedium"
+            accessibilityLabel={`Patient: ${item.name}`}
+          >
+            {item.name}
+          </Text>
+          <Text 
+            variant="bodySmall" 
+            style={styles.service}
+            accessibilityLabel={`Service: ${item.service}`}
+          >
             {item.service}
           </Text>
         </View>
@@ -81,10 +150,16 @@ export default function PatientQueueView() {
           <Chip
             style={[styles.statusChip, { backgroundColor: getStatusColor(item.status) }]}
             textStyle={styles.statusText}
+            accessibilityRole="text"
+            accessibilityLabel={`Status: ${getStatusLabel(item.status)}`}
           >
             {getStatusLabel(item.status)}
           </Chip>
-          <Text variant="bodySmall" style={styles.time}>
+          <Text 
+            variant="bodySmall" 
+            style={styles.time}
+            accessibilityLabel={`Estimated time: ${item.estimatedTime}`}
+          >
             Est. {item.estimatedTime}
           </Text>
         </View>
@@ -94,41 +169,49 @@ export default function PatientQueueView() {
 
   return (
     <View style={styles.container}>
-      <Card style={styles.myPositionCard}>
-        <Card.Content>
-          <Text variant="titleMedium" style={styles.cardTitle}>
-            Your Position
-          </Text>
-          <View style={styles.positionRow}>
-            <Text variant="displayLarge" style={styles.positionNumber}>
-              {myPosition}
-            </Text>
-            <View style={styles.positionInfo}>
-              <Text variant="bodyLarge">Estimated Time</Text>
-              <Text variant="titleLarge" style={styles.estimatedTime}>
-                {estimatedTime}
-              </Text>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
+      <TicketDisplay ticketData={myQueueData} />
 
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        Queue List
-      </Text>
+      <Divider style={styles.divider} />
+
+      <View style={styles.sectionHeader}>
+        <Text 
+          variant="titleMedium" 
+          style={styles.sectionTitle}
+          accessibilityRole="header"
+        >
+          Queue List
+        </Text>
+        <Text style={styles.queueCount}>
+          {mockQueue.length} patients ahead
+        </Text>
+      </View>
 
       <FlatList
         data={mockQueue}
         renderItem={renderQueueItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#1E40AF"]}
+            tintColor="#1E40AF"
+          />
+        }
+        accessibilityLabel="Queue list"
+        accessibilityHint="Pull to refresh the queue"
       />
 
       <FAB
         icon="bell-ring"
         label="Remind Me"
+        onPress={async () => {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }}
         style={styles.fab}
-        onPress={() => {}}
+        accessibilityLabel="Set reminder notification"
+        accessibilityHint="Get notified when your turn is near"
       />
     </View>
   );
@@ -140,38 +223,29 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#f5f5f5",
   },
-  myPositionCard: {
-    marginBottom: 16,
-    backgroundColor: "#E8F5E9",
+  divider: {
+    marginVertical: 16,
   },
-  cardTitle: {
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  positionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  positionNumber: {
-    fontWeight: "bold",
-    color: "#2E7D32",
-  },
-  positionInfo: {
-    marginLeft: 24,
-  },
-  estimatedTime: {
-    color: "#4CAF50",
-    fontWeight: "bold",
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   sectionTitle: {
-    marginBottom: 12,
     fontWeight: "bold",
+    color: '#333',
+  },
+  queueCount: {
+    fontSize: 14,
+    color: '#666',
   },
   listContainer: {
     paddingBottom: 80,
   },
   queueCard: {
     marginBottom: 8,
+    backgroundColor: '#FFFFFF',
   },
   queueContent: {
     flexDirection: "row",

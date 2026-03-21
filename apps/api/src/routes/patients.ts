@@ -116,12 +116,12 @@ patients.get('/:id/queue-position', async (c) => {
 
   const activeVisit = await db.prepare(`
     SELECT v.id, v.ticket_number, v.department, v.status, v.priority, v.created_at,
-           (SELECT COUNT(*) FROM visits v2 
+           (SELECT COUNT(*) FROM queue_tickets v2 
             WHERE v2.department = v.department 
             AND v2.status = 'waiting' 
             AND v2.priority = 0
             AND v2.created_at < v.created_at) as position
-    FROM visits v
+    FROM queue_tickets v
     WHERE v.patient_id = ? AND v.status IN ('waiting', 'called', 'in_progress')
     ORDER BY v.created_at DESC
     LIMIT 1
@@ -175,7 +175,7 @@ patients.get('/:id/history', async (c) => {
 
   const result = await db.prepare(`
     SELECT v.*, d.name as doctor_name
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE v.patient_id = ?
     ORDER BY v.created_at DESC
@@ -183,11 +183,11 @@ patients.get('/:id/history', async (c) => {
   `).bind(patientId, limit, offset).all();
 
   const countResult = await db.prepare(
-    'SELECT COUNT(*) as count FROM visits WHERE patient_id = ?'
+    'SELECT COUNT(*) as count FROM queue_tickets WHERE patient_id = ?'
   ).bind(patientId).first() as { count: number };
 
   return c.json(successResponse({
-    visits: result.results,
+    queue_tickets: result.results,
     total: countResult?.count || 0,
     limit,
     offset,

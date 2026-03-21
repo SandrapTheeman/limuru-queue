@@ -34,7 +34,7 @@ doctors.get('/:id', async (c) => {
 
   const doctor = await db.prepare(`
     SELECT d.*, 
-           (SELECT COUNT(*) FROM visits v WHERE v.doctor_id = d.id AND v.status = 'in_progress') as active_visits
+           (SELECT COUNT(*) FROM queue_tickets v WHERE v.doctor_id = d.id AND v.status = 'in_progress') as active_visits
     FROM doctors d WHERE d.id = ?
   `).bind(id).first();
 
@@ -91,7 +91,7 @@ doctors.get('/doctor/queue', async (c) => {
 
   const result = await db.prepare(`
     SELECT v.*, p.name as patient_name, p.phone as patient_phone
-    FROM visits v
+    FROM queue_tickets v
     JOIN patients p ON v.patient_id = p.id
     WHERE v.doctor_id = ? AND v.status IN ('waiting', 'called', 'in_progress')
     ORDER BY v.priority DESC, v.created_at ASC

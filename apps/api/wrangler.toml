@@ -1,60 +1,52 @@
 name = "limuru-queue-api"
 main = "src/index.ts"
 compatibility_date = "2024-10-22"
-node_compat = true
-usage_model = "bundled"
 
+# ===========================================
 # Secrets (set via: wrangler secret put <name>)
-# Required secrets:
-# - JWT_SECRET
-# - DEFAULT_PASSWORD
-# Optional secrets:
-# - TWILIO_ACCOUNT_SID
-# - TWILIO_AUTH_TOKEN
-# - TWILIO_PHONE_NUMBER
-# - WHATSAPP_API_TOKEN
-# - WHATSAPP_PHONE_NUMBER
-# - OPENROUTER_API_KEY
+# ===========================================
+# Required (MUST be set before deployment):
+#   wrangler secret put JWT_SECRET
+#   wrangler secret put DEFAULT_PASSWORD
+#
+# Optional:
+#   WHATSAPP_API_TOKEN, WHATSAPP_PHONE_NUMBER, WHATSAPP_APP_SECRET, WHATSAPP_VERIFY_TOKEN
+#   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
+#   OPENROUTER_API_KEY, OLLAMA_ENDPOINT
 
 [vars]
 ENVIRONMENT = "development"
 API_VERSION = "v2"
-JWT_SECRET = "CHANGE_ME_IN_PRODUCTION"
-DEFAULT_PASSWORD = "#Limuru_Cottage_Hospital@2026"
 AI_PROVIDER = "ollama"
 HMS_ADAPTER_TYPE = "mock"
 
 # ===========================================
 # D1 Database
 # ===========================================
-# Create with: wrangler d1 create limuru-queue-db
-# Apply migrations: wrangler d1 migrations apply limuru-queue-db
 [[d1_databases]]
 binding = "DB"
 database_name = "limuru-queue-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "13630410-b0da-4bd2-b0bf-218d9eb42f64"
 migrations_dir = "src/db/migrations"
 
 # ===========================================
 # KV Namespaces
 # ===========================================
-# Create with: wrangler kv:namespace create limuru-queue-kv
 [[kv_namespaces]]
 binding = "SESSION_KV"
-id = "REPLACE_WITH_SESSION_KV_ID"
+id = "32e9afd9852640b7973ec669560a642a"
 
 [[kv_namespaces]]
 binding = "CACHE_KV"
-id = "REPLACE_WITH_CACHE_KV_ID"
+id = "398fc397a7d0452a8db2dcc00f4b8644"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "REPLACE_WITH_RATE_LIMIT_KV_ID"
+id = "84bcd17cbc514a08801ede084f035ad6"
 
 # ===========================================
 # R2 Storage
 # ===========================================
-# Create with: wrangler r2 bucket create limuru-queue-storage
 [[r2_buckets]]
 binding = "ASSETS_BUCKET"
 bucket_name = "limuru-queue-storage"
@@ -64,7 +56,7 @@ binding = "BACKUP_BUCKET"
 bucket_name = "limuru-queue-storage"
 
 # ===========================================
-# Durable Objects for Real-time Features
+# Durable Objects
 # ===========================================
 [[durable_objects.bindings]]
 name = "QUEUE_ROOM"
@@ -73,6 +65,13 @@ class_name = "QueueRoomDO"
 [[durable_objects.bindings]]
 name = "PATIENT_SYNC"
 class_name = "PatientSyncDO"
+
+# ===========================================
+# Durable Object Migrations
+# ===========================================
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = [ "QueueRoomDO", "PatientSyncDO" ]
 
 # ===========================================
 # Environments
@@ -84,4 +83,3 @@ vars = { ENVIRONMENT = "staging" }
 [env.production]
 name = "limuru-queue-api"
 vars = { ENVIRONMENT = "production" }
-# route = "api.limuruhospital.co.ke/*"

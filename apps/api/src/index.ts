@@ -68,7 +68,7 @@ app.use('/api/*', async (c, next) => {
   
   const authHeader = c.req.header('Authorization');
   if (authHeader && path.includes('/auth/')) {
-    const timedOut = checkSessionTimeout(c);
+    const timedOut = await checkSessionTimeout(c);
     if (timedOut) {
       return c.json(errorResponse('Session expired. Please login again.'), 401);
     }
@@ -100,7 +100,7 @@ app.post('/api/auth/patient/login', async (c) => {
   }
   
   const result = await import('./services/auth').then(m => 
-    m.patientLogin(c.env.DB, identifier, password)
+    m.patientLogin(c.env.DB, c.env, identifier, password)
   );
   
   if (!result) {
@@ -128,7 +128,7 @@ app.post('/api/auth/staff/login', async (c) => {
   }
   
   const result = await import('./services/auth').then(m => 
-    m.staffLogin(c.env.DB, email, password)
+    m.staffLogin(c.env.DB, c.env, email, password)
   );
   
   if (!result) {
@@ -156,7 +156,7 @@ app.post('/api/auth/pin/login', async (c) => {
   }
   
   const result = await import('./services/auth').then(m => 
-    m.doctorPinLogin(c.env.DB, pin, stationId)
+    m.doctorPinLogin(c.env.DB, c.env, pin, stationId)
   );
   
   if (!result) {
@@ -220,7 +220,7 @@ app.post('/api/auth/change-password', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
   
-  const user = await verifyToken(token);
+  const user = await verifyToken(token, c.env);
   if (!user) {
     return c.json(errorResponse('Invalid token'), 401);
   }
@@ -264,7 +264,7 @@ app.post('/api/queue', async (c) => {
   // Check if patient already in queue
   if (patientId) {
     const existing = await c.env.DB.prepare(`
-      SELECT * FROM visits 
+      SELECT * FROM queue_tickets 
       WHERE patient_id = ? AND status IN ('waiting', 'called', 'in_progress')
     `).bind(patientId).first();
     
@@ -336,7 +336,7 @@ app.post('/api/queue/complete/:visitId', requireRBAC('visits', 'update'), async 
   const authHeader = c.req.header('Authorization');
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
-    const payload = await verifyToken(token);
+    const payload = await verifyToken(token, c.env);
     if (payload) {
       await logAuditEvent(c.env.DB, {
         userId: payload.sub as string,
@@ -399,7 +399,7 @@ app.get('/api/patients/:id', requireRBAC('patients', 'read'), async (c) => {
   const authHeader = c.req.header('Authorization');
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
-    const payload = await verifyToken(token);
+    const payload = await verifyToken(token, c.env);
     if (payload) {
       await logAuditEvent(c.env.DB, {
         userId: payload.sub as string,
@@ -452,7 +452,7 @@ app.put('/api/patients/:id', requireRBAC('patients', 'update'), async (c) => {
   const authHeader = c.req.header('Authorization');
   if (authHeader) {
     const token = authHeader.replace('Bearer ', '');
-    const payload = await verifyToken(token);
+    const payload = await verifyToken(token, c.env);
     if (payload) {
       await logAuditEvent(c.env.DB, {
         userId: payload.sub as string,
@@ -503,7 +503,7 @@ app.get('/api/patients/:id/history', async (c) => {
   return c.json(successResponse({
     patientId,
     total: result.total,
-    visits: result.visits,
+    visits: result.queue_tickets,
   }));
 });
 
@@ -523,7 +523,7 @@ app.get('/api/doctors', async (c) => {
     params.push(department);
   }
   
-  query += ' ORDER BY name ASC';
+  query += ' ORDER BY created_at DESC';
   
   const doctors = await c.env.DB.prepare(query).bind(...params).all();
   
@@ -567,15 +567,15 @@ app.get('/api/admin/stats', requireRBAC('admin_stats', 'read'), async (c) => {
   
   // Get today's stats
   const totalVisits = await c.env.DB.prepare(`
-    SELECT COUNT(*) as count FROM visits WHERE date(created_at) = date(?)
+    SELECT COUNT(*) as count FROM queue_tickets WHERE date(created_at) = date(?)
   `).bind(today).first() as { count: number };
   
   const waitingCount = await c.env.DB.prepare(`
-    SELECT COUNT(*) as count FROM visits WHERE status = 'waiting'
+    SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'waiting'
   `).first() as { count: number };
   
   const completedCount = await c.env.DB.prepare(`
-    SELECT COUNT(*) as count FROM visits WHERE status = 'completed' AND date(completed_at) = date(?)
+    SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'completed' AND date(completed_at) = date(?)
   `).bind(today).first() as { count: number };
   
   const totalPatients = await c.env.DB.prepare(`
@@ -648,7 +648,7 @@ app.post('/api/admin/iptv', requireRBAC('iptv', 'create'), async (c) => {
 // Get all users (admin only)
 app.get('/api/admin/users', requireRBAC('users', 'read'), async (c) => {
   const users = await c.env.DB.prepare(`
-    SELECT id, email, name, role, is_active, last_login, created_at
+    SELECT id, email, first_name || ' ' || last_name as name, role, is_active, last_login, created_at
     FROM users ORDER BY created_at DESC
   `).all();
   
@@ -744,14 +744,11 @@ app.post('/api/auth/reset-password/request', async (c) => {
     { expirationTtl: 3600 }
   );
   
-  // In production, send email with reset link
-  // For now, return success
-  console.log(`Password reset token for ${identifier}: ${resetToken}`);
+  // SECURITY: Never expose reset tokens in responses or logs
+  // In production, send the token via email instead of logging it
   
   return c.json(successResponse({ 
-    message: 'If an account exists, a reset link will be sent',
-    // Debug: include token in development
-    debugToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+    message: 'If an account exists, a reset link will be sent'
   }));
 });
 
@@ -939,5 +936,11 @@ app.get('/api/notifications/log/:patientId', async (c) => {
     total: total?.count || 0,
   }));
 });
+
+// =====================================================
+// Durable Objects (required by wrangler.toml)
+// =====================================================
+export { QueueRoomDO } from './realtime';
+export { PatientSyncDO } from './realtime';
 
 export default app;

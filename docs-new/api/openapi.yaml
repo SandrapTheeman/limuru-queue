@@ -1,0 +1,2922 @@
+openapi: 3.0.3
+info:
+  title: Limuru Cottage Hospital Queue Management API
+  description: |
+    REST API for the Limuru Cottage Hospital Queue Management System.
+    
+    This API provides endpoints for managing patient queues, appointments,
+    clinical documentation, and staff communication.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <token>
+    ```
+    
+    ## Rate Limiting
+    - Public endpoints: 30 requests/minute
+    - Authenticated endpoints: 100 requests/minute
+    - Auth endpoints: 5 attempts per 15 minutes
+    
+    ## Localization
+    The API supports English (en) and Swahili (sw) via the Accept-Language header.
+  version: 2.0.0
+  contact:
+    name: Limuru Cottage Hospital IT
+    email: it-support@limuruhospital.co.ke
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  x-logo:
+    url: https://limuruhospital.co.ke/logo.png
+
+servers:
+  - url: https://api.limuruhospital.co.ke
+    description: Production server
+  - url: https://api-staging.limuruhospital.co.ke
+    description: Staging server
+  - url: http://localhost:8787
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Staff and patient authentication endpoints
+  - name: Queue
+    description: Queue management operations
+  - name: Patients
+    description: Patient registration and management
+  - name: Appointments
+    description: Appointment scheduling
+  - name: Departments
+    description: Department configuration
+  - name: Doctors
+    description: Doctor management and scheduling
+  - name: Clinical
+    description: Clinical notes and documentation
+  - name: Vitals
+    description: Patient vitals recording
+  - name: Messages
+    description: Internal staff messaging
+  - name: Voice
+    description: Voice call management (WebRTC)
+  - name: Notifications
+    description: SMS and WhatsApp notifications
+  - name: Analytics
+    description: Reporting and analytics
+  - name: Admin
+    description: System administration
+  - name: Display
+    description: TV display integration
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  # ==================== AUTHENTICATION ====================
+  /api/auth/staff/login:
+    post:
+      tags: [Authentication]
+      summary: Staff login
+      description: Authenticate staff members (admin, doctor, nurse, receptionist)
+      operationId: staffLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffLoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/patient/login:
+    post:
+      tags: [Authentication]
+      summary: Patient login
+      description: Authenticate patients using email, phone, or patient number
+      operationId: patientLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientLoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientAuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/pin/login:
+    post:
+      tags: [Authentication]
+      summary: Quick PIN login
+      description: Quick patient access using patient ID and PIN (for kiosk)
+      operationId: pinLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinLoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid PIN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout
+      description: Terminate the current session
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/change-password:
+    post:
+      tags: [Authentication]
+      summary: Change password
+      description: Change the current user's password
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==================== QUEUE ====================
+  /api/queue:
+    get:
+      tags: [Queue]
+      summary: Get queue status
+      description: Get the current queue for all or specific departments
+      operationId: getQueue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: departmentId
+          in: query
+          description: Filter by department ID
+          schema:
+            type: string
+            format: uuid
+        - name: includeCompleted
+          in: query
+          description: Include completed entries
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Queue data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [Queue]
+      summary: Create queue ticket
+      description: Create a new queue ticket for a patient
+      operationId: createTicket
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTicketRequest'
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/queue/call:
+    post:
+      tags: [Queue]
+      summary: Call patient
+      description: Call a patient from the queue
+      operationId: callPatient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallPatientRequest'
+      responses:
+        '200':
+          description: Patient called
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/queue/{ticketId}/start:
+    post:
+      tags: [Queue]
+      summary: Start consultation
+      description: Mark a ticket as in progress (consultation started)
+      operationId: startConsultation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          description: Queue ticket ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Consultation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/queue/{ticketId}/complete:
+    post:
+      tags: [Queue]
+      summary: Complete consultation
+      description: Mark a ticket as completed
+      operationId: completeConsultation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          description: Queue ticket ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTicketRequest'
+      responses:
+        '200':
+          description: Consultation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/queue/{ticketId}/transfer:
+    post:
+      tags: [Queue]
+      summary: Transfer patient
+      description: Transfer a patient to a different department
+      operationId: transferPatient
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          description: Queue ticket ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Patient transferred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/queue/{ticketId}/cancel:
+    post:
+      tags: [Queue]
+      summary: Cancel ticket
+      description: Cancel a queue ticket
+      operationId: cancelTicket
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          description: Queue ticket ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Cancellation reason
+      responses:
+        '200':
+          description: Ticket cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==================== PATIENTS ====================
+  /api/patients:
+    get:
+      tags: [Patients]
+      summary: List patients
+      description: Get a paginated list of patients
+      operationId: listPatients
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: search
+          in: query
+          description: Search by name, email, phone, or patient number
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Patient list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPatients'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [Patients]
+      summary: Register patient
+      description: Register a new patient
+      operationId: registerPatient
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterPatientRequest'
+      responses:
+        '201':
+          description: Patient registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/patients/{patientId}:
+    get:
+      tags: [Patients]
+      summary: Get patient details
+      description: Get detailed information about a patient
+      operationId: getPatient
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          description: Patient ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientDetailResponse'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [Patients]
+      summary: Update patient
+      description: Update patient information
+      operationId: updatePatient
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          description: Patient ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePatientRequest'
+      responses:
+        '200':
+          description: Patient updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/patients/{patientId}/history:
+    get:
+      tags: [Patients]
+      summary: Get patient history
+      description: Get visit history for a patient
+      operationId: getPatientHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          description: Patient ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Patient history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientHistoryResponse'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==================== APPOINTMENTS ====================
+  /api/appointments:
+    get:
+      tags: [Appointments]
+      summary: List appointments
+      description: Get appointments for a date or patient
+      operationId: listAppointments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: Filter by date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: patientId
+          in: query
+          description: Filter by patient ID
+          schema:
+            type: string
+            format: uuid
+        - name: doctorId
+          in: query
+          description: Filter by doctor ID
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [scheduled, confirmed, completed, cancelled, no_show]
+      responses:
+        '200':
+          description: Appointment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [Appointments]
+      summary: Create appointment
+      description: Schedule a new appointment
+      operationId: createAppointment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppointmentRequest'
+      responses:
+        '201':
+          description: Appointment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '400':
+          description: Invalid request or slot unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/appointments/{appointmentId}:
+    get:
+      tags: [Appointments]
+      summary: Get appointment
+      description: Get appointment details
+      operationId: getAppointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Appointment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '404':
+          description: Appointment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [Appointments]
+      summary: Update appointment
+      description: Update appointment details
+      operationId: updateAppointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAppointmentRequest'
+      responses:
+        '200':
+          description: Appointment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+
+    delete:
+      tags: [Appointments]
+      summary: Cancel appointment
+      description: Cancel an appointment
+      operationId: cancelAppointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Appointment cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/appointments/{appointmentId}/checkin:
+    post:
+      tags: [Appointments]
+      summary: Check in for appointment
+      description: Patient checks in for their appointment
+      operationId: checkinAppointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Checked in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+
+  # ==================== DEPARTMENTS ====================
+  /api/departments:
+    get:
+      tags: [Departments]
+      summary: List departments
+      description: Get all active departments
+      operationId: listDepartments
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Department list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentListResponse'
+    post:
+      tags: [Departments]
+      summary: Create department
+      description: Create a new department
+      operationId: createDepartment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDepartmentRequest'
+      responses:
+        '201':
+          description: Department created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentResponse'
+
+  /api/departments/{departmentId}:
+    get:
+      tags: [Departments]
+      summary: Get department
+      description: Get department details
+      operationId: getDepartment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Department details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentResponse'
+    put:
+      tags: [Departments]
+      summary: Update department
+      description: Update department details
+      operationId: updateDepartment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDepartmentRequest'
+      responses:
+        '200':
+          description: Department updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentResponse'
+
+  # ==================== DOCTORS ====================
+  /api/doctors:
+    get:
+      tags: [Doctors]
+      summary: List doctors
+      description: Get list of doctors with their availability
+      operationId: listDoctors
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: departmentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: available
+          in: query
+          description: Filter by availability
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Doctor list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorListResponse'
+
+  /api/doctors/{doctorId}:
+    get:
+      tags: [Doctors]
+      summary: Get doctor
+      description: Get doctor details and schedule
+      operationId: getDoctor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Doctor details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorResponse'
+
+  /api/doctors/{doctorId}/availability:
+    put:
+      tags: [Doctors]
+      summary: Toggle availability
+      description: Set doctor availability status
+      operationId: toggleAvailability
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isAvailable:
+                  type: boolean
+                breakUntil:
+                  type: string
+                  format: date-time
+                  description: Optional end time for break
+      responses:
+        '200':
+          description: Availability updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorResponse'
+
+  # ==================== CLINICAL NOTES ====================
+  /api/notes/{queueId}:
+    get:
+      tags: [Clinical]
+      summary: Get clinical notes
+      description: Get clinical notes for a queue entry
+      operationId: getClinicalNotes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: queueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Clinical notes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicalNotesResponse'
+
+    post:
+      tags: [Clinical]
+      summary: Create clinical note
+      description: Add a clinical note for a queue entry
+      operationId: createClinicalNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: queueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClinicalNoteRequest'
+      responses:
+        '201':
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicalNoteResponse'
+
+  /api/notes/{noteId}:
+    put:
+      tags: [Clinical]
+      summary: Update clinical note
+      description: Update an existing clinical note
+      operationId: updateClinicalNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClinicalNoteRequest'
+      responses:
+        '200':
+          description: Note updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicalNoteResponse'
+
+  # ==================== VITALS ====================
+  /api/vitals/{patientId}:
+    post:
+      tags: [Vitals]
+      summary: Record vitals
+      description: Record patient vitals
+      operationId: recordVitals
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordVitalsRequest'
+      responses:
+        '201':
+          description: Vitals recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VitalsResponse'
+
+    get:
+      tags: [Vitals]
+      summary: Get vitals history
+      description: Get vitals history for a patient
+      operationId: getVitalsHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Vitals history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VitalsHistoryResponse'
+
+  # ==================== MESSAGES ====================
+  /api/messages:
+    get:
+      tags: [Messages]
+      summary: List messages
+      description: Get messages for current user
+      operationId: listMessages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Message list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageListResponse'
+
+    post:
+      tags: [Messages]
+      summary: Send message
+      description: Send a message to staff or broadcast
+      operationId: sendMessage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /api/messages/staff:
+    get:
+      tags: [Messages]
+      summary: Get staff messages
+      description: Get messages sent to staff roles
+      operationId: getStaffMessages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: recipientType
+          in: query
+          description: Filter by recipient type
+          schema:
+            type: string
+            enum: [department, all]
+      responses:
+        '200':
+          description: Staff messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageListResponse'
+
+  /api/messages/unread/count:
+    get:
+      tags: [Messages]
+      summary: Get unread count
+      description: Get count of unread messages
+      operationId: getUnreadCount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+
+  /api/messages/{messageId}/read:
+    put:
+      tags: [Messages]
+      summary: Mark as read
+      description: Mark a message as read
+      operationId: markAsRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Message marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== VOICE CALLS ====================
+  /api/voice/call:
+    post:
+      tags: [Voice]
+      summary: Initiate call
+      description: Start a voice call with another staff member
+      operationId: initiateCall
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [calleeId]
+              properties:
+                calleeId:
+                  type: string
+                  description: User ID of the person to call
+                priority:
+                  type: string
+                  enum: [normal, urgent, emergency]
+                  default: normal
+      responses:
+        '201':
+          description: Call initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResponse'
+
+  /api/voice/call/{callId}/accept:
+    post:
+      tags: [Voice]
+      summary: Accept call
+      description: Accept an incoming call
+      operationId: acceptCall
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Call accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResponse'
+
+  /api/voice/call/{callId}/reject:
+    post:
+      tags: [Voice]
+      summary: Reject call
+      description: Reject an incoming call
+      operationId: rejectCall
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Call rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/voice/call/{callId}/end:
+    post:
+      tags: [Voice]
+      summary: End call
+      description: End an active call
+      operationId: endCall
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Call ended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/voice/call/{callId}/hold:
+    post:
+      tags: [Voice]
+      summary: Hold call
+      description: Put a call on hold
+      operationId: holdCall
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Call held
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResponse'
+
+  /api/voice/call/{callId}/resume:
+    post:
+      tags: [Voice]
+      summary: Resume call
+      description: Resume a held call
+      operationId: resumeCall
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Call resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResponse'
+
+  /api/voice/calls:
+    get:
+      tags: [Voice]
+      summary: Get call history
+      description: Get call history
+      operationId: getCallHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by call status
+          schema:
+            type: string
+            enum: [active, completed, missed, rejected]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Call history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallHistoryResponse'
+
+  /api/voice/calls/active:
+    get:
+      tags: [Voice]
+      summary: Get active calls
+      description: Get current active calls for user
+      operationId: getActiveCalls
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active calls
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CallResponse'
+
+  # ==================== ANALYTICS ====================
+  /api/analytics/overview:
+    get:
+      tags: [Analytics]
+      summary: Get system overview
+      description: Get dashboard overview statistics
+      operationId: getAnalyticsOverview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          description: Date for stats (defaults to today)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Overview statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsOverviewResponse'
+
+  /api/analytics/wait-times:
+    get:
+      tags: [Analytics]
+      summary: Get wait time statistics
+      description: Get average wait times by department
+      operationId: getWaitTimes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: departmentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Wait time statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitTimeResponse'
+
+  /api/analytics/doctors:
+    get:
+      tags: [Analytics]
+      summary: Get doctor metrics
+      description: Get metrics for doctors
+      operationId: getDoctorMetrics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Doctor metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorMetricsResponse'
+
+  # ==================== ADMIN ====================
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List users
+      description: Get list of staff users
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [admin, doctor, nurse, receptionist, pharmacist, lab_tech, facility_manager, it_support]
+      responses:
+        '200':
+          description: User list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+    post:
+      tags: [Admin]
+      summary: Create user
+      description: Create a new staff user
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /api/admin/users/{userId}:
+    put:
+      tags: [Admin]
+      summary: Update user
+      description: Update user details
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+    delete:
+      tags: [Admin]
+      summary: Deactivate user
+      description: Deactivate a user account
+      operationId: deactivateUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/settings:
+    get:
+      tags: [Admin]
+      summary: Get system settings
+      description: Get system configuration
+      operationId: getSettings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: System settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemSettingsResponse'
+
+    put:
+      tags: [Admin]
+      summary: Update settings
+      description: Update system settings
+      operationId: updateSettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemSettingsResponse'
+
+  /api/admin/departments:
+    post:
+      tags: [Admin]
+      summary: Create department
+      description: Create a new department
+      operationId: createDepartmentAdmin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDepartmentRequest'
+      responses:
+        '201':
+          description: Department created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentResponse'
+
+  # ==================== DISPLAY ====================
+  /api/display/queue:
+    get:
+      tags: [Display]
+      summary: Get TV display data
+      description: Get queue data formatted for TV display
+      operationId: getTVDisplay
+      parameters:
+        - name: departmentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: TV display data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TVDisplayResponse'
+
+  # ==================== HEALTH ====================
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Check API health status
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: healthy
+                      version:
+                        type: string
+                        example: 2.0.0
+
+# ==================== COMPONENTS ====================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    # ============ Common ============
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Invalid credentials"
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    PaginatedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        hasMore:
+          type: boolean
+
+    # ============ Auth ============
+    StaffLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: doctor@limuruhospital.co.ke
+        password:
+          type: string
+          format: password
+          minLength: 6
+
+    PatientLoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: Email, phone, or patient number
+          example: "+254712345678"
+        password:
+          type: string
+          format: password
+
+    PinLoginRequest:
+      type: object
+      required: [patientId, pin]
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        pin:
+          type: string
+          length: 4
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+            expiresIn:
+              type: integer
+            user:
+              $ref: '#/components/schemas/User'
+
+    PatientAuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+            expiresIn:
+              type: integer
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                email:
+                  type: string
+                requiresPasswordChange:
+                  type: boolean
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, doctor, nurse, receptionist, pharmacist, lab_tech, facility_manager, it_support]
+        department:
+          type: string
+        room:
+          type: string
+
+    # ============ Queue ============
+    QueueResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            tickets:
+              type: array
+              items:
+                $ref: '#/components/schemas/QueueTicket'
+            total:
+              type: integer
+            waiting:
+              type: integer
+            called:
+              type: integer
+
+    QueueTicket:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ticketNumber:
+          type: string
+          example: "MED-001"
+        patientId:
+          type: string
+          format: uuid
+        patientName:
+          type: string
+        patientNumber:
+          type: string
+        department:
+          type: string
+        status:
+          type: string
+          enum: [waiting, called, in_progress, completed, cancelled, transferred]
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          description: "1=Normal, 2=Priority, 3=Urgent, 4=Emergency"
+        position:
+          type: integer
+        waitTime:
+          type: integer
+          description: Wait time in minutes
+        roomAssigned:
+          type: string
+        calledAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    CreateTicketRequest:
+      type: object
+      required: [patientId, departmentId, priority]
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        departmentId:
+          type: string
+          format: uuid
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 4
+          description: "1=Normal, 2=Priority, 3=Urgent, 4=Emergency"
+        complaint:
+          type: string
+          maxLength: 500
+        doctorId:
+          type: string
+          format: uuid
+        hmsAppointmentId:
+          type: string
+
+    CallPatientRequest:
+      type: object
+      required: [ticketId, roomAssigned]
+      properties:
+        ticketId:
+          type: string
+          format: uuid
+        roomAssigned:
+          type: string
+        doctorId:
+          type: string
+          format: uuid
+
+    CompleteTicketRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+        diagnosis:
+          type: string
+        prescription:
+          type: string
+
+    TransferRequest:
+      type: object
+      required: [newDepartmentId]
+      properties:
+        newDepartmentId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+
+    TicketResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ticket:
+              $ref: '#/components/schemas/QueueTicket'
+
+    # ============ Patients ============
+    RegisterPatientRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          pattern: '^\+?[0-9]{9,15}$'
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female, other]
+        address:
+          type: string
+        nationalId:
+          type: string
+        insuranceProvider:
+          type: string
+        insuranceNumber:
+          type: string
+        emergencyContactName:
+          type: string
+        emergencyContactPhone:
+          type: string
+        bloodType:
+          type: string
+          enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+        allergies:
+          type: string
+        medicalConditions:
+          type: string
+        language:
+          type: string
+          enum: [en, sw]
+          default: en
+
+    UpdatePatientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+        address:
+          type: string
+        insuranceProvider:
+          type: string
+        insuranceNumber:
+          type: string
+        emergencyContactName:
+          type: string
+        emergencyContactPhone:
+          type: string
+        bloodType:
+          type: string
+        allergies:
+          type: string
+        medicalConditions:
+          type: string
+
+    PatientResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Patient'
+
+    Patient:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientNumber:
+          type: string
+          example: "LCH-2024-0001"
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+        address:
+          type: string
+        nationalId:
+          type: string
+        insuranceProvider:
+          type: string
+        insuranceNumber:
+          type: string
+        bloodType:
+          type: string
+        allergies:
+          type: string
+        medicalConditions:
+          type: string
+        language:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PatientDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            patient:
+              $ref: '#/components/schemas/Patient'
+            stats:
+              type: object
+              properties:
+                totalVisits:
+                  type: integer
+                lastVisit:
+                  type: string
+                  format: date
+
+    PaginatedPatients:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Patient'
+            total:
+              type: integer
+            page:
+              type: integer
+            pageSize:
+              type: integer
+            hasMore:
+              type: boolean
+
+    PatientHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            visits:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  ticketNumber:
+                    type: string
+                  department:
+                    type: string
+                  status:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  completedAt:
+                    type: string
+                    format: date-time
+                  diagnosis:
+                    type: string
+
+    # ============ Appointments ============
+    CreateAppointmentRequest:
+      type: object
+      required: [patientId, doctorId, appointmentDate, appointmentTime]
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        departmentId:
+          type: string
+          format: uuid
+        appointmentDate:
+          type: string
+          format: date
+        appointmentTime:
+          type: string
+          format: time
+        notes:
+          type: string
+        hmsAppointmentId:
+          type: string
+
+    UpdateAppointmentRequest:
+      type: object
+      properties:
+        appointmentDate:
+          type: string
+          format: date
+        appointmentTime:
+          type: string
+          format: time
+        status:
+          type: string
+          enum: [scheduled, confirmed, completed, cancelled, no_show]
+        notes:
+          type: string
+
+    AppointmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Appointment'
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        patientName:
+          type: string
+        doctorId:
+          type: string
+          format: uuid
+        doctorName:
+          type: string
+        departmentId:
+          type: string
+          format: uuid
+        departmentName:
+          type: string
+        appointmentDate:
+          type: string
+          format: date
+        appointmentTime:
+          type: string
+          format: time
+        status:
+          type: string
+          enum: [scheduled, confirmed, completed, cancelled, no_show]
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    AppointmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointment'
+
+    # ============ Departments ============
+    CreateDepartmentRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        code:
+          type: string
+          maxLength: 20
+          pattern: '^[A-Z]{3,10}$'
+        description:
+          type: string
+        color:
+          type: string
+          example: "#FF5733"
+        icon:
+          type: string
+
+    UpdateDepartmentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        color:
+          type: string
+        icon:
+          type: string
+        isActive:
+          type: boolean
+
+    DepartmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Department'
+
+    Department:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        color:
+          type: string
+        icon:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    DepartmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Department'
+
+    # ============ Doctors ============
+    DoctorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Doctor'
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        room:
+          type: string
+        isAvailable:
+          type: boolean
+        breakUntil:
+          type: string
+          format: date-time
+
+    DoctorListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Doctor'
+
+    DoctorMetricsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              doctor:
+                $ref: '#/components/schemas/Doctor'
+              metrics:
+                type: object
+                properties:
+                  patientsToday:
+                    type: integer
+                  avgWaitTime:
+                    type: integer
+                  avgConsultationTime:
+                    type: integer
+                  completed:
+                    type: integer
+
+    # ============ Clinical Notes ============
+    CreateClinicalNoteRequest:
+      type: object
+      required: [diagnosis]
+      properties:
+        subjective:
+          type: string
+          description: Patient's description of symptoms
+        objective:
+          type: string
+          description: Clinical observations
+        assessment:
+          type: string
+          description: Diagnosis
+        plan:
+          type: string
+          description: Treatment plan
+        diagnosis:
+          type: string
+        symptoms:
+          type: string
+        prescription:
+          type: string
+        notes:
+          type: string
+        followUpRequired:
+          type: boolean
+        followUpDate:
+          type: string
+          format: date
+
+    UpdateClinicalNoteRequest:
+      type: object
+      properties:
+        subjective:
+          type: string
+        objective:
+          type: string
+        assessment:
+          type: string
+        plan:
+          type: string
+        diagnosis:
+          type: string
+        prescription:
+          type: string
+        notes:
+          type: string
+        followUpRequired:
+          type: boolean
+        followUpDate:
+          type: string
+          format: date
+
+    ClinicalNoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/ClinicalNote'
+
+    ClinicalNote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        queueId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        subjective:
+          type: string
+        objective:
+          type: string
+        assessment:
+          type: string
+        plan:
+          type: string
+        diagnosis:
+          type: string
+        symptoms:
+          type: string
+        prescription:
+          type: string
+        notes:
+          type: string
+        followUpRequired:
+          type: boolean
+        followUpDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+
+    ClinicalNotesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClinicalNote'
+
+    # ============ Vitals ============
+    RecordVitalsRequest:
+      type: object
+      required: [queueId]
+      properties:
+        queueId:
+          type: string
+          format: uuid
+        bloodPressureSystolic:
+          type: integer
+          minimum: 60
+          maximum: 250
+        bloodPressureDiastolic:
+          type: integer
+          minimum: 40
+          maximum: 150
+        heartRate:
+          type: integer
+          minimum: 30
+          maximum: 220
+          description: BPM
+        temperature:
+          type: number
+          minimum: 35
+          maximum: 42
+          description: Celsius
+        respiratoryRate:
+          type: integer
+          minimum: 8
+          maximum: 40
+          description: Breaths per minute
+        oxygenSaturation:
+          type: number
+          minimum: 70
+          maximum: 100
+          description: SpO2 percentage
+        weight:
+          type: number
+          minimum: 0.5
+          maximum: 500
+          description: Kilograms
+        height:
+          type: number
+          minimum: 20
+          maximum: 250
+          description: Centimeters
+        notes:
+          type: string
+
+    VitalsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Vitals'
+
+    Vitals:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        queueId:
+          type: string
+          format: uuid
+        bloodPressure:
+          type: string
+          example: "120/80"
+        heartRate:
+          type: integer
+        temperature:
+          type: number
+        respiratoryRate:
+          type: integer
+        oxygenSaturation:
+          type: number
+        weight:
+          type: number
+        height:
+          type: number
+        bmi:
+          type: number
+        recordedBy:
+          type: string
+        recordedAt:
+          type: string
+          format: date-time
+
+    VitalsHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vitals'
+
+    # ============ Messages ============
+    SendMessageRequest:
+      type: object
+      required: [content]
+      properties:
+        recipientId:
+          type: string
+          format: uuid
+          description: User ID of recipient
+        recipientType:
+          type: string
+          enum: [user, department, all]
+          default: user
+        senderType:
+          type: string
+          enum: [user, system, patient]
+          default: user
+        subject:
+          type: string
+          maxLength: 500
+        content:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+        expiresAt:
+          type: string
+          format: date-time
+
+    MessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Message'
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        senderName:
+          type: string
+        recipientId:
+          type: string
+          format: uuid
+        recipientType:
+          type: string
+        subject:
+          type: string
+        content:
+          type: string
+        priority:
+          type: string
+        isRead:
+          type: boolean
+        readAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    MessageListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        total:
+          type: integer
+        unread:
+          type: integer
+
+    # ============ Voice Calls ============
+    CallResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            callId:
+              type: string
+              format: uuid
+            callerId:
+              type: string
+              format: uuid
+            callerName:
+              type: string
+            calleeId:
+              type: string
+              format: uuid
+            calleeName:
+              type: string
+            status:
+              type: string
+              enum: [initiated, ringing, active, held, completed, missed, rejected]
+            priority:
+              type: string
+            startedAt:
+              type: string
+              format: date-time
+            duration:
+              type: integer
+              description: Duration in seconds
+
+    CallHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CallResponse'
+
+    # ============ Analytics ============
+    AnalyticsOverviewResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            todayVisits:
+              type: integer
+            waiting:
+              type: integer
+            called:
+              type: integer
+            inProgress:
+              type: integer
+            completed:
+              type: integer
+            noShow:
+              type: integer
+            avgWaitTime:
+              type: integer
+            avgConsultationTime:
+              type: integer
+            totalPatients:
+              type: integer
+
+    WaitTimeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              department:
+                type: string
+              avgWaitTime:
+                type: integer
+              minWaitTime:
+                type: integer
+              maxWaitTime:
+                type: integer
+              patientsCount:
+                type: integer
+
+    # ============ Admin ============
+    CreateUserRequest:
+      type: object
+      required: [email, name, role]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, doctor, nurse, receptionist, pharmacist, lab_tech, facility_manager, it_support]
+        department:
+          type: string
+        room:
+          type: string
+        phone:
+          type: string
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+        room:
+          type: string
+        phone:
+          type: string
+        isActive:
+          type: boolean
+
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/User'
+
+    UserListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+
+    SystemSettingsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            clinicName:
+              type: string
+            clinicAddress:
+              type: string
+            waitTimePerPatient:
+              type: integer
+              description: Minutes
+            defaultPassword:
+              type: string
+
+    UpdateSettingsRequest:
+      type: object
+      properties:
+        clinicName:
+          type: string
+        clinicAddress:
+          type: string
+        waitTimePerPatient:
+          type: integer
+        defaultPassword:
+          type: string
+
+    # ============ TV Display ============
+    TVDisplayResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            department:
+              type: string
+            waiting:
+              type: array
+              items:
+                type: object
+                properties:
+                  ticketNumber:
+                    type: string
+                  position:
+                    type: integer
+                  waitTime:
+                    type: integer
+            called:
+              type: array
+              items:
+                type: object
+                properties:
+                  ticketNumber:
+                    type: string
+                  room:
+                    type: string
+            stats:
+              type: object
+              properties:
+                totalWaiting:
+                  type: integer
+                avgWaitTime:
+                  type: integer
+                estimatedNext:
+                  type: string
+            announcements:
+              type: array
+              items:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  priority:
+                    type: string

@@ -1,3 +1,8 @@
+export * from './query-monitor';
+export * from './cache-manager';
+export * from './optimized-queries';
+export * from './schema';
+
 export const query = async (text: string, params?: unknown[]): Promise<{
   rows: unknown[];
   rowCount: number;

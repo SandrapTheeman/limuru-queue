@@ -190,7 +190,7 @@ clinical.post('/', async (c) => {
     return c.json(errorResponse('Forbidden'), 403);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(body.visitId).first();
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(body.visitId).first();
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
   }

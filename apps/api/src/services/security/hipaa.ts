@@ -30,13 +30,13 @@ const RBAC_CONFIG: Record<UserRole, RBACPermission[]> = {
   ],
   doctor: [
     { resource: 'patients', actions: ['read', 'update'] },
-    { resource: 'visits', actions: ['read', 'create', 'update'] },
+    { resource: 'queue_tickets', actions: ['read', 'create', 'update'] },
     { resource: 'queue', actions: ['read', 'call', 'start', 'complete'] },
     { resource: 'medical_records', actions: ['read', 'create'] },
   ],
   nurse: [
     { resource: 'patients', actions: ['read'] },
-    { resource: 'visits', actions: ['read', 'update'] },
+    { resource: 'queue_tickets', actions: ['read', 'update'] },
     { resource: 'queue', actions: ['read', 'call'] },
   ],
   receptionist: [
@@ -163,7 +163,7 @@ export function requireRBAC(resource: string, action: string) {
     
     const token = authHeader.replace('Bearer ', '');
     const { verifyToken } = await import('../auth');
-    const payload = await verifyToken(token);
+    const payload = await verifyToken(token, c.env);
     
     if (!payload) {
       c.status(401);
@@ -195,15 +195,16 @@ export function requireRBAC(resource: string, action: string) {
   };
 }
 
-export function checkSessionTimeout(c: Context): boolean {
+export async function checkSessionTimeout(c: Context): Promise<boolean> {
   const authHeader = c.req.header('Authorization');
   if (!authHeader) return false;
   
   const token = authHeader.replace('Bearer ', '');
   const sessionKey = `session:${token.substring(0, 32)}`;
   
-  const sessionData = c.env.SESSION_KV ? c.env.SESSION_KV.get(sessionKey) : null;
+  if (!c.env.SESSION_KV) return false;
   
+  const sessionData = await c.env.SESSION_KV.get(sessionKey);
   if (!sessionData) return true;
   
   const session = JSON.parse(sessionData);

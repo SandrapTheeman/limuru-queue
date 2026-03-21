@@ -140,7 +140,7 @@ export function createMockEnv(): MockEnv {
 export function populateMockData(db: MockD1Database, data: {
   patients?: any[];
   doctors?: any[];
-  visits?: any[];
+  queue_tickets?: any[];
   users?: any[];
   settings?: any[];
 }) {
@@ -150,10 +150,10 @@ export function populateMockData(db: MockD1Database, data: {
   if (data.doctors) {
     db.setData('SELECT * FROM doctors', data.doctors);
   }
-  if (data.visits) {
-    db.setData('SELECT * FROM visits WHERE department = ? AND status = \'waiting\'', data.visits);
-    db.setData('SELECT * FROM visits WHERE status = \'waiting\'', data.visits);
-    db.setData('SELECT * FROM visits WHERE status = \'completed\' AND date(completed_at) = date(\'now\')', []);
+  if (data.queue_tickets) {
+    db.setData('SELECT * FROM queue_tickets WHERE department = ? AND status = \'waiting\'', data.queue_tickets);
+    db.setData('SELECT * FROM queue_tickets WHERE status = \'waiting\'', data.queue_tickets);
+    db.setData('SELECT * FROM queue_tickets WHERE status = \'completed\' AND date(completed_at) = date(\'now\')', []);
   }
   if (data.users) {
     db.setData('SELECT * FROM users WHERE email = ? AND is_active = 1', data.users);

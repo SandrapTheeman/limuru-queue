@@ -87,7 +87,7 @@ visits.get('/', async (c) => {
   let sql = `
     SELECT v.*, p.name as patient_name, p.phone as patient_phone, p.email as patient_email,
            d.name as doctor_name
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE 1=1
@@ -132,10 +132,10 @@ visits.get('/', async (c) => {
 
   let countSql = sql.replace(/ORDER BY.*LIMIT.*OFFSET.*/, '').replace(/LEFT JOIN.*ON.*/, 'WHERE 1=1').split('LIMIT')[0];
   const countParams = params.slice(0, -2);
-  const countResult = await db.prepare(`SELECT COUNT(*) as count FROM visits v WHERE 1=1 ${status ? ' AND v.status = ?' : ''}${department ? ' AND v.department = ?' : ''}${doctorId ? ' AND v.doctor_id = ?' : ''}${patientId ? ' AND v.patient_id = ?' : ''}${date ? ' AND date(v.created_at) = ?' : ''}`).bind(...countParams).first() as { count: number };
+  const countResult = await db.prepare(`SELECT COUNT(*) as count FROM queue_tickets v WHERE 1=1 ${status ? ' AND v.status = ?' : ''}${department ? ' AND v.department = ?' : ''}${doctorId ? ' AND v.doctor_id = ?' : ''}${patientId ? ' AND v.patient_id = ?' : ''}${date ? ' AND date(v.created_at) = ?' : ''}`).bind(...countParams).first() as { count: number };
 
   return c.json(successResponse({
-    visits: result.results,
+    queue_tickets: result.results,
     total: countResult?.count || 0,
     limit,
     offset,
@@ -156,7 +156,7 @@ visits.get('/:id', async (c) => {
     SELECT v.*, p.name as patient_name, p.phone as patient_phone, p.email as patient_email,
            p.dob as patient_dob, p.allergies as patient_allergies,
            d.name as doctor_name, d.department as doctor_department
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE v.id = ?
@@ -183,7 +183,7 @@ visits.post('/', async (c) => {
   }
 
   const countResult = await db.prepare(`
-    SELECT COUNT(*) as count FROM visits 
+    SELECT COUNT(*) as count FROM queue_tickets 
     WHERE department = ? AND status IN ('waiting', 'called', 'in_progress')
     AND date(created_at) = date('now')
   `).bind(body.department).first() as { count: number };
@@ -193,7 +193,7 @@ visits.post('/', async (c) => {
   const createdAt = now();
 
   await db.prepare(`
-    INSERT INTO visits (id, patient_id, ticket_number, department, priority, triage_level, status, created_at)
+    INSERT INTO queue_tickets (id, patient_id, ticket_number, department, priority, triage_level, status, created_at)
     VALUES (?, ?, ?, ?, ?, ?, 'waiting', ?)
   `).bind(
     id,
@@ -219,7 +219,7 @@ visits.post('/', async (c) => {
 
   const visit = await db.prepare(`
     SELECT v.*, p.name as patient_name 
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     WHERE v.id = ?
   `).bind(id).first();
@@ -237,7 +237,7 @@ visits.put('/:id', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(visitId).first() as Visit | undefined;
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first() as Visit | undefined;
 
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
@@ -299,7 +299,7 @@ visits.put('/:id', async (c) => {
   }
 
   params.push(visitId);
-  await db.prepare(`UPDATE visits SET ${updates.join(', ')} WHERE id = ?`).bind(...params).run();
+  await db.prepare(`UPDATE queue_tickets SET ${updates.join(', ')} WHERE id = ?`).bind(...params).run();
 
   await db.prepare(`
     INSERT INTO queue_history (id, visit_id, action, actor_id, actor_type, timestamp, metadata)
@@ -316,7 +316,7 @@ visits.put('/:id', async (c) => {
 
   const updated = await db.prepare(`
     SELECT v.*, p.name as patient_name 
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     WHERE v.id = ?
   `).bind(visitId).first();
@@ -333,7 +333,7 @@ visits.post('/:id/start', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(visitId).first() as Visit | undefined;
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first() as Visit | undefined;
 
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
@@ -346,7 +346,7 @@ visits.post('/:id/start', async (c) => {
   const startedAt = now();
 
   await db.prepare(`
-    UPDATE visits SET status = 'in_progress', started_at = ?, doctor_id = ?
+    UPDATE queue_tickets SET status = 'in_progress', started_at = ?, doctor_id = ?
     WHERE id = ?
   `).bind(startedAt, user.doctorId || null, visitId).run();
 
@@ -357,7 +357,7 @@ visits.post('/:id/start', async (c) => {
 
   const updated = await db.prepare(`
     SELECT v.*, p.name as patient_name 
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     WHERE v.id = ?
   `).bind(visitId).first();
@@ -375,7 +375,7 @@ visits.post('/:id/complete', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(visitId).first() as Visit | undefined;
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first() as Visit | undefined;
 
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
@@ -388,7 +388,7 @@ visits.post('/:id/complete', async (c) => {
   }
 
   await db.prepare(`
-    UPDATE visits 
+    UPDATE queue_tickets 
     SET status = 'completed', completed_at = ?, wait_time_minutes = ?,
         diagnosis = ?, prescription = ?, doctor_notes = ?
     WHERE id = ?
@@ -408,7 +408,7 @@ visits.post('/:id/complete', async (c) => {
 
   const updated = await db.prepare(`
     SELECT v.*, p.name as patient_name 
-    FROM visits v
+    FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     WHERE v.id = ?
   `).bind(visitId).first();
@@ -446,7 +446,7 @@ visits.post('/:id/vital-signs', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(visitId).first();
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first();
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
   }
@@ -509,7 +509,7 @@ visits.post('/:id/soap-notes', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(visitId).first();
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first();
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
   }
@@ -598,7 +598,7 @@ visits.post('/:id/prescriptions', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(visitId).first();
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first();
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
   }
@@ -699,7 +699,7 @@ visits.get('/:id/history', async (c) => {
     return c.json(errorResponse('Unauthorized'), 401);
   }
 
-  const visit = await db.prepare('SELECT * FROM visits WHERE id = ?').bind(visitId).first();
+  const visit = await db.prepare('SELECT * FROM queue_tickets WHERE id = ?').bind(visitId).first();
   if (!visit) {
     return c.json(errorResponse('Visit not found'), 404);
   }
@@ -733,7 +733,7 @@ visits.get('/stats/daily', async (c) => {
       SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
       SUM(CASE WHEN status = 'no_show' THEN 1 ELSE 0 END) as no_show,
       AVG(wait_time_minutes) as avg_wait_time
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) = ?
   `).bind(today).first() as {
     total_visits: number;
@@ -749,7 +749,7 @@ visits.get('/stats/daily', async (c) => {
       department,
       COUNT(*) as count,
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-    FROM visits
+    FROM queue_tickets
     WHERE date(created_at) = ?
     GROUP BY department
   `).bind(today).all();

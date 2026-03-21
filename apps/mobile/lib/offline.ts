@@ -13,6 +13,7 @@ interface PendingOperation {
   timestamp: number;
   attempts: number;
   synced: boolean;
+  lastError?: string;
 }
 
 interface OfflineStatus {
@@ -24,12 +25,19 @@ interface OfflineStatus {
 
 const PENDING_OPS_KEY = 'pending_operations';
 const LAST_SYNC_KEY = 'last_sync_time';
+const SYNC_BACKOFF_KEY = 'sync_backoff';
+
+const MAX_RETRIES = 5;
+const INITIAL_BACKOFF_MS = 1000;
+const MAX_BACKOFF_MS = 60000;
 
 let networkListener: ((status: NetworkStatus) => void) | null = null;
 let pendingOperations: PendingOperation[] = [];
 let isOnline = true;
 let isSyncing = false;
 let lastSyncTime: number | null = null;
+let currentBackoff = INITIAL_BACKOFF_MS;
+let syncTimeoutId: NodeJS.Timeout | null = null;
 
 export async function queueOperation(
   type: 'create' | 'update' | 'delete',
@@ -75,34 +83,43 @@ export async function syncPending(): Promise<{ success: number; failed: number }
 
       if (response.ok) {
         operation.synced = true;
+        operation.lastError = undefined;
         success++;
+        currentBackoff = INITIAL_BACKOFF_MS;
       } else if (response.status === 409) {
         const serverData = await response.json();
         await resolveConflict(operation, serverData);
         operation.synced = true;
+        operation.lastError = undefined;
         success++;
       } else {
         operation.attempts++;
-        if (operation.attempts >= 5) {
+        operation.lastError = `HTTP ${response.status}`;
+        if (operation.attempts >= MAX_RETRIES) {
           failed++;
         }
       }
-    } catch {
+    } catch (error: any) {
       operation.attempts++;
-      if (operation.attempts >= 5) {
+      operation.lastError = error.message || 'Network error';
+      if (operation.attempts >= MAX_RETRIES) {
         failed++;
       }
     }
   }
 
   pendingOperations = pendingOperations.filter(
-    (op) => !op.synced || op.attempts < 5
+    (op) => !op.synced || op.attempts < MAX_RETRIES
   );
   await saveLocalOperations();
 
   lastSyncTime = Date.now();
   await AsyncStorage.setItem(LAST_SYNC_KEY, lastSyncTime.toString());
   isSyncing = false;
+
+  if (pendingOperations.filter(op => !op.synced).length > 0 && isOnline) {
+    scheduleSync();
+  }
 
   return { success, failed };
 }
@@ -122,7 +139,6 @@ async function fetchOperation(operation: PendingOperation): Promise<Response> {
         headers['Authorization'] = `Bearer ${state.token}`;
       }
     } catch {
-      // ignore token parse error
     }
   }
 
@@ -143,6 +159,20 @@ async function fetchOperation(operation: PendingOperation): Promise<Response> {
   return response;
 }
 
+function scheduleSync(): void {
+  if (syncTimeoutId) {
+    clearTimeout(syncTimeoutId);
+  }
+
+  syncTimeoutId = setTimeout(() => {
+    if (isOnline && !isSyncing) {
+      syncPending();
+    }
+  }, currentBackoff);
+
+  currentBackoff = Math.min(currentBackoff * 2, MAX_BACKOFF_MS);
+}
+
 export async function resolveConflict(
   operation: PendingOperation,
   serverData: any,
@@ -151,10 +181,8 @@ export async function resolveConflict(
   switch (strategy) {
     case 'client-wins':
       return operation.data;
-
     case 'server-wins':
       return serverData;
-
     case 'merge':
       return {
         ...serverData,
@@ -162,7 +190,6 @@ export async function resolveConflict(
         id: serverData.id || operation.data.id,
         updatedAt: new Date().toISOString(),
       };
-
     default:
       return serverData;
   }
@@ -219,6 +246,7 @@ export function initOfflineSync(
     }
 
     if (!wasOnline && isOnline) {
+      currentBackoff = INITIAL_BACKOFF_MS;
       syncPending();
     }
   });
@@ -247,4 +275,28 @@ export async function clearPendingOperations(): Promise<void> {
 export async function getPendingOperations(): Promise<PendingOperation[]> {
   await loadLocalOperations();
   return pendingOperations.filter((op) => !op.synced);
+}
+
+export async function retryFailedOperations(): Promise<void> {
+  await loadLocalOperations();
+  
+  for (const op of pendingOperations) {
+    if (op.attempts >= MAX_RETRIES) {
+      op.attempts = 0;
+      op.lastError = undefined;
+    }
+  }
+  
+  await saveLocalOperations();
+  
+  if (isOnline) {
+    currentBackoff = INITIAL_BACKOFF_MS;
+    syncPending();
+  }
+}
+
+export async function removeOperation(id: string): Promise<void> {
+  await loadLocalOperations();
+  pendingOperations = pendingOperations.filter(op => op.id !== id);
+  await saveLocalOperations();
 }

@@ -9,15 +9,15 @@ admin.get('/stats', async (c) => {
   const today = new Date().toISOString().split('T')[0];
 
   const totalVisits = await db.prepare(`
-    SELECT COUNT(*) as count FROM visits WHERE date(created_at) = date(?)
+    SELECT COUNT(*) as count FROM queue_tickets WHERE date(created_at) = date(?)
   `).bind(today).first() as { count: number };
 
   const waitingCount = await db.prepare(`
-    SELECT COUNT(*) as count FROM visits WHERE status = 'waiting'
+    SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'waiting'
   `).first() as { count: number };
 
   const completedCount = await db.prepare(`
-    SELECT COUNT(*) as count FROM visits WHERE status = 'completed' AND date(completed_at) = date(?)
+    SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'completed' AND date(completed_at) = date(?)
   `).bind(today).first() as { count: number };
 
   const totalPatients = await db.prepare(`
@@ -29,7 +29,7 @@ admin.get('/stats', async (c) => {
   `).first() as { count: number };
 
   const avgWaitTime = await db.prepare(`
-    SELECT AVG(wait_time_minutes) as avg FROM visits WHERE date(created_at) = date(?) AND wait_time_minutes IS NOT NULL
+    SELECT AVG(wait_time_minutes) as avg FROM queue_tickets WHERE date(created_at) = date(?) AND wait_time_minutes IS NOT NULL
   `).bind(today).first() as { avg: number | null };
 
   const deptStats = await db.prepare(`
@@ -37,7 +37,7 @@ admin.get('/stats', async (c) => {
            COUNT(*) as total,
            SUM(CASE WHEN status = 'waiting' THEN 1 ELSE 0 END) as waiting,
            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-    FROM visits 
+    FROM queue_tickets 
     WHERE date(created_at) = date(?)
     GROUP BY department
   `).bind(today).all();
@@ -361,7 +361,7 @@ admin.post('/backups', async (c) => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const backupKey = `backups/backup-${timestamp}.sql`;
 
-  const tables = ['patients', 'users', 'visits', 'doctors', 'departments', 'rooms', 'appointments', 'messages', 'clinical_notes', 'prescriptions', 'lab_orders'];
+  const tables = ['patients', 'users', 'queue_tickets', 'doctors', 'departments', 'rooms', 'appointments', 'messages', 'clinical_notes', 'prescriptions', 'lab_orders'];
   let backupData = '';
 
   for (const table of tables) {

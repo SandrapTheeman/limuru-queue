@@ -37,7 +37,7 @@ describe('HIPAA Security', () => {
       expect(checkRBAC('receptionist' as UserRole, 'patients', 'create')).toBe(true);
       expect(checkRBAC('receptionist' as UserRole, 'queue', 'create')).toBe(true);
       expect(checkRBAC('receptionist' as UserRole, 'queue', 'call')).toBe(true);
-      expect(checkRBAC('receptionist' as UserRole, 'visits', 'delete')).toBe(false);
+      expect(checkRBAC('receptionist' as UserRole, 'queue_tickets', 'delete')).toBe(false);
     });
 
     it('should allow patient limited access', () => {
@@ -53,9 +53,9 @@ describe('HIPAA Security', () => {
     });
 
     it('should handle wildcard actions', () => {
-      expect(checkRBAC('doctor' as UserRole, 'visits', 'read')).toBe(true);
-      expect(checkRBAC('doctor' as UserRole, 'visits', 'create')).toBe(true);
-      expect(checkRBAC('doctor' as UserRole, 'visits', 'update')).toBe(true);
+      expect(checkRBAC('doctor' as UserRole, 'queue_tickets', 'read')).toBe(true);
+      expect(checkRBAC('doctor' as UserRole, 'queue_tickets', 'create')).toBe(true);
+      expect(checkRBAC('doctor' as UserRole, 'queue_tickets', 'update')).toBe(true);
     });
   });
 

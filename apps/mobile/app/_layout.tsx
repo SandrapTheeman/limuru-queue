@@ -2,13 +2,17 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { Portal, Modal, Surface, Text, Button, Avatar } from 'react-native-paper';
+import { Portal, Modal, Surface, Text, Button, Avatar, View } from 'react-native-paper';
 import { router, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useVoiceCallStore } from '../lib/stores/voice';
 import { acceptCall, rejectCall } from '../lib/api/voice';
 import { initOfflineSync, NetworkStatus } from '../lib/offline';
 import { WebSocketProvider } from '../lib/websocket';
+import * as Haptics from 'expo-haptics';
+import { registerNotificationCategories, handleNotificationResponse } from '../lib/notifications';
+import * as Notifications from 'expo-notifications';
+import { OfflineIndicator } from '../components/OfflineIndicator';
 
 interface AuthContextType {
   user: User | null;
@@ -49,6 +53,15 @@ function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     loadStoredAuth();
     initOfflineSync(handleNetworkChange);
+    registerNotificationCategories();
+    
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      handleNotificationResponse
+    );
+    
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   const loadStoredAuth = async () => {

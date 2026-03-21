@@ -76,10 +76,10 @@ export async function checkHealth(db: D1Database): Promise<HealthStatus> {
 }
 
 export async function getMetrics(db: D1Database): Promise<SystemMetrics> {
-  const totalVisits = await db.prepare('SELECT COUNT(*) as count FROM visits').first() as { count: number } | undefined;
-  const completedVisits = await db.prepare("SELECT COUNT(*) as count FROM visits WHERE status = 'completed'").first() as { count: number } | undefined;
-  const waitingVisits = await db.prepare("SELECT COUNT(*) as count FROM visits WHERE status = 'waiting'").first() as { count: number } | undefined;
-  const inProgressVisits = await db.prepare("SELECT COUNT(*) as count FROM visits WHERE status = 'in_progress'").first() as { count: number } | undefined;
+  const totalVisits = await db.prepare('SELECT COUNT(*) as count FROM queue_tickets').first() as { count: number } | undefined;
+  const completedVisits = await db.prepare("SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'completed'").first() as { count: number } | undefined;
+  const waitingVisits = await db.prepare("SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'waiting'").first() as { count: number } | undefined;
+  const inProgressVisits = await db.prepare("SELECT COUNT(*) as count FROM queue_tickets WHERE status = 'in_progress'").first() as { count: number } | undefined;
 
   return {
     timestamp: new Date().toISOString(),
@@ -111,7 +111,7 @@ export async function getRecentLogs(db: D1Database, limit: number = 50): Promise
       'System event' as message,
       created_at as timestamp,
       'system' as context
-    FROM visits
+    FROM queue_tickets
     ORDER BY created_at DESC
     LIMIT ?
   `).bind(limit).all() as unknown as { id: number; level: string; message: string; timestamp: string; context: string }[];
@@ -126,7 +126,7 @@ export async function getRecentLogs(db: D1Database, limit: number = 50): Promise
 }
 
 export async function getDatabaseStats(db: D1Database): Promise<DatabaseStats> {
-  const tableNames = ['visits', 'patients', 'doctors', 'appointments', 'messages', 'notifications'];
+  const tableNames = ['queue_tickets', 'patients', 'doctors', 'appointments', 'messages', 'notifications'];
   const tables: { name: string; rowCount: number; size: number }[] = [];
   let totalRows = 0;
 
