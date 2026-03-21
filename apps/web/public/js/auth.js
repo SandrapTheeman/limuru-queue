@@ -100,7 +100,7 @@ const Auth = {
     },
 
     /**
-     * Login with email and password
+     * Login with email and password (Staff login)
      * @param {string} email - User email
      * @param {string} password - User password
      * @returns {Promise<Object>} Resolves with user data and tokens
@@ -115,7 +115,7 @@ const Auth = {
         const sanitizedEmail = email.trim().toLowerCase();
 
         try {
-            const response = await fetch(`${this.baseUrl}/auth/login`, {
+            const response = await fetch(`${this.baseUrl}/auth/staff/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -128,7 +128,7 @@ const Auth = {
 
             const data = await response.json();
 
-            if (!response.ok) {
+            if (!response.ok || !data.success) {
                 throw new Error(data.error || data.message || 'Login failed');
             }
 
@@ -139,9 +139,107 @@ const Auth = {
                 // Dispatch login event
                 this._dispatchEvent(this.events.LOGIN, {
                     user: data.data.user,
-                    token: data.data.accessToken
+                    token: data.data.token
                 });
 
+                return data.data;
+            }
+
+            throw new Error(data.error || 'Invalid response from server');
+
+        } catch (error) {
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Network error. Please check your connection.');
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * Patient login with ID/Phone and password
+     * @param {string} identifier - Patient ID or phone number
+     * @param {string} password - Patient password
+     * @returns {Promise<Object>} Resolves with user data and tokens
+     * @throws {Error} If login fails
+     */
+    async patientLogin(identifier, password) {
+        if (!identifier || !password) {
+            throw new Error('Patient ID/Phone and password are required');
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/auth/patient/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    identifier: identifier.trim(),
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || data.message || 'Login failed');
+            }
+
+            if (data.success && data.data) {
+                this._storeCredentials(data.data);
+                this._dispatchEvent(this.events.LOGIN, {
+                    user: data.data.user,
+                    token: data.data.token
+                });
+                return data.data;
+            }
+
+            throw new Error(data.error || 'Invalid response from server');
+
+        } catch (error) {
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Network error. Please check your connection.');
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * Doctor PIN login
+     * @param {string} email - Doctor email
+     * @param {string} pin - 4-digit PIN
+     * @returns {Promise<Object>} Resolves with user data and tokens
+     * @throws {Error} If login fails
+     */
+    async pinLogin(email, pin) {
+        if (!email || !pin || pin.length !== 4) {
+            throw new Error('Email and 4-digit PIN are required');
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/auth/pin/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email.trim().toLowerCase(),
+                    pin: pin
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || data.message || 'Login failed');
+            }
+
+            if (data.success && data.data) {
+                this._storeCredentials(data.data);
+                this._dispatchEvent(this.events.LOGIN, {
+                    user: data.data.user,
+                    token: data.data.token
+                });
                 return data.data;
             }
 
@@ -160,6 +258,9 @@ const Auth = {
      * @param {Object} data - Response data containing tokens and user
      */
     _storeCredentials(data) {
+        if (data.token) {
+            localStorage.setItem(this.tokenKey, data.token);
+        }
         if (data.accessToken) {
             localStorage.setItem(this.tokenKey, data.accessToken);
         }

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { generateId, hashPassword, successResponse, errorResponse, now, isValidEmail } from '../utils';
+import { generateId, hashPassword, verifyPassword, successResponse, errorResponse, now, isValidEmail } from '../utils';
 import type { Bindings } from '../types';
 
 const auth = new Hono<{ Bindings: Bindings }>();
@@ -78,11 +78,12 @@ auth.post('/patient/login', async (c) => {
     return c.json(errorResponse('Invalid credentials'), 401);
   }
 
-  const passwordHash = await hashPassword(password);
-  if (patient.password_hash !== passwordHash) {
+  const isValid = await verifyPassword(password, patient.password_hash as string);
+  if (!isValid) {
     return c.json(errorResponse('Invalid credentials'), 401);
   }
 
+  const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
   const token = generateId('token');
   const expiresAt = new Date(Date.now() + 86400000).toISOString();
   
@@ -93,7 +94,7 @@ auth.post('/patient/login', async (c) => {
       email: patient.email,
       role: 'patient',
       patientId: patient.id,
-      name: patient.name,
+      name: patientName,
       expiresAt,
     }),
     { expirationTtl: 86400 }
@@ -104,7 +105,7 @@ auth.post('/patient/login', async (c) => {
     expiresIn: 86400,
     user: {
       id: patient.id,
-      name: patient.name,
+      name: patientName,
       email: patient.email,
       requiresPasswordChange: patient.requires_password_change,
     },
@@ -130,11 +131,12 @@ auth.post('/staff/login', async (c) => {
     return c.json(errorResponse('Invalid credentials'), 401);
   }
 
-  const passwordHash = await hashPassword(password);
-  if (user.password_hash !== passwordHash) {
+  const isValid = await verifyPassword(password, user.password_hash as string);
+  if (!isValid) {
     return c.json(errorResponse('Invalid credentials'), 401);
   }
 
+  const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
   const token = generateId('token');
   const expiresAt = new Date(Date.now() + 86400000).toISOString();
   
@@ -145,7 +147,7 @@ auth.post('/staff/login', async (c) => {
       email: user.email,
       role: user.role,
       doctorId: user.doctor_id,
-      name: user.name,
+      name: userName,
       expiresAt,
     }),
     { expirationTtl: 86400 }
@@ -160,7 +162,7 @@ auth.post('/staff/login', async (c) => {
     expiresIn: 86400,
     user: {
       id: user.id,
-      name: user.name,
+      name: userName,
       email: user.email,
       role: user.role,
     },
@@ -296,8 +298,12 @@ auth.get('/me', async (c) => {
   
   if (session.role === 'patient') {
     const patient = await db.prepare(
-      'SELECT id, name, email, phone, created_at FROM patients WHERE id = ?'
+      'SELECT id, first_name, last_name, email, phone, created_at FROM patients WHERE id = ?'
     ).bind(session.userId).first();
+    
+    if (patient) {
+      patient.name = `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
+    }
     
     return c.json(successResponse({
       ...session,
@@ -305,8 +311,12 @@ auth.get('/me', async (c) => {
     }));
   } else {
     const user = await db.prepare(
-      'SELECT id, name, email, role, created_at FROM users WHERE id = ?'
+      'SELECT id, first_name, last_name, email, role, created_at FROM users WHERE id = ?'
     ).bind(session.userId).first();
+    
+    if (user) {
+      user.name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+    }
     
     return c.json(successResponse({
       ...session,
@@ -477,7 +487,6 @@ auth.post('/change-password', async (c) => {
     return c.json(errorResponse('New password must be at least 6 characters'), 400);
   }
 
-  const currentHash = await hashPassword(currentPassword);
   let user;
 
   if (session.role === 'patient') {
@@ -485,7 +494,7 @@ auth.post('/change-password', async (c) => {
       'SELECT * FROM patients WHERE id = ?'
     ).bind(session.userId).first();
     
-    if (!user || user.password_hash !== currentHash) {
+    if (!user || !(await verifyPassword(currentPassword, user.password_hash as string))) {
       return c.json(errorResponse('Current password is incorrect'), 401);
     }
     
@@ -498,7 +507,7 @@ auth.post('/change-password', async (c) => {
       'SELECT * FROM users WHERE id = ?'
     ).bind(session.userId).first();
     
-    if (!user || user.password_hash !== currentHash) {
+    if (!user || !(await verifyPassword(currentPassword, user.password_hash as string))) {
       return c.json(errorResponse('Current password is incorrect'), 401);
     }
     

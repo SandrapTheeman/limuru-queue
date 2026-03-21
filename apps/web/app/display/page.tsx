@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDisplayStore } from '@/lib/stores/display';
 import { apiClient } from '@/lib/api/client';
 
@@ -31,6 +31,7 @@ interface Channel {
 export default function DisplayPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
+  const queueRef = useRef<HTMLDivElement>(null);
   
   const {
     departments,
@@ -40,7 +41,6 @@ export default function DisplayPage() {
     announcement,
     activeChannel,
     channels,
-    isLoading,
     fetchDepartments,
     selectDepartment,
     fetchQueue,
@@ -53,6 +53,8 @@ export default function DisplayPage() {
   const [streamError, setStreamError] = useState<string | null>(null);
   const [tickerPosition, setTickerPosition] = useState(0);
   const [healthTipIndex, setHealthTipIndex] = useState(0);
+  const [prevPatientId, setPrevPatientId] = useState<string | null>(null);
+  const [isPatientChanged, setIsPatientChanged] = useState(false);
 
   useEffect(() => {
     fetchDepartments();
@@ -65,11 +67,13 @@ export default function DisplayPage() {
     }
   }, [selectedDepartment, fetchQueue]);
 
+  // Update clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Auto-cycle departments
   useEffect(() => {
     const deptTimer = setInterval(() => {
       if (departments.length > 0) {
@@ -81,6 +85,7 @@ export default function DisplayPage() {
     return () => clearInterval(deptTimer);
   }, [departments, selectedDepartment, selectDepartment]);
 
+  // Health tips rotation
   useEffect(() => {
     const tipTimer = setInterval(() => {
       setHealthTipIndex(prev => (prev + 1) % HEALTH_TIPS.length);
@@ -88,6 +93,7 @@ export default function DisplayPage() {
     return () => clearInterval(tipTimer);
   }, []);
 
+  // Ticker animation
   useEffect(() => {
     const tickerAnimation = setInterval(() => {
       setTickerPosition(prev => {
@@ -98,6 +104,7 @@ export default function DisplayPage() {
     return () => clearInterval(tickerAnimation);
   }, []);
 
+  // Video stream
   useEffect(() => {
     if (videoRef.current && activeChannel?.url) {
       videoRef.current.src = activeChannel.url;
@@ -107,6 +114,15 @@ export default function DisplayPage() {
       });
     }
   }, [activeChannel]);
+
+  // Detect patient change for animation
+  useEffect(() => {
+    if (currentPatient?.id && currentPatient.id !== prevPatientId) {
+      setIsPatientChanged(true);
+      setPrevPatientId(currentPatient.id);
+      setTimeout(() => setIsPatientChanged(false), 1000);
+    }
+  }, [currentPatient?.id, prevPatientId]);
 
   const fetchPlaylist = async () => {
     try {
@@ -175,13 +191,16 @@ export default function DisplayPage() {
     });
   };
 
+  // Calculate estimated wait time
+  const estimatedWaitMinutes = waitingPatients.length * 12;
+
   return (
     <div className="min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Top Header Bar */}
-      <header className="bg-slate-900/90 border-b border-slate-700 py-3 px-6 flex-shrink-0">
+      <header className="bg-slate-900/95 border-b border-slate-700/50 py-3 px-6 flex-shrink-0 backdrop-blur-md">
         <div className="flex justify-between items-center max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center text-2xl">
+            <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-2xl shadow-lg shadow-teal-500/30">
               🏥
             </div>
             <div>
@@ -197,10 +216,10 @@ export default function DisplayPage() {
                 <button
                   key={dept.id}
                   onClick={() => selectDepartment(dept)}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                  className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300 ${
                     selectedDepartment?.id === dept.id
-                      ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
+                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:scale-102'
                   }`}
                 >
                   {dept.code || dept.name.substring(0, 4).toUpperCase()}
@@ -209,11 +228,11 @@ export default function DisplayPage() {
             </div>
 
             {/* Date & Time */}
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white tabular-nums">
+            <div className="text-right bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">
+              <div className="text-2xl font-bold text-white tabular-nums tracking-wider">
                 {formatTime(currentTime)}
               </div>
-              <div className="text-slate-400 text-sm">{formatDate(currentTime)}</div>
+              <div className="text-slate-400 text-xs">{formatDate(currentTime)}</div>
             </div>
           </div>
         </div>
@@ -221,7 +240,7 @@ export default function DisplayPage() {
 
       {/* Announcement Banner */}
       {announcement && (
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 py-2 px-6 flex-shrink-0">
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 py-2 px-6 flex-shrink-0 animate-pulse">
           <div className="flex items-center justify-center gap-3 max-w-[1920px] mx-auto">
             <span className="text-xl">📢</span>
             <span className="text-white font-semibold text-lg uppercase tracking-wide">
@@ -237,21 +256,30 @@ export default function DisplayPage() {
         {/* Left Panel - Queue Display */}
         <div className="w-[40%] flex flex-col gap-4">
           {/* Current Patient Card */}
-          <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-6 flex-shrink-0 shadow-2xl">
-            <div className="text-teal-200 text-sm font-semibold uppercase tracking-wider mb-2">
+          <div className={`
+            bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-6 flex-shrink-0 shadow-2xl
+            transition-all duration-500
+            ${isPatientChanged ? 'scale-[1.02] shadow-teal-500/40' : ''}
+          `}>
+            <div className="text-teal-200 text-sm font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 bg-teal-300 rounded-full animate-pulse"></span>
               Now Serving
             </div>
             {currentPatient ? (
               <div className="text-center">
-                <div className="text-8xl font-black text-white mb-2">
+                <div className={`
+                  text-8xl font-black text-white mb-2
+                  transition-all duration-300
+                  ${isPatientChanged ? 'scale-110' : ''}
+                `}>
                   {currentPatient.ticket_number}
                 </div>
                 <div className="text-3xl font-bold text-teal-100">
                   Patient #{currentPatient.patient_number || currentPatient.id?.slice(-4)}
                 </div>
                 {currentPatient.priority && (
-                  <div className="mt-3 inline-block px-4 py-1 bg-amber-400 text-amber-900 rounded-full font-bold text-sm uppercase">
-                    Priority
+                  <div className="mt-3 inline-block px-4 py-1 bg-amber-400 text-amber-900 rounded-full font-bold text-sm uppercase shadow-lg">
+                    ⚠️ Priority
                   </div>
                 )}
               </div>
@@ -265,7 +293,7 @@ export default function DisplayPage() {
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-4 flex-shrink-0">
-            <div className="bg-slate-800/80 rounded-xl p-4 text-center border border-slate-700">
+            <div className="bg-slate-800/80 rounded-2xl p-4 text-center border border-slate-700/50 backdrop-blur-sm hover:border-teal-500/30 transition-colors">
               <div className="text-4xl font-black text-teal-400">
                 {waitingPatients.length}
               </div>
@@ -273,63 +301,75 @@ export default function DisplayPage() {
                 Waiting
               </div>
             </div>
-            <div className="bg-slate-800/80 rounded-xl p-4 text-center border border-slate-700">
+            <div className="bg-slate-800/80 rounded-2xl p-4 text-center border border-slate-700/50 backdrop-blur-sm hover:border-amber-500/30 transition-colors">
               <div className="text-4xl font-black text-amber-400">
-                ~{waitingPatients.length * 12}
+                ~{estimatedWaitMinutes}
               </div>
               <div className="text-slate-400 text-sm mt-1 uppercase tracking-wide">
                 Est. Minutes
               </div>
             </div>
-            <div className="bg-slate-800/80 rounded-xl p-4 text-center border border-slate-700">
+            <div className="bg-slate-800/80 rounded-2xl p-4 text-center border border-slate-700/50 backdrop-blur-sm hover:border-blue-500/30 transition-colors">
               <div className="text-2xl font-bold text-white">
-                {selectedDepartment?.name || 'N/A'}
+                {selectedDepartment?.code || 'N/A'}
               </div>
               <div className="text-slate-400 text-sm mt-1 uppercase tracking-wide">
-                Department
+                Dept
               </div>
             </div>
           </div>
 
           {/* Waiting Queue List */}
-          <div className="bg-slate-800/80 rounded-2xl p-4 flex-1 flex flex-col border border-slate-700 overflow-hidden">
+          <div className="bg-slate-800/80 rounded-2xl p-4 flex-1 flex flex-col border border-slate-700/50 overflow-hidden backdrop-blur-sm">
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <h2 className="text-xl font-bold text-white uppercase tracking-wide">
+              <h2 className="text-xl font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                <span className="w-2 h-2 bg-teal-400 rounded-full"></span>
                 Up Next
               </h2>
-              <div className="text-slate-400 text-sm">
+              <div className="text-slate-400 text-sm bg-slate-700/50 px-3 py-1 rounded-full">
                 {waitingPatients.length} patients
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+            <div ref={queueRef} className="flex-1 overflow-y-auto space-y-2 pr-2">
               {waitingPatients.slice(0, 12).map((patient, index) => (
                 <div
                   key={patient.id || index}
-                  className="flex items-center justify-between p-3 bg-slate-700/50 rounded-xl"
+                  className={`
+                    flex items-center justify-between p-3 
+                    bg-slate-700/50 rounded-xl
+                    transition-all duration-300
+                    hover:bg-slate-700/80 hover:translate-x-1
+                    ${index === 0 ? 'border-l-2 border-l-teal-400 bg-teal-500/10' : ''}
+                  `}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 bg-teal-500/20 rounded-full flex items-center justify-center text-teal-400 font-bold text-sm">
+                    <span className={`
+                      w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                      ${index === 0 ? 'bg-teal-500 text-white' : 'bg-slate-600 text-slate-300'}
+                    `}>
                       {index + 1}
                     </span>
                     {patient.priority && (
-                      <span className="px-2 py-0.5 bg-amber-500/20 rounded text-amber-400 text-xs font-bold uppercase">
+                      <span className="px-2 py-0.5 bg-amber-500/20 rounded text-amber-400 text-xs font-bold uppercase animate-pulse">
                         !
                       </span>
                     )}
                   </div>
                   <div className="flex-1 text-center">
-                    <span className="text-2xl font-bold text-white font-mono">
+                    <span className="text-2xl font-bold text-white font-mono tracking-wider">
                       {patient.ticket_number}
                     </span>
                   </div>
-                  <div className="text-slate-400 text-sm w-16 text-right">
-                    {patient.wait_time || 0}m
+                  <div className="text-slate-400 text-sm w-16 text-right flex items-center justify-end gap-1">
+                    <span>⏱️</span>
+                    <span>{patient.wait_time || 0}m</span>
                   </div>
                 </div>
               ))}
               {waitingPatients.length === 0 && (
-                <div className="text-center py-8 text-slate-500">
-                  No patients waiting
+                <div className="text-center py-12">
+                  <div className="text-5xl mb-3 opacity-30">✓</div>
+                  <div className="text-slate-500 text-lg">No patients waiting</div>
                 </div>
               )}
             </div>
@@ -339,9 +379,9 @@ export default function DisplayPage() {
         {/* Right Panel - IPTV */}
         <div className="w-[60%] flex flex-col gap-4">
           {/* Channel Info Bar */}
-          <div className="bg-slate-800/80 rounded-xl p-4 flex items-center justify-between border border-slate-700 flex-shrink-0">
+          <div className="bg-slate-800/80 rounded-xl p-4 flex items-center justify-between border border-slate-700/50 flex-shrink-0 backdrop-blur-sm">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-xl">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-xl shadow-lg">
                 📺
               </div>
               <div>
@@ -352,7 +392,7 @@ export default function DisplayPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-slate-400 text-sm">
+              <div className="text-slate-400 text-sm bg-slate-700/50 px-3 py-1 rounded-full">
                 {activeChannel?.category || 'Entertainment'}
               </div>
               <div className="flex gap-1">
@@ -360,10 +400,10 @@ export default function DisplayPage() {
                   <button
                     key={ch.id}
                     onClick={() => setActiveChannel(ch)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                       activeChannel?.id === ch.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white'
                     }`}
                   >
                     {ch.name.substring(0, 6)}
@@ -374,7 +414,7 @@ export default function DisplayPage() {
           </div>
 
           {/* Video Player */}
-          <div className="flex-1 bg-black rounded-2xl overflow-hidden relative border border-slate-700">
+          <div className="flex-1 bg-black rounded-2xl overflow-hidden relative border border-slate-700/50">
             {activeChannel?.url ? (
               <>
                 <video
@@ -386,11 +426,11 @@ export default function DisplayPage() {
                   onError={() => setStreamError('Stream unavailable')}
                 />
                 {streamError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90">
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm">
                     <div className="text-center">
                       <div className="text-6xl mb-4">📡</div>
-                      <div className="text-red-400 text-xl font-semibold">{streamError}</div>
-                      <div className="text-slate-400 mt-2">Please try another channel</div>
+                      <div className="text-red-400 text-xl font-semibold mb-2">{streamError}</div>
+                      <div className="text-slate-400">Please try another channel</div>
                     </div>
                   </div>
                 )}
@@ -409,10 +449,10 @@ export default function DisplayPage() {
       </main>
 
       {/* Health Tips Ticker */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 border-t border-slate-700 py-3 px-6 flex-shrink-0">
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 border-t border-slate-700/50 py-3 px-6 flex-shrink-0">
         <div className="flex items-center gap-6 max-w-[1920px] mx-auto">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-2xl">💡</span>
+          <div className="flex items-center gap-2 flex-shrink-0 bg-gradient-to-r from-teal-500/20 to-teal-500/10 px-3 py-1.5 rounded-full border border-teal-500/20">
+            <span className="text-xl">💡</span>
             <span className="text-teal-400 font-bold uppercase tracking-wide text-sm">
               Health Tip
             </span>
@@ -420,18 +460,18 @@ export default function DisplayPage() {
           <div className="flex-1 overflow-hidden">
             <div
               ref={tickerRef}
-              className="text-white text-lg transition-transform"
+              className="text-white text-lg transition-transform duration-100"
               style={{ transform: `translateX(${tickerPosition}%)` }}
             >
               {HEALTH_TIPS[healthTipIndex]}
             </div>
           </div>
-          <div className="flex gap-1 flex-shrink-0">
+          <div className="flex gap-1.5 flex-shrink-0">
             {HEALTH_TIPS.map((_, idx) => (
               <div
                 key={idx}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  idx === healthTipIndex ? 'bg-teal-400' : 'bg-slate-600'
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  idx === healthTipIndex ? 'bg-teal-400 scale-125' : 'bg-slate-600'
                 }`}
               />
             ))}
@@ -440,12 +480,14 @@ export default function DisplayPage() {
       </div>
 
       {/* Footer */}
-      <div className="bg-slate-900 py-2 px-6 flex justify-between items-center text-slate-500 text-sm flex-shrink-0">
-        <div>
-          Auto-refresh: <span className="text-teal-400 font-semibold">30s</span> | Next update: <span className="text-white">{formatTime(new Date(currentTime.getTime() + 30000))}</span>
+      <div className="bg-slate-900/95 py-2 px-6 flex justify-between items-center text-slate-500 text-sm flex-shrink-0 border-t border-slate-800">
+        <div className="flex items-center gap-4">
+          <span>Auto-refresh: <span className="text-teal-400 font-semibold">30s</span></span>
+          <span>|</span>
+          <span>Next update: <span className="text-white">{formatTime(new Date(currentTime.getTime() + 30000))}</span></span>
         </div>
         <div>
-          Powered by <span className="text-teal-400">Limuru Cottage Hospital</span>
+          Powered by <span className="text-teal-400 font-semibold">Limuru Cottage Hospital</span> | Queue Management System
         </div>
       </div>
     </div>

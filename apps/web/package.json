@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@hospital-queue/shared": "*",
+    "immer": "^10.0.3",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-dropdown-menu": "^2.1.0",

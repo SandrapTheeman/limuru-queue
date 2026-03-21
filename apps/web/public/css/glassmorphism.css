@@ -426,6 +426,114 @@ h4 { font-size: var(--text-xl); }
 .btn-xl { padding: var(--space-5) var(--space-8); font-size: var(--text-lg); }
 .btn-block { width: 100%; }
 
+/* Glass Button - Hospital Theme */
+.glass-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+    background: var(--glass-bg);
+    color: white;
+    backdrop-filter: var(--blur-sm);
+    -webkit-backdrop-filter: var(--blur-sm);
+}
+
+.glass-button:hover {
+    background: var(--glass-bg-hover);
+    border-color: rgba(13, 148, 136, 0.3);
+    transform: translateY(-1px);
+}
+
+.glass-button:active {
+    transform: translateY(0);
+}
+
+.glass-button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    white-space: nowrap;
+    background: linear-gradient(135deg, var(--hospital-primary), var(--hospital-secondary));
+    color: white;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+}
+
+.glass-button-primary:hover {
+    background: linear-gradient(135deg, var(--hospital-secondary), var(--hospital-primary));
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+    transform: translateY(-1px);
+}
+
+.glass-button-primary:active {
+    transform: translateY(0);
+}
+
+/* Glass Input */
+.glass-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    outline: none;
+    transition: all var(--transition-fast);
+}
+
+.glass-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--hospital-primary);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+}
+
+.glass-input:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.glass-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.glass-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Glass Card with better styling */
+.glass-card {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: var(--blur-md) saturate(150%);
+    -webkit-backdrop-filter: var(--blur-md) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow);
+    transition: all var(--transition-base);
+}
+
+.glass-card:hover {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
 /* ==========================================================================
    FORM ELEMENTS
    ========================================================================== */
@@ -631,10 +739,36 @@ h4 { font-size: var(--text-xl); }
     100% { background-position: 200% 0; }
 }
 
+@keyframes bounceIn {
+    0% { transform: scale(0.9); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideInRight {
+    0% { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulseSubtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .animate-fade-in { animation: fadeIn var(--transition-slow) ease-out; }
 .animate-slide-up { animation: slideUp var(--transition-slow) ease-out; }
 .animate-slide-down { animation: slideDown var(--transition-slow) ease-out; }
+.animate-slide-in-right { animation: slideInRight 200ms ease-out; }
 .animate-pulse { animation: pulse 2s infinite; }
+.animate-pulse-slow { animation: pulse 3s ease-in-out infinite; }
+.animate-pulse-subtle { animation: pulseSubtle 2s ease-in-out infinite; }
+.animate-bounce-in { animation: bounceIn 0.5s ease-out; }
+.animate-spin { animation: spin 1s linear infinite; }
 
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
 .stagger > *:nth-child(2) { animation-delay: 50ms; }

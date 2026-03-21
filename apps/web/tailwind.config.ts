@@ -11,16 +11,16 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          50: '#E8F5E9',
-          100: '#C8E6C9',
-          200: '#A5D6A7',
-          300: '#81C784',
-          400: '#66BB6A',
-          500: '#4CAF50',
-          600: '#43A047',
-          700: '#388E3C',
-          800: '#2E7D32',
-          900: '#1B5E20',
+          50: '#f0fdfa',
+          100: '#ccfbf1',
+          200: '#99f6e4',
+          300: '#5eead4',
+          400: '#2dd4bf',
+          500: '#14b8a6',
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+          900: '#134e4a',
         },
         secondary: {
           50: '#E3F2FD',
@@ -45,6 +45,7 @@ const config: Config = {
           100: '#C8E6C9',
           500: '#4CAF50',
           600: '#43A047',
+          700: '#16a34a',
         },
         warning: {
           50: '#FFF8E1',
@@ -57,6 +58,7 @@ const config: Config = {
           100: '#FFCDD2',
           500: '#EF4444',
           600: '#DC2626',
+          700: '#B91C1C',
         },
         info: {
           50: '#E3F2FD',
@@ -88,13 +90,19 @@ const config: Config = {
           mutedDark: '#99F6E4',
         },
         dark: {
-          bg: '#121212',
-          card: '#1E1E1E',
-          elevated: '#2D2D2D',
-          border: '#424242',
+          bg: '#030712',
+          card: '#0f172a',
+          elevated: '#1e293b',
+          border: '#334155',
           text: '#FFFFFF',
-          textSecondary: '#B0B0B0',
-          textDisabled: '#6B6B6B',
+          textSecondary: '#94a3b8',
+          textDisabled: '#475569',
+        },
+        slate: {
+          750: '#1e293b',
+          800: '#0f172a',
+          850: '#0a111d',
+          900: '#020617',
         },
       },
       fontFamily: {
@@ -104,7 +112,7 @@ const config: Config = {
       spacing: {
         '18': '72px',
         '22': '88px',
-        touch: '44px',
+        'touch': '44px',
       },
       borderRadius: {
         'radius-sm': '4px',
@@ -125,6 +133,8 @@ const config: Config = {
         'elevation-1': '0 1px 3px rgba(0, 0, 0, 0.08)',
         'elevation-2': '0 4px 6px rgba(0, 0, 0, 0.07)',
         'elevation-3': '0 10px 20px rgba(0, 0, 0, 0.1)',
+        'glow-teal': '0 0 20px rgba(13, 148, 136, 0.3)',
+        'glow-teal-lg': '0 0 40px rgba(13, 148, 136, 0.4)',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -134,6 +144,7 @@ const config: Config = {
         'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
         'shake': 'shake 0.5s ease-in-out',
         'bounce-in': 'bounceIn 0.3s ease-out',
+        'bounce-in-fast': 'bounceIn 0.2s ease-out',
       },
       keyframes: {
         slideIn: {
@@ -162,6 +173,9 @@ const config: Config = {
           '50%': { transform: 'scale(1.05)' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
+      },
+      backdropBlur: {
+        xs: '2px',
       },
     },
   },
