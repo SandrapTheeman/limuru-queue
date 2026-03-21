@@ -80,7 +80,7 @@ export async function createVisit(
 ): Promise<Visit> {
   const countResult = await db.prepare(`
     SELECT COUNT(*) as count FROM queue_tickets 
-    WHERE department = ? AND status IN ('waiting', 'called', 'in_progress')
+    WHERE department_id = ? AND status IN ('waiting', 'called', 'in_progress')
     AND date(created_at) = date('now')
   `).bind(params.department).first() as unknown as { count: number };
 
@@ -89,7 +89,7 @@ export async function createVisit(
   const createdAt = now();
 
   await db.prepare(`
-    INSERT INTO queue_tickets (id, patient_id, ticket_number, department, priority, triage_level, status, created_at)
+    INSERT INTO queue_tickets (id, patient_id, ticket_number, department_id, priority, triage_level, status, created_at)
     VALUES (?, ?, ?, ?, ?, ?, 'waiting', ?)
   `).bind(
     id,
@@ -130,8 +130,8 @@ export async function getVisitWithDetails(
   visitId: string
 ): Promise<Visit & { patient_name?: string; doctor_name?: string; patient_allergies?: Allergy[] } | null> {
   const visit = await db.prepare(`
-    SELECT v.*, p.name as patient_name, p.phone as patient_phone, p.email as patient_email,
-           p.dob as patient_dob, d.name as doctor_name
+    SELECT v.*, p.first_name || ' ' || p.last_name as patient_name, p.phone as patient_phone, p.email as patient_email,
+           p.dob as patient_dob, d.qualification as doctor_name
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
@@ -159,7 +159,7 @@ export async function getVisits(
   const { status, department, doctorId, patientId, date, limit = 20, offset = 0 } = filters;
 
   let sql = `
-    SELECT v.*, p.name as patient_name, d.name as doctor_name
+    SELECT v.*, p.first_name || ' ' || p.last_name as patient_name, d.qualification as doctor_name
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
@@ -172,7 +172,7 @@ export async function getVisits(
     params.push(status);
   }
   if (department) {
-    sql += ` AND v.department = ?`;
+    sql += ` AND v.department_id = ?`;
     params.push(department);
   }
   if (doctorId) {
@@ -427,7 +427,7 @@ export async function getVitalSigns(
   visitId: string
 ): Promise<VitalSign[]> {
   const result = await db.prepare(`
-    SELECT vs.*, u.name as recorded_by_name
+    SELECT vs.*, u.first_name || ' ' || u.last_name as recorded_by_name
     FROM vital_signs vs
     LEFT JOIN users u ON vs.recorded_by = u.id
     WHERE vs.visit_id = ?
@@ -489,7 +489,7 @@ export async function getSoapNotes(
   visitId: string
 ): Promise<SoapNote[]> {
   const result = await db.prepare(`
-    SELECT sn.*, u.name as recorded_by_name
+    SELECT sn.*, u.first_name || ' ' || u.last_name as recorded_by_name
     FROM soap_notes sn
     LEFT JOIN users u ON sn.recorded_by = u.id
     WHERE sn.visit_id = ?
@@ -531,7 +531,7 @@ export async function getPrescriptions(
   activeOnly = true
 ): Promise<Prescription[]> {
   let sql = `
-    SELECT p.*, u.name as prescribed_by_name
+    SELECT p.*, u.first_name || ' ' || u.last_name as prescribed_by_name
     FROM prescriptions p
     LEFT JOIN users u ON p.prescribed_by = u.id
     WHERE p.visit_id = ?
@@ -584,7 +584,7 @@ export async function getPatientAllergies(
   patientId: string
 ): Promise<Allergy[]> {
   const result = await db.prepare(`
-    SELECT a.*, u.name as recorded_by_name
+    SELECT a.*, u.first_name || ' ' || u.last_name as recorded_by_name
     FROM allergies a
     LEFT JOIN users u ON a.recorded_by = u.id
     WHERE a.patient_id = ? AND a.is_active = 1
@@ -613,7 +613,7 @@ export async function getVisitHistory(
   }
 
   const history = await db.prepare(`
-    SELECT qh.*, u.name as actor_name
+    SELECT qh.*, u.first_name || ' ' || u.last_name as actor_name
     FROM queue_history qh
     LEFT JOIN users u ON qh.actor_id = u.id
     WHERE qh.visit_id = ?
@@ -663,12 +663,12 @@ export async function getDailyStats(
 
   const byDepartment = await db.prepare(`
     SELECT 
-      department,
+      department_id as department,
       COUNT(*) as count,
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
     FROM queue_tickets
     WHERE date(created_at) = ?
-    GROUP BY department
+    GROUP BY department_id
   `).bind(targetDate).all() as unknown as { department: string; count: number; completed: number }[];
 
   return { stats, byDepartment };

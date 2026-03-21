@@ -70,9 +70,9 @@ export async function createRoom(
   const createdAt = now();
 
   await db.prepare(`
-    INSERT INTO rooms (id, room_number, name, room_type, department_id, floor, building, 
-      capacity, status, equipment, amenities, notes, display_order, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available', ?, ?, ?, ?, ?, ?)
+    INSERT INTO rooms (id, room_number, room_name, room_type, department_id, floor, building, 
+      capacity, status, equipment, amenities, notes, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available', ?, ?, ?, ?, ?)
   `).bind(
     id,
     params.roomNumber,
@@ -85,7 +85,6 @@ export async function createRoom(
     params.equipment ? JSON.stringify(params.equipment) : null,
     params.amenities ? JSON.stringify(params.amenities) : null,
     params.notes || null,
-    params.displayOrder || 0,
     createdAt,
     createdAt
   ).run();
@@ -134,7 +133,7 @@ export async function getRooms(
   const countSql = sql.replace(/LEFT JOIN.*ON.*/, '').replace(/SELECT r\.\*,.*FROM/, 'SELECT COUNT(*) as count FROM rooms r WHERE 1=1');
   const countResult = await db.prepare(countSql).bind(...params).first() as unknown as { count: number };
 
-  sql += ` ORDER BY r.display_order ASC, r.room_number ASC LIMIT ? OFFSET ?`;
+  sql += ` ORDER BY r.room_number ASC LIMIT ? OFFSET ?`;
   params.push(limit, offset);
 
   const result = await db.prepare(sql).bind(...params).all();
@@ -164,7 +163,7 @@ export async function updateRoom(
     updateParams.push(params.roomNumber);
   }
   if (params.name !== undefined) {
-    updates.push(`name = ?`);
+    updates.push(`room_name = ?`);
     updateParams.push(params.name);
   }
   if (params.roomType !== undefined) {
@@ -202,10 +201,6 @@ export async function updateRoom(
   if (params.notes !== undefined) {
     updates.push(`notes = ?`);
     updateParams.push(params.notes);
-  }
-  if (params.displayOrder !== undefined) {
-    updates.push(`display_order = ?`);
-    updateParams.push(params.displayOrder);
   }
 
   if (updates.length === 0) {
@@ -276,7 +271,7 @@ export async function getAvailableRooms(
     params.push(roomType);
   }
 
-  sql += ` ORDER BY r.display_order ASC, r.room_number ASC`;
+  sql += ` ORDER BY r.room_number ASC`;
 
   const result = await db.prepare(sql).bind(...params).all();
   return (result.results as unknown) as Room[];
@@ -385,7 +380,7 @@ export async function getDoctorRoomAssignment(
   const targetDate = date || new Date().toISOString().split('T')[0];
 
   const assignment = await db.prepare(`
-    SELECT ra.*, r.room_number, r.name as room_name, r.room_type
+    SELECT ra.*, r.room_number, r.room_name, r.room_type
     FROM room_assignments ra
     JOIN rooms r ON ra.room_id = r.id
     WHERE ra.doctor_id = ?
@@ -405,9 +400,9 @@ export async function getRoomAssignments(
   roomId: string
 ): Promise<RoomAssignment[]> {
   const result = await db.prepare(`
-    SELECT ra.*, d.name as doctor_name, d.department
+    SELECT ra.*, u.first_name || ' ' || u.last_name as doctor_name
     FROM room_assignments ra
-    JOIN doctors d ON ra.doctor_id = d.id
+    JOIN users u ON ra.doctor_id = u.id
     WHERE ra.room_id = ? AND ra.is_active = 1
     ORDER BY ra.start_date DESC
   `).bind(roomId).all();
@@ -538,10 +533,10 @@ export async function getCurrentRoomOccupancy(
   roomId: string
 ): Promise<RoomOccupancy | null> {
   const occupancy = await db.prepare(`
-    SELECT ro.*, p.name as patient_name, d.name as doctor_name
+    SELECT ro.*, p.first_name || ' ' || p.last_name as patient_name, u.first_name || ' ' || u.last_name as doctor_name
     FROM room_occupancy ro
     LEFT JOIN patients p ON ro.patient_id = p.id
-    LEFT JOIN doctors d ON ro.doctor_id = d.id
+    LEFT JOIN users u ON ro.doctor_id = u.id
     WHERE ro.room_id = ? AND ro.check_out_time IS NULL
   `).bind(roomId).first() as RoomOccupancy | undefined;
 
@@ -565,7 +560,7 @@ export async function getRoomsWithOccupancy(
     params.push(departmentId);
   }
 
-  sql += ` ORDER BY r.display_order ASC, r.room_number ASC`;
+  sql += ` ORDER BY r.room_number ASC`;
 
   const rooms = await db.prepare(sql).bind(...params).all();
 

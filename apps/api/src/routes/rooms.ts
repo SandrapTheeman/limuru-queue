@@ -9,20 +9,20 @@ rooms.get('/', async (c) => {
   const department = c.req.query('department');
   const status = c.req.query('status');
 
-  let sql = 'SELECT * FROM rooms WHERE 1=1';
+  let sql = 'SELECT r.*, d.name as department_name FROM rooms r JOIN departments d ON r.department_id = d.id WHERE 1=1';
   const params: unknown[] = [];
 
   if (department) {
-    sql += ' AND department = ?';
+    sql += ' AND r.department_id = ?';
     params.push(department);
   }
 
   if (status) {
-    sql += ' AND status = ?';
+    sql += ' AND r.status = ?';
     params.push(status);
   }
 
-  sql += ' ORDER BY name ASC';
+  sql += ' ORDER BY r.room_name ASC';
 
   const result = await db.prepare(sql).bind(...params).all();
 
@@ -36,7 +36,12 @@ rooms.get('/:id', async (c) => {
   const db = c.env.DB;
   const id = c.req.param('id');
 
-  const room = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(id).first();
+  const room = await db.prepare(`
+    SELECT r.*, d.name as department_name
+    FROM rooms r
+    JOIN departments d ON r.department_id = d.id
+    WHERE r.id = ?
+  `).bind(id).first();
 
   if (!room) {
     return c.json(errorResponse('Room not found'), 404);
@@ -49,21 +54,21 @@ rooms.post('/', async (c) => {
   const db = c.env.DB;
   const body = await c.req.json().catch(() => null);
 
-  if (!body || !body.name || !body.type || !body.department) {
-    return c.json(errorResponse('Missing required fields'), 400);
+  if (!body || !body.room_number || !body.room_type || !body.department_id) {
+    return c.json(errorResponse('Missing required fields: room_number, room_type, department_id'), 400);
   }
 
-  const { name, type, department, capacity, equipment } = body;
+  const { room_number, room_name, room_type, department_id, capacity, equipment } = body;
   const id = generateId('room');
 
   await db.prepare(`
-    INSERT INTO rooms (id, name, type, department, capacity, equipment, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 'available', ?)
-  `).bind(id, name, type, department, capacity || null, equipment ? JSON.stringify(equipment) : null, now()).run();
+    INSERT INTO rooms (id, room_number, room_name, room_type, department_id, capacity, equipment, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?)
+  `).bind(id, room_number, room_name || null, room_type, department_id, capacity || 1, equipment ? JSON.stringify(equipment) : null, now()).run();
 
   const room = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(id).first();
 
-  return c.json(successResponse(room, 'Room created'), 201);
+  return c.json(successResponse(room), 201);
 });
 
 rooms.patch('/:id', async (c) => {
@@ -75,13 +80,16 @@ rooms.patch('/:id', async (c) => {
     return c.json(errorResponse('Missing update data'), 400);
   }
 
-  const allowedFields = ['name', 'type', 'department', 'capacity', 'equipment', 'status'];
+  const allowedFields: Record<string, string> = {
+    room_number: 'room_number', room_name: 'room_name', room_type: 'room_type',
+    department_id: 'department_id', capacity: 'capacity', equipment: 'equipment', status: 'status'
+  };
   const updates: string[] = [];
   const values: unknown[] = [];
 
   for (const [key, value] of Object.entries(body)) {
-    if (allowedFields.includes(key)) {
-      updates.push(`${key} = ?`);
+    if (allowedFields[key]) {
+      updates.push(`${allowedFields[key]} = ?`);
       if (key === 'equipment' && typeof value === 'object') {
         values.push(JSON.stringify(value));
       } else {
@@ -96,7 +104,7 @@ rooms.patch('/:id', async (c) => {
 
   values.push(id);
 
-  await db.prepare(`UPDATE rooms SET ${updates.join(', ')} WHERE id = ?`).bind(...values).run();
+  await db.prepare(`UPDATE rooms SET ${updates.join(', ')}, updated_at = ? WHERE id = ?`).bind(...values, now()).run();
 
   const room = await db.prepare('SELECT * FROM rooms WHERE id = ?').bind(id).first();
 

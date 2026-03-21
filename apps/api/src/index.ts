@@ -12,6 +12,7 @@ import { waitTimeService } from './services/ai/waitTime';
 import { createTwilioService } from './services/notifications/twilio';
 import { createSecurityMiddleware } from './services/security/middleware';
 import { logAuditEvent, requireRBAC, checkSessionTimeout, sanitizeInput, validatePatientData } from './services/security/hipaa';
+import { routes } from './routes';
 
 type Bindings = {
   DB: D1Database;
@@ -50,7 +51,7 @@ app.use('*', createSecurityMiddleware({
     user: { windowMs: 60000, maxRequests: 200 },
   },
   csrf: {
-    enabled: true,
+    enabled: false, // Disabled for API-only deployment
     cookieName: 'csrf_token',
   },
   sessionTimeout: 1800000,
@@ -198,10 +199,11 @@ app.post('/api/auth/register', async (c) => {
       m.registerPatient(c.env.DB, { name: sanitizedName, email: sanitizedEmail, phone: sanitizedPhone, dob, password })
     );
     
+    const p: any = patient;
     return c.json(successResponse({
-      id: patient.id,
-      name: patient.name,
-      email: patient.email,
+      id: p.id,
+      name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+      email: p.email,
     }), 201);
   } catch (e: any) {
     if (e.message?.includes('UNIQUE constraint')) {
@@ -328,9 +330,7 @@ app.post('/api/queue/complete/:visitId', requireRBAC('visits', 'update'), async 
   const visitId = c.req.param('visitId');
   const { diagnosis, prescription, doctorNotes } = await c.req.json();
   
-  const visit = await queue.completeVisit(c.env.DB, visitId, {
-    diagnosis, prescription, doctorNotes,
-  });
+  const visit = await queue.completeVisit(c.env.DB, visitId, undefined, doctorNotes || null);
 
   const ip = c.req.header('CF-Connecting-IP') || 'unknown';
   const authHeader = c.req.header('Authorization');
@@ -942,5 +942,8 @@ app.get('/api/notifications/log/:patientId', async (c) => {
 // =====================================================
 export { QueueRoomDO } from './realtime';
 export { PatientSyncDO } from './realtime';
+
+// Mount all route modules
+app.route('/api', routes);
 
 export default app;

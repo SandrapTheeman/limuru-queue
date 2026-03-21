@@ -33,13 +33,13 @@ admin.get('/stats', async (c) => {
   `).bind(today).first() as { avg: number | null };
 
   const deptStats = await db.prepare(`
-    SELECT department, 
+    SELECT department_id as department, 
            COUNT(*) as total,
            SUM(CASE WHEN status = 'waiting' THEN 1 ELSE 0 END) as waiting,
            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
     FROM queue_tickets 
     WHERE date(created_at) = date(?)
-    GROUP BY department
+    GROUP BY department_id
   `).bind(today).all();
 
   return c.json(successResponse({
@@ -60,7 +60,7 @@ admin.get('/users', async (c) => {
   const role = c.req.query('role');
   const search = c.req.query('search');
 
-  let sql = 'SELECT id, email, name, role, is_active, last_login, created_at FROM users WHERE 1=1';
+  let sql = 'SELECT id, email, first_name, last_name, role, is_active, last_login, created_at FROM users WHERE 1=1';
   const params: unknown[] = [];
 
   if (role) {
@@ -69,7 +69,7 @@ admin.get('/users', async (c) => {
   }
 
   if (search) {
-    sql += ' AND (name LIKE ? OR email LIKE ?)';
+    sql += ' AND ((first_name || \' \' || last_name) LIKE ? OR email LIKE ?)';
     params.push(`%${search}%`, `%${search}%`);
   }
 
@@ -78,11 +78,17 @@ admin.get('/users', async (c) => {
 
   const result = await db.prepare(sql).bind(...params).all();
   
-  const countSql = sql.replace(/ORDER BY.*LIMIT.*OFFSET.*/, '').replace('SELECT id, email, name, role, is_active, last_login, created_at', 'SELECT COUNT(*) as count');
+  // Map results to include combined name
+  const usersWithName = (result.results || []).map((u: any) => ({
+    ...u,
+    name: `${u.first_name || ''} ${u.last_name || ''}`.trim(),
+  }));
+  
+  const countSql = sql.replace(/ORDER BY.*LIMIT.*OFFSET.*/, '').replace('SELECT id, email, first_name, last_name, role, is_active, last_login, created_at', 'SELECT COUNT(*) as count');
   const countResult = await db.prepare(countSql).bind(...params.slice(0, -2)).first() as { count: number };
 
   return c.json(successResponse({
-    users: result.results,
+    users: usersWithName,
     total: countResult?.count || 0,
     limit,
     offset,
@@ -94,7 +100,7 @@ admin.get('/users/:id', async (c) => {
   const id = c.req.param('id');
 
   const user = await db.prepare(`
-    SELECT id, email, name, role, is_active, last_login, created_at, doctor_id
+    SELECT id, email, first_name, last_name, role, is_active, last_login, created_at, doctor_id
     FROM users WHERE id = ?
   `).bind(id).first();
 
@@ -102,7 +108,11 @@ admin.get('/users/:id', async (c) => {
     return c.json(errorResponse('User not found'), 404);
   }
 
-  return c.json(successResponse(user));
+  const u: any = user;
+  return c.json(successResponse({
+    ...user,
+    name: `${u.first_name || ''} ${u.last_name || ''}`.trim(),
+  }));
 });
 
 admin.post('/users', async (c) => {
@@ -114,6 +124,11 @@ admin.post('/users', async (c) => {
   }
 
   const { email, password, name, role, doctorId } = body;
+  // Split name into first_name and last_name
+  const nameParts = name.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  
   const validRoles = ['admin', 'doctor', 'nurse', 'receptionist', 'pharmacist', 'lab_tech', 'facility', 'it_support', 'super_admin'];
   
   if (!validRoles.includes(role)) {
@@ -132,13 +147,17 @@ admin.post('/users', async (c) => {
   const passwordHash = await hashPassword(password);
 
   await db.prepare(`
-    INSERT INTO users (id, email, password_hash, name, role, doctor_id, is_active, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-  `).bind(id, email, passwordHash, name, role, doctorId || null, now()).run();
+    INSERT INTO users (id, email, password_hash, first_name, last_name, role, doctor_id, is_active, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+  `).bind(id, email, passwordHash, firstName, lastName, role, doctorId || null, now()).run();
 
-  const user = await db.prepare('SELECT id, email, name, role FROM users WHERE id = ?').bind(id).first();
+  const user = await db.prepare('SELECT id, email, first_name, last_name, role FROM users WHERE id = ?').bind(id).first();
+  const u: any = user;
 
-  return c.json(successResponse(user, 'User created successfully'), 201);
+  return c.json(successResponse({
+    ...user,
+    name: `${u.first_name || ''} ${u.last_name || ''}`.trim(),
+  }, 'User created successfully'), 201);
 });
 
 admin.patch('/users/:id', async (c) => {
@@ -150,7 +169,7 @@ admin.patch('/users/:id', async (c) => {
     return c.json(errorResponse('Missing update data'), 400);
   }
 
-  const allowedFields = ['email', 'name', 'role', 'is_active', 'doctor_id'];
+  const allowedFields = ['email', 'role', 'is_active', 'doctor_id', 'first_name', 'last_name'];
   const updates: string[] = [];
   const values: unknown[] = [];
 

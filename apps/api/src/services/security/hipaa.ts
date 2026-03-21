@@ -3,16 +3,16 @@ import { Context } from 'hono';
 import { UserRole } from '../../types';
 
 interface AuditLogEntry {
-  timestamp: string;
-  userId: string;
-  userRole: string;
+  timestamp?: string;
+  userId?: string;
+  userRole?: string;
   action: string;
-  resource: string;
+  resource?: string;
   resourceId?: string;
-  ipAddress: string;
-  userAgent: string;
-  success: boolean;
-  phiAccessed: boolean;
+  ipAddress?: string;
+  userAgent?: string;
+  success?: boolean;
+  phiAccessed?: boolean;
   details?: Record<string, unknown>;
 }
 
@@ -70,31 +70,33 @@ export function logAuditEvent(
   db: D1Database,
   entry: Omit<AuditLogEntry, 'timestamp'>
 ): Promise<void> {
-  const logEntry: AuditLogEntry = {
-    ...entry,
-    timestamp: new Date().toISOString(),
-  };
-
-  const maskedEntry = maskPHIInLog(logEntry);
+  // Apply PHI masking to sensitive data
+  const maskedEntry = maskPHIInLog(entry);
   
+  // Map to actual schema columns - include created_at explicitly
   const query = `
-    INSERT INTO audit_logs (id, timestamp, user_id, user_role, action, resource, resource_id, ip_address, user_agent, success, phi_accessed, details)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO audit_logs (
+      id, facility_id, user_id, action, entity_type, entity_id, 
+      description, ip_address, user_agent, phi_accessed, created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
+  const id = generateId('audit');
+  const facilityId = 'ddd49b309b9fd5449d47077c22ee2772'; // Default facility ID
+  const userId = maskedEntry.userId || null;
+  const action = maskedEntry.action || 'UNKNOWN';
+  const entityType = maskedEntry.resource || 'system';
+  const entityId = maskedEntry.resourceId || null;
+  const description = maskedEntry.details ? JSON.stringify(maskedEntry.details) : null;
+  const ipAddress = maskedEntry.ipAddress || null;
+  const userAgent = maskedEntry.userAgent || null;
+  const phiAccessed = maskedEntry.phiAccessed ? 1 : 0;
+  const createdAt = new Date().toISOString();
+
   return db.prepare(query).bind(
-    generateId('audit'),
-    maskedEntry.timestamp,
-    maskedEntry.userId || 'anonymous',
-    maskedEntry.userRole || 'unknown',
-    maskedEntry.action,
-    maskedEntry.resource,
-    maskedEntry.resourceId || null,
-    maskedEntry.ipAddress,
-    maskedEntry.userAgent,
-    maskedEntry.success ? 1 : 0,
-    maskedEntry.phiAccessed ? 1 : 0,
-    JSON.stringify(maskedEntry.details || {})
+    id, facilityId, userId, action, entityType, entityId,
+    description, ipAddress, userAgent, phiAccessed, createdAt
   ).run().then(() => {});
 }
 
@@ -108,6 +110,9 @@ function maskPHIInLog(entry: AuditLogEntry): AuditLogEntry {
   if (masked.details) {
     masked.details = maskObjectPHI(masked.details);
   }
+  
+  // Remove timestamp since it's not in the schema
+  delete masked.timestamp;
   
   return masked;
 }
@@ -156,9 +161,7 @@ export function requireRBAC(resource: string, action: string) {
     const authHeader = c.req.header('Authorization');
     
     if (!authHeader) {
-      c.status(401);
-      c.json({ success: false, error: 'Unauthorized' });
-      return;
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
     }
     
     const token = authHeader.replace('Bearer ', '');
@@ -166,16 +169,15 @@ export function requireRBAC(resource: string, action: string) {
     const payload = await verifyToken(token, c.env);
     
     if (!payload) {
-      c.status(401);
-      c.json({ success: false, error: 'Invalid token' });
-      return;
+      return c.json({ success: false, error: 'Invalid token' }, 401);
     }
     
     const hasPermission = checkRBAC(payload.role as UserRole, resource, action);
     
     if (!hasPermission) {
       const ip = c.req.header('CF-Connecting-IP') || 'unknown';
-      await logAuditEvent(c.env.DB, {
+      // Fire-and-forget audit log (don't block response on logging failure)
+      logAuditEvent(c.env.DB, {
         userId: payload.sub as string,
         userRole: payload.role as string,
         action: 'ACCESS_DENIED',
@@ -184,11 +186,9 @@ export function requireRBAC(resource: string, action: string) {
         userAgent: c.req.header('User-Agent') || 'unknown',
         success: false,
         phiAccessed: false,
-      });
+      }).catch(() => {}); // Ignore logging failures
       
-      c.status(403);
-      c.json({ success: false, error: 'Forbidden' });
-      return;
+      return c.json({ success: false, error: 'Forbidden' }, 403);
     }
     
     await next();

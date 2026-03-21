@@ -118,9 +118,15 @@ export async function patientLogin(
     patientId: patient.id as string,
   }, env);
   
+  // Construct name from first_name + last_name
+  const patientWithName = {
+    ...patient,
+    name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim(),
+  };
+  
   return {
     token,
-    user: patient as unknown as Patient,
+    user: patientWithName as unknown as Patient,
     expiresIn: TOKEN_EXPIRY.patient,
   };
 }
@@ -157,9 +163,15 @@ export async function staffLogin(
     doctorId: result.doctor_id as string | undefined,
   }, env);
   
+  // Construct name from first_name + last_name
+  const userWithName = {
+    ...result,
+    name: `${result.first_name || ''} ${result.last_name || ''}`.trim(),
+  };
+  
   return {
     token,
-    user: result as unknown as User,
+    user: userWithName as unknown as User,
     expiresIn: TOKEN_EXPIRY.staff,
   };
 }
@@ -195,9 +207,15 @@ export async function doctorPinLogin(
     doctorId: doctor.id as string,
   }, env);
   
+  // Construct name from qualification (doctors don't have first_name/last_name)
+  const doctorWithName = {
+    ...doctor,
+    name: doctor.qualification || doctor.department_id || 'Doctor',
+  };
+  
   return {
     token,
-    doctor,
+    doctor: doctorWithName,
     expiresIn: TOKEN_EXPIRY.staff,
   };
 }
@@ -216,10 +234,15 @@ export async function registerPatient(
   const id = generateId('patient');
   const passwordHash = await hashPassword(data.password);
   
+  // Split name into first_name and last_name
+  const nameParts = data.name.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
+  
   await db.prepare(`
-    INSERT INTO patients (id, name, email, phone, dob, password_hash, requires_password_change)
-    VALUES (?, ?, ?, ?, ?, ?, 1)
-  `).bind(id, data.name, data.email || null, data.phone || null, data.dob || null, passwordHash).run();
+    INSERT INTO patients (id, first_name, last_name, email, phone, dob, password_hash, requires_password_change)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+  `).bind(id, firstName, lastName, data.email || null, data.phone || null, data.dob || null, passwordHash).run();
   
   const patient: any = await db.prepare('SELECT * FROM patients WHERE id = ?').bind(id).first();
   return patient as unknown as Patient;

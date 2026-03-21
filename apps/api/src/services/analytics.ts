@@ -152,7 +152,7 @@ export async function getOverviewStats(
       AVG(wait_time_minutes) as avg_wait
     FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
-    ${filters.department ? 'AND department = ?' : ''}
+    ${filters.department ? 'AND department_id = ?' : ''}
   `).bind(
     start,
     end,
@@ -225,17 +225,17 @@ export async function getWaitTimeAnalytics(
     FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
-    ${filters.department ? 'AND department = ?' : ''}
+    ${filters.department ? 'AND department_id = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { avg: number | null; max: number | null; over30: number } | undefined;
 
   const totalWithWait = await db.prepare(`
     SELECT COUNT(*) as cnt FROM queue_tickets WHERE wait_time_minutes IS NOT NULL AND date(created_at) BETWEEN ? AND ?
-    ${filters.department ? 'AND department = ?' : ''}
+    ${filters.department ? 'AND department_id = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { cnt: number } | undefined;
 
   const byDepartmentRaw = await db.prepare(`
     SELECT 
-      department,
+      department_id as department,
       AVG(wait_time_minutes) as avg,
       MAX(wait_time_minutes) as max,
       SUM(CASE WHEN wait_time_minutes > 30 THEN 1 ELSE 0 END) as over30,
@@ -243,7 +243,7 @@ export async function getWaitTimeAnalytics(
     FROM queue_tickets
     WHERE wait_time_minutes IS NOT NULL
     AND date(created_at) BETWEEN ? AND ?
-    GROUP BY department
+    GROUP BY department_id
     ORDER BY avg DESC
   `).bind(start, end).all() as unknown as { department: string; avg: number; max: number; over30: number; total: number }[];
 
@@ -305,7 +305,7 @@ export async function getVolumeAnalytics(
   const total = await db.prepare(`
     SELECT COUNT(*) as cnt FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
-    ${filters.department ? 'AND department = ?' : ''}
+    ${filters.department ? 'AND department_id = ?' : ''}
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).first() as { cnt: number } | undefined;
 
   const dailyRaw = await db.prepare(`
@@ -315,18 +315,18 @@ export async function getVolumeAnalytics(
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
     FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
-    ${filters.department ? 'AND department = ?' : ''}
+    ${filters.department ? 'AND department_id = ?' : ''}
     GROUP BY date(created_at)
     ORDER BY date
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).all() as unknown as { date: string; count: number; completed: number }[];
 
   const byDepartmentRaw = await db.prepare(`
     SELECT 
-      department,
+      department_id as department,
       COUNT(*) as count
     FROM queue_tickets
     WHERE date(created_at) BETWEEN ? AND ?
-    GROUP BY department
+    GROUP BY department_id
     ORDER BY count DESC
   `).bind(start, end).all() as unknown as { department: string; count: number }[];
 
@@ -367,17 +367,17 @@ export async function getDepartmentPerformance(
 
   const resultRaw = await db.prepare(`
     SELECT 
-      v.department,
+      v.department_id as department,
       COUNT(*) as patients,
       SUM(CASE WHEN v.status = 'completed' THEN 1 ELSE 0 END) as completed,
       AVG(v.wait_time_minutes) as avg_wait,
       MAX(v.wait_time_minutes) as max_wait,
       SUM(CASE WHEN v.status = 'no_show' THEN 1 ELSE 0 END) as no_shows,
-      (SELECT COUNT(*) FROM doctors d WHERE d.department = v.department AND d.is_available = 1) as doctors
+      (SELECT COUNT(*) FROM doctors d WHERE d.department_id = v.department_id AND d.is_available = 1) as doctors
     FROM queue_tickets v
     WHERE date(v.created_at) BETWEEN ? AND ?
-    ${filters.department ? 'AND v.department = ?' : ''}
-    GROUP BY v.department
+    ${filters.department ? 'AND v.department_id = ?' : ''}
+    GROUP BY v.department_id
     ORDER BY patients DESC
   `).bind(start, end, ...(filters.department ? [filters.department] : [])).all() as unknown as { department: string; patients: number; completed: number; avg_wait: number | null; max_wait: number | null; no_shows: number; doctors: number }[];
 

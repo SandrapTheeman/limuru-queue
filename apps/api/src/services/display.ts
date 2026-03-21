@@ -5,7 +5,7 @@ export interface QueueDisplayItem {
   id: string;
   ticket_number: string;
   patient_name: string;
-  priority: boolean;
+  priority: number;
   status: string;
   created_at: string;
   wait_time_minutes: number;
@@ -48,49 +48,62 @@ export interface HealthTipItem {
 export async function getQueueDisplay(
   db: D1Database,
   options?: {
-    department?: string;
+    departmentId?: string;
+    departmentCode?: string;
     limit?: number;
-    showCompleted?: boolean;
   }
 ): Promise<QueueDisplay> {
-  const department = options?.department;
+  let deptId = options?.departmentId;
+  const deptCode = options?.departmentCode;
   const limit = options?.limit || 50;
-  const deptFilter = department ? ` AND v.department = ?` : '';
-  const deptParams = department ? [department] : [];
+  
+  // Resolve department code to ID if needed
+  if (!deptId && deptCode) {
+    const dept = await db.prepare('SELECT id FROM departments WHERE code = ?').bind(deptCode).first() as { id: string } | undefined;
+    deptId = dept?.id;
+  }
+  
+  const deptFilter = deptId ? ' AND v.department_id = ?' : '';
+  const deptParams = deptId ? [deptId] : [];
   
   const waitingPatients = await db.prepare(`
-    SELECT v.id, v.ticket_number, p.name as patient_name, v.priority, v.status, 
-           v.created_at, v.wait_time_minutes
+    SELECT v.id, v.ticket_number, 
+           p.first_name || ' ' || p.last_name as patient_name,
+           v.priority, v.status, v.created_at, v.wait_time_minutes,
+           dep.name as department_name
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
+    LEFT JOIN departments dep ON v.department_id = dep.id
     WHERE v.status = 'waiting'${deptFilter}
     ORDER BY v.priority DESC, v.created_at ASC
     LIMIT ?
   `).bind(...deptParams, limit).all();
   
   const calledPatients = await db.prepare(`
-    SELECT v.id, v.ticket_number, p.name as patient_name, v.priority, v.status,
-           v.created_at, v.called_at, v.wait_time_minutes,
-           d.name as doctor_name, d.room
+    SELECT v.id, v.ticket_number,
+           p.first_name || ' ' || p.last_name as patient_name,
+           v.priority, v.status, v.created_at, v.called_at, v.wait_time_minutes,
+           d.qualification as doctor_name, v.room_assigned
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE v.status = 'called'${deptFilter}
     ORDER BY v.called_at DESC
-    LIMIT ?
-  `).bind(...deptParams, 10).all();
+    LIMIT 10
+  `).bind(...deptParams).all();
   
   const inProgressPatients = await db.prepare(`
-    SELECT v.id, v.ticket_number, p.name as patient_name, v.priority, v.status,
-           v.created_at, v.started_at, v.wait_time_minutes,
-           d.name as doctor_name, d.room
+    SELECT v.id, v.ticket_number,
+           p.first_name || ' ' || p.last_name as patient_name,
+           v.priority, v.status, v.created_at, v.started_at, v.wait_time_minutes,
+           d.qualification as doctor_name, v.room_assigned
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
     WHERE v.status = 'in_progress'${deptFilter}
     ORDER BY v.started_at ASC
-    LIMIT ?
-  `).bind(...deptParams, 10).all();
+    LIMIT 10
+  `).bind(...deptParams).all();
   
   const stats = await db.prepare(`
     SELECT 
@@ -114,39 +127,23 @@ export async function getQueueDisplay(
     AND date(created_at) = date('now')
     ${deptFilter}
   `).bind(...deptParams).first() as { avg_wait: number } | undefined;
-  
+
+  const mapPatient = (v: any): QueueDisplayItem => ({
+    id: v.id,
+    ticket_number: v.ticket_number,
+    patient_name: v.patient_name?.trim() || 'Guest',
+    priority: v.priority || 3,
+    status: v.status,
+    created_at: v.created_at,
+    wait_time_minutes: v.wait_time_minutes || (v.created_at ? Math.floor((Date.now() - new Date(v.created_at).getTime()) / 60000) : 0),
+    doctor_name: v.doctor_name || undefined,
+    room: v.room_assigned || undefined,
+  });
+
   return {
-    waiting: (waitingPatients.results || []).map((v: any) => ({
-      id: v.id,
-      ticket_number: v.ticket_number,
-      patient_name: v.patient_name || 'Guest',
-      priority: Boolean(v.priority),
-      status: v.status,
-      created_at: v.created_at,
-      wait_time_minutes: v.wait_time_minutes || Math.floor((Date.now() - new Date(v.created_at).getTime()) / 60000),
-    })),
-    called: (calledPatients.results || []).map((v: any) => ({
-      id: v.id,
-      ticket_number: v.ticket_number,
-      patient_name: v.patient_name || 'Guest',
-      priority: Boolean(v.priority),
-      status: v.status,
-      created_at: v.created_at,
-      wait_time_minutes: v.wait_time_minutes || 0,
-      doctor_name: v.doctor_name || 'Unknown',
-      room: v.room || 'TBD',
-    })),
-    in_progress: (inProgressPatients.results || []).map((v: any) => ({
-      id: v.id,
-      ticket_number: v.ticket_number,
-      patient_name: v.patient_name || 'Guest',
-      priority: Boolean(v.priority),
-      status: v.status,
-      created_at: v.created_at,
-      wait_time_minutes: v.wait_time_minutes || 0,
-      doctor_name: v.doctor_name || 'Unknown',
-      room: v.room || 'TBD',
-    })),
+    waiting: (waitingPatients.results || []).map(mapPatient),
+    called: (calledPatients.results || []).map(mapPatient),
+    in_progress: (inProgressPatients.results || []).map(mapPatient),
     stats: {
       waiting_count: stats?.waiting_count || 0,
       called_count: stats?.called_count || 0,
@@ -161,18 +158,26 @@ export async function getQueueDisplay(
 export async function getAnnouncements(
   db: D1Database,
   options?: {
-    department?: string;
+    departmentId?: string;
+    departmentCode?: string;
     limit?: number;
     since?: string;
   }
 ): Promise<AnnouncementItem[]> {
-  const department = options?.department;
+  let deptId = options?.departmentId;
+  const deptCode = options?.departmentCode;
   const limit = options?.limit || 20;
   const since = options?.since;
   
+  if (!deptId && deptCode) {
+    const dept = await db.prepare('SELECT id FROM departments WHERE code = ?').bind(deptCode).first() as { id: string } | undefined;
+    deptId = dept?.id;
+  }
+  
   let sql = `
-    SELECT v.id, v.ticket_number, p.name as patient_name,
-           d.name as doctor_name, d.room, v.called_at
+    SELECT v.id, v.ticket_number, 
+           p.first_name || ' ' || p.last_name as patient_name,
+           d.qualification as doctor_name, v.room_assigned, v.called_at
     FROM queue_tickets v
     LEFT JOIN patients p ON v.patient_id = p.id
     LEFT JOIN doctors d ON v.doctor_id = d.id
@@ -180,9 +185,9 @@ export async function getAnnouncements(
   `;
   const params: unknown[] = [];
   
-  if (department) {
-    sql += ` AND v.department = ?`;
-    params.push(department);
+  if (deptId) {
+    sql += ` AND v.department_id = ?`;
+    params.push(deptId);
   }
   
   if (since) {
@@ -198,9 +203,9 @@ export async function getAnnouncements(
   return (result.results || []).map((v: any) => ({
     id: v.id,
     ticket_number: v.ticket_number,
-    patient_name: v.patient_name || 'Guest',
-    doctor_name: v.doctor_name || 'Unknown',
-    room: v.room || 'TBD',
+    patient_name: v.patient_name?.trim() || 'Guest',
+    doctor_name: v.doctor_name || 'TBD',
+    room: v.room_assigned || 'TBD',
     called_at: v.called_at,
     duration_seconds: 30,
   }));
@@ -239,6 +244,7 @@ export async function getHealthTips(
     }));
   }
   
+  // Fallback tips
   return [
     { id: '1', title: 'Stay Hydrated', content: 'Drink at least 8 glasses of water daily for optimal health.', category: 'general', display_order: 1 },
     { id: '2', title: 'Regular Exercise', content: 'Aim for 30 minutes of physical activity most days of the week.', category: 'fitness', display_order: 2 },
@@ -253,10 +259,10 @@ export async function getDisplayConfig(
   displayId: string
 ): Promise<any> {
   const result = await db.prepare(`
-    SELECT d.*, dept.name as department_name
-    FROM display_configs d
-    LEFT JOIN departments dept ON d.department_id = dept.id
-    WHERE d.id = ?
+    SELECT dc.*, dep.name as department_name, dep.code as department_code
+    FROM display_configs dc
+    LEFT JOIN departments dep ON dc.department_id = dep.id
+    WHERE dc.id = ?
   `).bind(displayId).first();
   
   if (result) {
@@ -285,11 +291,9 @@ export async function getDisplayData(
     throw new Error('Display not found');
   }
   
-  const department = display.department_id;
-  
   const [queue, announcements, healthTips] = await Promise.all([
-    getQueueDisplay(db, { department, limit: 20 }),
-    getAnnouncements(db, { department, limit: 10 }),
+    getQueueDisplay(db, { departmentId: display.department_id, limit: 20 }),
+    getAnnouncements(db, { departmentId: display.department_id, limit: 10 }),
     getHealthTips(db, { limit: 5 }),
   ]);
   
@@ -305,7 +309,7 @@ export async function getDisplayData(
   `).all();
   
   const settings: Record<string, string> = {};
-  for (const s of settingsResult.results as { key: string; value: string }[]) {
+  for (const s of (settingsResult.results || []) as { key: string; value: string }[]) {
     settings[s.key] = s.value;
   }
   
