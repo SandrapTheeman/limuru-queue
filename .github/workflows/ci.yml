@@ -14,19 +14,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable pnpm via corepack
-        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Lint
-        run: pnpm lint
+        run: npm run lint
 
   typecheck:
     name: TypeScript Check
@@ -35,19 +32,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable pnpm via corepack
-        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: npm run typecheck
 
   test-api:
     name: Test API
@@ -56,19 +50,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable pnpm via corepack
-        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Test API
-        run: pnpm --filter @hospital-queue/api test
+        run: npm test --workspace=@hospital-queue/api
 
   test-web:
     name: Test Web
@@ -79,19 +70,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Enable pnpm via corepack
-        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Test Web
-        run: pnpm --filter @hospital-queue/web test
+        run: npm test --workspace=@hospital-queue/web
 
   build:
     name: Build
@@ -101,22 +89,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable pnpm via corepack
-        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Build API
-        run: pnpm --filter @hospital-queue/api build
+        run: npm run build --workspace=@hospital-queue/api
 
       - name: Build Web
-        run: pnpm --filter @hospital-queue/web build
+        run: npm run build --workspace=@hospital-queue/web
         env:
           NEXT_PUBLIC_API_URL: 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api'
 
