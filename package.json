@@ -2,8 +2,7 @@
   "name": "hospital-queue-v2",
   "version": "2.0.0",
   "private": true,
-  "packageManager": "pnpm@9.4.0",
-  "scripts": {
+    "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
