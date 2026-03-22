@@ -18,10 +18,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.0'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "=== Disk space ==="
+          df -h /
+          echo "=== npm version ==="
+          npm --version
+          echo "=== node version ==="
+          node --version
+          echo "=== Installing with npm install ==="
+          npm install 2>&1
 
       - name: Lint
         run: npm run lint
@@ -37,10 +44,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.0'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "=== Disk space ==="
+          df -h /
+          echo "=== npm version ==="
+          npm --version
+          echo "=== Installing with npm install ==="
+          npm install 2>&1
 
       - name: Typecheck
         run: npm run typecheck
@@ -56,10 +68,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.0'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "=== Disk space ==="
+          df -h /
+          echo "=== npm version ==="
+          npm --version
+          echo "=== Installing with npm install ==="
+          npm install 2>&1
 
       - name: Test API
         run: npm test --workspace=@hospital-queue/api
@@ -77,10 +94,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.0'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "=== Disk space ==="
+          df -h /
+          echo "=== npm version ==="
+          npm --version
+          echo "=== Installing with npm install ==="
+          npm install 2>&1
 
       - name: Test Web
         run: npm test --workspace=@hospital-queue/web
@@ -97,10 +119,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.0'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build API
         run: npm run build --workspace=@hospital-queue/api
