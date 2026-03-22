@@ -17,18 +17,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.11.0'
+          node-version: '22'
 
       - name: Install dependencies
         run: |
-          echo "=== Disk space ==="
-          df -h /
-          echo "=== npm version ==="
-          npm --version
-          echo "=== node version ==="
+          set -x
           node --version
-          echo "=== Installing with npm install ==="
-          npm install 2>&1
+          npm --version
+          npm install
 
       - name: Lint
         run: npm run lint
@@ -43,16 +39,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.11.0'
+          node-version: '22'
 
       - name: Install dependencies
         run: |
-          echo "=== Disk space ==="
-          df -h /
-          echo "=== npm version ==="
+          set -x
+          node --version
           npm --version
-          echo "=== Installing with npm install ==="
-          npm install 2>&1
+          npm install
 
       - name: Typecheck
         run: npm run typecheck
@@ -67,16 +61,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.11.0'
+          node-version: '22'
 
       - name: Install dependencies
         run: |
-          echo "=== Disk space ==="
-          df -h /
-          echo "=== npm version ==="
+          set -x
+          node --version
           npm --version
-          echo "=== Installing with npm install ==="
-          npm install 2>&1
+          npm install
 
       - name: Test API
         run: npm test --workspace=@hospital-queue/api
@@ -93,16 +85,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.11.0'
+          node-version: '22'
 
       - name: Install dependencies
         run: |
-          echo "=== Disk space ==="
-          df -h /
-          echo "=== npm version ==="
+          set -x
+          node --version
           npm --version
-          echo "=== Installing with npm install ==="
-          npm install 2>&1
+          npm install
 
       - name: Test Web
         run: npm test --workspace=@hospital-queue/web
@@ -118,7 +108,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.11.0'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm install
