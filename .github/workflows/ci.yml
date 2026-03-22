@@ -14,8 +14,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -35,8 +35,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -56,8 +56,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -79,8 +79,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -101,8 +101,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@9.4.0 --activate
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
