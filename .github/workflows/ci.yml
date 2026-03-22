@@ -20,18 +20,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: |
-          echo "=== Disk ==="
-          df -h / | tail -1
-          echo "=== npm version ==="
-          npm --version
-          echo "=== node version ==="
-          node --version
-          echo "=== npm config ==="
-          npm config list
-          echo "=== Running npm install ==="
-          npm install --loglevel verbose 2>&1 | tail -50
-          echo "=== Exit code: $? ==="
+        run: npm ci
 
       - name: Lint
         run: npm run lint
@@ -49,18 +38,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: |
-          echo "=== Disk ==="
-          df -h / | tail -1
-          echo "=== npm version ==="
-          npm --version
-          echo "=== node version ==="
-          node --version
-          echo "=== npm config ==="
-          npm config list
-          echo "=== Running npm install ==="
-          npm install --loglevel verbose 2>&1 | tail -50
-          echo "=== Exit code: $? ==="
+        run: npm ci
 
       - name: Typecheck
         run: npm run typecheck
@@ -78,18 +56,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: |
-          echo "=== Disk ==="
-          df -h / | tail -1
-          echo "=== npm version ==="
-          npm --version
-          echo "=== node version ==="
-          node --version
-          echo "=== npm config ==="
-          npm config list
-          echo "=== Running npm install ==="
-          npm install --loglevel verbose 2>&1 | tail -50
-          echo "=== Exit code: $? ==="
+        run: npm ci
 
       - name: Test API
         run: npm test --workspace=@hospital-queue/api
@@ -109,18 +76,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: |
-          echo "=== Disk ==="
-          df -h / | tail -1
-          echo "=== npm version ==="
-          npm --version
-          echo "=== node version ==="
-          node --version
-          echo "=== npm config ==="
-          npm config list
-          echo "=== Running npm install ==="
-          npm install --loglevel verbose 2>&1 | tail -50
-          echo "=== Exit code: $? ==="
+        run: npm ci
 
       - name: Test Web
         run: npm test --workspace=@hospital-queue/web
@@ -139,18 +95,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: |
-          echo "=== Disk ==="
-          df -h / | tail -1
-          echo "=== npm version ==="
-          npm --version
-          echo "=== node version ==="
-          node --version
-          echo "=== npm config ==="
-          npm config list
-          echo "=== Running npm install ==="
-          npm install --loglevel verbose 2>&1 | tail -50
-          echo "=== Exit code: $? ==="
+        run: npm ci
 
       - name: Build API
         run: npm run build --workspace=@hospital-queue/api
