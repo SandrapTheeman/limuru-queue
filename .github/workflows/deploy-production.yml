@@ -22,30 +22,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: '9.4.0'
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.0'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Lint
-        run: pnpm lint
+        run: npm run lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: npm run typecheck
 
       - name: Test API
-        run: pnpm --filter @hospital-queue/api test
+        run: npm test --workspace=@hospital-queue/api
 
       - name: Test Web
-        run: pnpm --filter @hospital-queue/web test
+        run: npm test --workspace=@hospital-queue/web
 
   deploy:
     name: Deploy to Production
@@ -57,21 +53,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: '9.4.0'
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.11.0'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       - name: Build API
-        run: pnpm --filter @hospital-queue/api build
+        run: npm run build --workspace=@hospital-queue/api
 
       - name: Set secrets
         run: |
@@ -95,7 +87,7 @@ jobs:
           workingDirectory: apps/api
 
       - name: Build Web
-        run: pnpm --filter @hospital-queue/web build
+        run: npm run build --workspace=@hospital-queue/web
         env:
           NEXT_PUBLIC_API_URL: 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api'
 
