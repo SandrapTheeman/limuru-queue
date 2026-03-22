@@ -57,7 +57,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm typecheck || true
+        run: pnpm typecheck
 
   test-api:
     name: Test API
@@ -81,7 +81,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test API
-        run: pnpm --filter @hospital-queue/api test || true
+        run: pnpm --filter @hospital-queue/api test
 
   test-web:
     name: Test Web
@@ -105,7 +105,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test Web
-        run: pnpm --filter @hospital-queue/web test || true
+        run: pnpm --filter @hospital-queue/web test
 
   build:
     name: Build
@@ -134,6 +134,8 @@ jobs:
 
       - name: Build Web
         run: pnpm --filter @hospital-queue/web build
+        env:
+          NEXT_PUBLIC_API_URL: 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api'
 
       - name: Upload API build
         uses: actions/upload-artifact@v4
