@@ -14,16 +14,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
   typecheck:
     name: TypeScript Check
@@ -32,16 +38,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
 
   test-api:
     name: Test API
@@ -50,16 +62,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
+
+      - name: Build shared package
+        run: pnpm --filter @limuru-queue/shared build
 
       - name: Test API
-        run: npm test --workspace=@hospital-queue/api
+        run: pnpm --filter @hospital-queue/api test
 
   test-web:
     name: Test Web
@@ -70,16 +91,25 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
+
+      - name: Build shared package
+        run: pnpm --filter @limuru-queue/shared build
 
       - name: Test Web
-        run: npm test --workspace=@hospital-queue/web
+        run: pnpm --filter @hospital-queue/web test
 
   build:
     name: Build
@@ -89,19 +119,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
+
+      - name: Build shared package
+        run: pnpm --filter @limuru-queue/shared build
 
       - name: Build API
-        run: npm run build --workspace=@hospital-queue/api
+        run: pnpm --filter @hospital-queue/api build
 
       - name: Build Web
-        run: npm run build --workspace=@hospital-queue/web
+        run: pnpm --filter @hospital-queue/web build
         env:
           NEXT_PUBLIC_API_URL: 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api'
 

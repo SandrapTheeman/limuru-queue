@@ -9,6 +9,7 @@
     "dev": "wrangler dev --persist",
     "dev:local": "wrangler dev --local",
     "build": "tsc",
+    "lint": "tsc --noEmit",
     "deploy": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:prod": "wrangler deploy --env production",

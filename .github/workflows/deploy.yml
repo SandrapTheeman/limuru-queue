@@ -6,23 +6,60 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-api:
-    name: Deploy API to Staging
+  lint-and-check:
+    name: Lint and Typecheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+  deploy-api:
+    name: Deploy API to Staging
+    runs-on: ubuntu-latest
+    needs: [lint-and-check]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build shared package
+        run: pnpm --filter @limuru-queue/shared build
 
       - name: Build API
-        run: npm run build --workspace=@hospital-queue/api
+        run: pnpm --filter @hospital-queue/api build
 
       - name: Set secrets
         run: |
@@ -48,21 +85,30 @@ jobs:
   deploy-web:
     name: Deploy Web to Staging
     runs-on: ubuntu-latest
-    needs: deploy-api
+    needs: [deploy-api]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
+
+      - name: Build shared package
+        run: pnpm --filter @limuru-queue/shared build
 
       - name: Build Web
-        run: npm run build --workspace=@hospital-queue/web
+        run: pnpm --filter @hospital-queue/web build
         env:
           NEXT_PUBLIC_API_URL: 'https://limuru-queue-api-staging.timnaessy-gitome.workers.dev/api'
 

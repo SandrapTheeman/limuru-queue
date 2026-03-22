@@ -2,14 +2,18 @@
 const nextConfig = {
   reactStrictMode: false,
   transpilePackages: ['lucide-react'],
-  // Standalone output for Docker - creates optimized production build
-  output: 'standalone',
-  // Skip TypeScript type checking during build for faster builds
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
+  },
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://limuru-queue-api.timnaessy-gitome.workers.dev/api',
   },
   webpack: (config) => {
     config.resolve.alias = {
