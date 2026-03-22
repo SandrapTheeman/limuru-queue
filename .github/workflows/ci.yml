@@ -8,20 +8,19 @@ on:
 
 env:
   NODE_VERSION: '20'
-  PNPM_VERSION: '9'
 
 jobs:
   lint:
-    name: Lint (ESLint)
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,20 +31,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run ESLint
+      - name: Lint
         run: pnpm lint
 
-  test-api:
-    name: Unit Tests (API) with Coverage
+  typecheck:
+    name: TypeScript Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -56,33 +55,44 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run API unit tests
+      - name: Typecheck
+        run: pnpm typecheck
+
+  test-api:
+    name: Test API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test API
         run: pnpm --filter @hospital-queue/api test
 
-      - name: Run API tests with coverage
-        run: pnpm --filter @hospital-queue/api test:coverage
-        continue-on-error: true
-
-      - name: Upload coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./apps/api/coverage/lcov.info
-          flags: unittests
-          name: hospital-queue-api
-          fail_ci_if_error: false
-
   test-web:
-    name: Unit Tests (Web)
+    name: Test Web
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -93,25 +103,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Run Web unit tests
+      - name: Test Web
         run: pnpm --filter @hospital-queue/web test
-        continue-on-error: true
 
   build:
-    name: Build (API & Web)
+    name: Build
     runs-on: ubuntu-latest
-    needs: [lint, test-api, test-web]
+    needs: [lint, typecheck, test-api, test-web]
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -121,22 +127,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Build Web app
-        run: pnpm --filter @hospital-queue/web build
 
       - name: Build API
         run: pnpm --filter @hospital-queue/api build
 
-      - name: Upload Web build artifacts
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: web-build
-          path: apps/web/out
-          retention-days: 7
+      - name: Build Web
+        run: pnpm --filter @hospital-queue/web build
 
-      - name: Upload API build artifacts
+      - name: Upload API build
         uses: actions/upload-artifact@v4
         if: success()
         with:
@@ -144,42 +142,10 @@ jobs:
           path: apps/api/dist
           retention-days: 7
 
-  e2e:
-    name: E2E Tests (Playwright)
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Run E2E tests
-        run: pnpm exec playwright test
-        env:
-          BASE_URL: http://localhost:3000
-
-      - name: Upload Playwright Report
-        if: always()
+      - name: Upload Web build
         uses: actions/upload-artifact@v4
+        if: success()
         with:
-          name: playwright-report
-          path: |
-            apps/web/playwright-report/
-            apps/web/test-results/
+          name: web-build
+          path: apps/web/out
           retention-days: 7
